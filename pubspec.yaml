@@ -10,6 +10,29 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # State Management & Architecture
+  provider: ^6.1.2                 # Simple state management for app data & user session
+
+  # Local Storage & Offline Sync (Critical for field sales without continuous connectivity)
+  sqflite: ^2.3.3                  # Local SQLite database for offline leads, orders, and cache
+  shared_preferences: ^2.2.3       # Key-value storage for user settings and auth tokens
+
+  # Networking & Serialization
+  http: ^1.2.0                     # REST API calls to backend/ERP systems
+  intl: ^0.19.0                    # Date and currency formatting (₹ INR values)
+
+  # Location & Maps (For field check-ins and AI route optimization - Screens 08, 31)
+  geolocator: ^11.0.0              # GPS coordinates tracking for site check-ins
+  google_maps_flutter: ^2.6.0      # Route map rendering
+
+  # Camera & File Handling (For KYC uploads, receipt OCR, and store-front photos - Screens 4B, 23, 27)
+  image_picker: ^1.0.7             # Capture photos from camera or gallery
+  google_mlkit_text_recognition: ^0.13.0 # On-device OCR for expense receipt scanning & KYC auto-fill
+
+  # UI Enhancements & Icons
+  flutter_svg: ^2.0.10             # For rendering vector illustrations and custom icons
+  cupertino_icons: ^1.0.6
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
