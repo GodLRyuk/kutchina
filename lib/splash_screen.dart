@@ -30,7 +30,7 @@ class _SplashScreenState extends State<SplashScreen> {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [AppColors.red, AppColors.redDark],
+            colors: [AppColors.commandCentreText, AppColors.navActive],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -70,7 +70,7 @@ class _SplashScreenState extends State<SplashScreen> {
                   'SALES COMPANION',
                   style: TextStyle(
                     fontFamily: 'IBM Plex Mono',
-                    color: Color(0xFFFFD8DE),
+                    color: Color(0xFFD8E1FF),
                     fontSize: 10.5,
                     letterSpacing: 1,
                   ),

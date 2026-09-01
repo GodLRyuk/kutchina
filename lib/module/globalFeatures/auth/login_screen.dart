@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/utils/responsive.dart';
+import 'package:kutchina/module/admin/admin_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -11,6 +13,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   bool isSalesExec = true;
+  bool isAdmin = false;
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -27,45 +30,47 @@ class _LoginScreenState extends State<LoginScreen> {
       AppWidgets.toast(context, 'Enter mobile number and password');
       return;
     }
-    Navigator.pushReplacementNamed(context, '/dashboard');
+
+    if (isAdmin) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => AdminDashboard()),
+      );
+    } else {
+      Navigator.pushReplacementNamed(context, '/dashboard');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          '9:41',
-          style: TextStyle(fontFamily: 'IBM Plex Mono', fontSize: 10.5),
-        ),
-      ),
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
+        child: ResponsiveCenter(
           child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Center(
                 child: Column(
                   children: [
                     Container(
-                      width: 46,
-                      height: 46,
+                      width: 55,
+                      height: 55,
                       decoration: BoxDecoration(
-                        color: AppColors.red,
+                        color: AppColors.commandCentreText,
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: const Icon(
                         Icons.local_fire_department,
                         color: Colors.white,
-                        size: 22,
+                        size: 55,
                       ),
                     ),
                     const SizedBox(height: 14),
                     const Text(
                       'Welcome back',
                       style: TextStyle(
-                        fontFamily: 'Sora',
+                        fontFamily: AppFonts.display,
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -78,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 28),
 
               // Functional role switcher
               Container(
@@ -120,8 +125,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: const Text(
                       'Forgot password?',
                       style: TextStyle(
+                        fontFamily: AppFonts.display,
                         fontSize: 11,
-                        color: AppColors.red,
+                        color: AppColors.commandCentreText,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
@@ -132,27 +138,6 @@ class _LoginScreenState extends State<LoginScreen> {
 
               AppWidgets.buildButton('Log in', onTap: _login),
               const SizedBox(height: 10),
-
-              Center(
-                child: GestureDetector(
-                  onTap: () => Navigator.pushNamed(context, '/register'),
-                  child: RichText(
-                    text: const TextSpan(
-                      style: TextStyle(fontSize: 11.5, color: AppColors.steel),
-                      children: [
-                        TextSpan(text: 'New to Kutchina? '),
-                        TextSpan(
-                          text: 'Register',
-                          style: TextStyle(
-                            color: AppColors.red,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
         ),
@@ -162,7 +147,12 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Widget _roleTab(String label, bool active) {
     return GestureDetector(
-      onTap: () => setState(() => isSalesExec = label == 'Sales exec'),
+      onTap: () {
+        setState(() {
+          isSalesExec = label == 'Sales exec';
+          isAdmin = !isSalesExec;
+        });
+      },
       child: Container(
         alignment: Alignment.center,
         padding: const EdgeInsets.symmetric(vertical: 8),
@@ -173,10 +163,10 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Text(
           label,
           style: TextStyle(
-            fontFamily: 'Sora',
+            fontFamily: AppFonts.display,
             fontSize: 11.5,
             fontWeight: active ? FontWeight.bold : FontWeight.w600,
-            color: active ? AppColors.ink : AppColors.steel,
+            color: active ? AppColors.commandCentreText : AppColors.steel,
           ),
         ),
       ),

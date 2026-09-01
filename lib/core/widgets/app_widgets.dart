@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
 
@@ -15,7 +17,7 @@ class AppWidgets {
       child: Text(
         text,
         style: TextStyle(
-          fontFamily: 'IBM Plex Mono',
+          fontFamily: AppFonts.mono,
           fontSize: 9.5,
           fontWeight: FontWeight.bold,
           color: color,
@@ -100,7 +102,7 @@ class AppWidgets {
         child: Text(
           label,
           style: TextStyle(
-            fontFamily: 'Sora',
+            fontFamily: AppFonts.display,
             fontSize: 11,
             fontWeight: FontWeight.w600,
             color: isActive
@@ -125,13 +127,13 @@ class AppWidgets {
     BoxBorder? border;
     switch (variant) {
       case AppButtonVariant.primary:
-        bg = AppColors.red;
+        bg = AppColors.commandCentreText;
         fg = Colors.white;
         break;
       case AppButtonVariant.outline:
         bg = Colors.transparent;
-        fg = AppColors.red;
-        border = Border.all(color: AppColors.red, width: 1.4);
+        fg = AppColors.commandCentreText;
+        border = Border.all(color: AppColors.commandCentreText, width: 1.4);
         break;
       case AppButtonVariant.dark:
         bg = AppColors.charcoal;
@@ -149,7 +151,7 @@ class AppWidgets {
         Text(
           label,
           style: TextStyle(
-            fontFamily: 'Sora',
+            fontFamily: AppFonts.display,
             fontWeight: FontWeight.bold,
             fontSize: 13,
             color: fg,
@@ -187,6 +189,7 @@ class AppWidgets {
         Text(
           label.toUpperCase(),
           style: const TextStyle(
+            fontFamily: AppFonts.display,
             fontSize: 10.5,
             color: AppColors.steel,
             fontWeight: FontWeight.bold,
@@ -235,6 +238,7 @@ class AppWidgets {
         Text(
           label.toUpperCase(),
           style: const TextStyle(
+            fontFamily: AppFonts.display,
             fontSize: 10.5,
             color: AppColors.steel,
             fontWeight: FontWeight.bold,
@@ -322,7 +326,9 @@ class AppWidgets {
               value: percent.clamp(0, 1),
               strokeWidth: 10,
               backgroundColor: const Color(0xFFEDEBE6),
-              valueColor: const AlwaysStoppedAnimation(AppColors.red),
+              valueColor: const AlwaysStoppedAnimation(
+                AppColors.commandCentreText,
+              ),
               strokeCap: StrokeCap.round,
             ),
           ),
@@ -332,7 +338,7 @@ class AppWidgets {
               Text(
                 centerLabel,
                 style: const TextStyle(
-                  fontFamily: 'Sora',
+                  fontFamily: AppFonts.display,
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
                   color: AppColors.charcoal,
@@ -341,7 +347,7 @@ class AppWidgets {
               Text(
                 centerSubLabel,
                 style: const TextStyle(
-                  fontFamily: 'IBM Plex Mono',
+                  fontFamily: AppFonts.mono,
                   fontSize: 9.5,
                   color: AppColors.steel,
                 ),
@@ -367,7 +373,7 @@ class AppWidgets {
               Text(
                 title,
                 style: const TextStyle(
-                  fontFamily: 'Sora',
+                  fontFamily: AppFonts.display,
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
                   color: AppColors.aiBlue,
@@ -392,6 +398,150 @@ class AppWidgets {
   static void toast(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), duration: const Duration(seconds: 1)),
+    );
+  }
+
+  static Widget targetStat(String value, String label, Color color) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: TextStyle(
+            fontFamily: AppFonts.mono,
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 9.5, color: AppColors.steel),
+        ),
+      ],
+    );
+  }
+
+  static Widget topProductTile({
+    required int rank,
+    required IconData icon,
+    required String name,
+    required String units,
+    required Color color,
+    required Color badgeColor,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: color.withOpacity(0.18)),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Positioned(
+            top: -14,
+            right: -6,
+            child: Container(
+              width: 22,
+              height: 22,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: badgeColor,
+                shape: BoxShape.circle,
+                border: Border.all(color: AppColors.white, width: 2),
+              ),
+              child: Text(
+                '$rank',
+                style: const TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.white,
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                name,
+                textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 10.5,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                units,
+                style: const TextStyle(fontSize: 9, color: AppColors.steel),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  static Widget milestoneDot({
+    required double fraction,
+    required double percent,
+    required double arcRadius,
+    required Offset arcCenter,
+    required String label,
+  }) {
+    final angle = 3.14159 + 3.14159 * fraction;
+    final pos = Offset(
+      arcCenter.dx + arcRadius * math.cos(angle),
+      arcCenter.dy + arcRadius * math.sin(angle),
+    );
+    final done = fraction <= percent + 0.001;
+    return Positioned(
+      left: pos.dx - 16,
+      top: pos.dy - 35,
+      child: Column(
+        children: [
+          Container(
+            width: 32,
+            height: 32,
+            decoration: BoxDecoration(
+              color: done ? AppColors.ink : AppColors.ash,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              done ? Icons.check : Icons.access_time,
+              color: done ? AppColors.white : AppColors.black,
+              size: 16,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: AppFonts.mono,
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: done ? AppColors.black : AppColors.black,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

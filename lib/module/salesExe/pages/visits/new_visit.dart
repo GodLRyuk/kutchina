@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 
-class CheckInScreen extends StatefulWidget {
-  const CheckInScreen({
+class NewVisitScreen extends StatefulWidget {
+  const NewVisitScreen({
     super.key,
     this.dealerName = 'Sharma Electronics',
     this.address = '42 Salt Lake Sector V, Kolkata 700091',
@@ -13,16 +13,35 @@ class CheckInScreen extends StatefulWidget {
   final String address;
 
   @override
-  State<CheckInScreen> createState() => _CheckInScreenState();
+  State<NewVisitScreen> createState() => _NewVisitScreenState();
 }
 
-class _CheckInScreenState extends State<CheckInScreen> {
+class _NewVisitScreenState extends State<NewVisitScreen> {
   final _purposeController = TextEditingController(
     text: 'Stock check & new display',
   );
   final _noteController = TextEditingController();
   bool _photoAdded = false;
   bool _noteAdded = false;
+
+  String? _visitType; // Distributor / Retailer — no default
+  String? _entity;
+
+  static const _distributors = [
+    'Sharma Electronics',
+    'Newtown Appliances',
+    'Howrah Home Center',
+  ];
+  static const _retailers = [
+    'Baruipur Home Corner',
+    'Sonarpur Electric Mart',
+    'Garia Kitchen Studio',
+  ];
+
+  List<String> get _entityOptions =>
+      _visitType == 'Distributor' ? _distributors : _retailers;
+
+  String get _displayName => _entity ?? widget.dealerName;
 
   @override
   void dispose() {
@@ -88,14 +107,50 @@ class _CheckInScreenState extends State<CheckInScreen> {
     }
   }
 
+  Future<void> _pickEntity() async {
+    if (_visitType == null) {
+      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      return;
+    }
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: _entityOptions
+              .map(
+                (e) => ListTile(
+                  title: Text(e),
+                  onTap: () => Navigator.pop(ctx, e),
+                ),
+              )
+              .toList(),
+        ),
+      ),
+    );
+    if (picked != null) setState(() => _entity = picked);
+  }
+
   void _checkIn() {
+    if (_visitType == null) {
+      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      return;
+    }
+    if (_entity == null) {
+      AppWidgets.toast(
+        context,
+        'Select a ${_visitType!.toLowerCase()} to check in',
+      );
+      return;
+    }
     Navigator.pop(context, {
-      'dealer': widget.dealerName,
+      'dealer': _displayName,
+      'type': _visitType,
       'purpose': _purposeController.text.trim(),
       'note': _noteController.text.trim(),
       'photo': _photoAdded,
     });
-    AppWidgets.toast(context, 'Checked in at ${widget.dealerName}');
+    AppWidgets.toast(context, 'Checked in at $_displayName');
   }
 
   @override
@@ -146,43 +201,54 @@ class _CheckInScreenState extends State<CheckInScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  AppWidgets.buildCard(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.dealerName,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 3),
-                        Text(
-                          widget.address,
-                          style: const TextStyle(
-                            fontSize: 11,
-                            color: AppColors.steel,
-                          ),
-                        ),
-                        const SizedBox(height: 6),
-                        const Row(
-                          children: [
-                            Icon(Icons.circle, size: 6, color: AppColors.green),
-                            SizedBox(width: 4),
-                            Text(
-                              '40m from your location',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.green,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
+                  const Text(
+                    'VISIT TYPE',
+                    style: TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.steel,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: .4,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 8),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _typeBox(
+                          title: 'Distributor',
+                          icon: Icons.storefront_outlined,
+                          selected: _visitType == 'Distributor',
+                          onTap: () => setState(() {
+                            _visitType = 'Distributor';
+                            _entity = null;
+                          }),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _typeBox(
+                          title: 'Retailer',
+                          icon: Icons.store_mall_directory_outlined,
+                          selected: _visitType == 'Retailer',
+                          onTap: () => setState(() {
+                            _visitType = 'Retailer';
+                            _entity = null;
+                          }),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_visitType != null) ...[
+                    const SizedBox(height: 12),
+                    AppWidgets.buildStaticField(
+                      label: _visitType!,
+                      value: _entity ?? 'Select $_visitType',
+                      isPlaceholder: _entity == null,
+                      onTap: _pickEntity,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+
                   AppWidgets.buildTextField(
                     label: 'Purpose of visit',
                     controller: _purposeController,
@@ -220,6 +286,48 @@ class _CheckInScreenState extends State<CheckInScreen> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _typeBox({
+    required String title,
+    required IconData icon,
+    required bool selected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(14),
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.redLight : AppColors.white,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.red : AppColors.line,
+            width: selected ? 1.6 : 1,
+          ),
+        ),
+        child: Column(
+          children: [
+            Icon(
+              icon,
+              size: 20,
+              color: selected ? AppColors.redDark : AppColors.steel,
+            ),
+            const SizedBox(height: 5),
+            Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Sora',
+                fontSize: 11.5,
+                fontWeight: FontWeight.w700,
+                color: selected ? AppColors.redDark : AppColors.steel,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

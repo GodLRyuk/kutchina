@@ -52,7 +52,7 @@ class _AddLeadScreenState extends State<AddLeadScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Add lead',
+          'Add Order',
           style: TextStyle(
             fontFamily: 'Sora',
             fontSize: 15.5,
