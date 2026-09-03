@@ -39,10 +39,10 @@ Future<bool> showCheckInRequiredDialog(
                   height: 48,
                   alignment: Alignment.center,
                   decoration: BoxDecoration(
-                    color: AppColors.redLight,
+                    color: AppColors.greenLight,
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: AppColors.redDark, size: 24),
+                  child: Icon(icon, color: AppColors.green, size: 24),
                 ),
                 const SizedBox(height: 14),
                 Text(

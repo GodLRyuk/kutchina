@@ -1,31 +1,69 @@
-class Product {
+import 'package:kutchina/core/network/masters_api.dart';
+
+class ProductColor {
+  final String id;
   final String name;
-  final String category;
+  ProductColor({required this.id, required this.name});
+
+  factory ProductColor.fromJson(Map<String, dynamic> json) {
+    return ProductColor(
+      id: (json['id'] ?? '').toString(),
+      name: json['name']?.toString().trim() ?? '',
+    );
+  }
+}
+
+class Product {
+  final String id;
+  final String name;
+  final Category
+  category; // reuses Category from masters_api.dart — no duplicate model
+  final ProductColor? color;
   final double price;
-  final String suction;
-  final String filter;
+  final String filterType;
   final String warranty;
+  final bool isActive;
 
   const Product({
+    required this.id,
     required this.name,
     required this.category,
+    this.color,
     required this.price,
-    this.suction = '1200 m³/hr',
-    this.filter = 'Filterless, auto-clean',
-    this.warranty = '5 years motor',
+    this.filterType = '',
+    this.warranty = '',
+    this.isActive = true,
   });
 
-  static const List<Product> catalog = [
-    Product(name: 'Neo Elica 90cm', category: 'Chimneys', price: 18990),
-    Product(name: 'Zeus Auto Clean', category: 'Chimneys', price: 24500),
-    Product(name: 'Curvo 60cm', category: 'Chimneys', price: 14250),
-    Product(name: 'Ceylon Straight', category: 'Chimneys', price: 16800),
-    Product(name: '3-Burner Auto Hob', category: 'Hobs', price: 9500),
-    Product(name: '2-Burner Glass Hob', category: 'Hobs', price: 6200),
-    Product(name: 'Induction Cooktop', category: 'Cooktops', price: 3400),
-    Product(name: 'Built-in Oven 60L', category: 'Ovens', price: 21500),
-    Product(name: 'RO + UV Purifier', category: 'Purifiers', price: 8990),
-  ];
+  factory Product.fromJson(Map<String, dynamic> json) {
+    return Product(
+      id: (json['id'] ?? '').toString(),
+      name: json['name']?.toString().trim() ?? '',
+      category: Category.fromJson(json['category'] ?? {}),
+      color: json['color'] != null
+          ? ProductColor.fromJson(json['color'])
+          : null,
+      price: double.tryParse(json['price']?.toString() ?? '') ?? 0.0,
+      filterType: json['filter_type']?.toString() ?? '',
+      warranty: json['warranty']?.toString() ?? '',
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
 
-  static const List<String> categories = ['Chimneys', 'Hobs', 'Cooktops'];
+  static List<Product> catalog = [];
+  static bool _loaded = false;
+
+  static Future<void> loadCatalog({bool force = false}) async {
+    if (_loaded && !force) return;
+    catalog = await MastersApi.fetchProducts();
+    _loaded = true;
+  }
+}
+
+class CategoryModel {
+  static List<String> categories = [];
+  static Future<void> loadCategories() async {
+    final list = await MastersApi.fetchCategories();
+    categories = list.map((c) => c.name).toList();
+  }
 }

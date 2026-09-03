@@ -22,9 +22,7 @@ class CartScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final subtotal = product.price * qty;
-    final discount = subtotal * 0.08;
-    final gst = (subtotal - discount) * 0.18;
-    final total = subtotal - discount + gst;
+    final total = subtotal;
 
     return Scaffold(
       appBar: AppTopBar(
@@ -84,8 +82,6 @@ class CartScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   _totalRow('Subtotal', subtotal),
-                  _totalRow('Dealer discount (8%)', -discount),
-                  _totalRow('GST (18%)', gst),
                   const Divider(height: 24, color: AppColors.line),
                   _totalRow(
                     'Total',

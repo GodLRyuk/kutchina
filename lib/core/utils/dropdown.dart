@@ -60,7 +60,7 @@ class EntityPickerSheetState extends State<EntityPickerSheet> {
                 ),
                 const SizedBox(height: 14),
                 Text(
-                  'Select ${widget.label.toLowerCase()}',
+                  'Select ${widget.label}',
                   style: const TextStyle(
                     fontFamily: AppFonts.display,
                     fontSize: 14,

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/salesExe/models/channel_model.dart';
 import 'package:kutchina/module/salesExe/pages/order/select_product_screen.dart';
 
 Future<void> showNewOrderSheet(BuildContext context) {
@@ -20,17 +21,21 @@ class _NewOrderSheet extends StatefulWidget {
 }
 
 class _NewOrderSheetState extends State<_NewOrderSheet> {
-  String? _orderType; // Distributor / Retailer
-  String? _channel; // Retailer / Direct Marketing / Vertical
+  String? _orderType;
+  String? _channel;
 
-  static const _channels = [
-    'Retailer',
-    'Premium',
-    'Direct Marketing',
-    'Vertical',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    setState(() {
+      ChannelModel.loadChannels().then((_) {
+        setState(() {});
+      });
+    });
+  }
 
   void _continue() {
+    print('Selected order type: $_orderType, channel: $_channel');
     if (_orderType == null || _channel == null) {
       AppWidgets.toast(context, 'Select order type and channel');
       return;
@@ -83,7 +88,7 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: _channels.map((c) {
+            children: ChannelModel.channels.map((c) {
               final active = _channel == c;
               return GestureDetector(
                 onTap: () => setState(() => _channel = c),
@@ -117,16 +122,16 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
             title: 'Primary',
             subtitle: 'Distributor',
             icon: Icons.storefront_outlined,
-            selected: _orderType == 'Distributor',
-            onTap: () => setState(() => _orderType = 'Distributor'),
+            selected: _orderType == 'D',
+            onTap: () => setState(() => _orderType = 'D'),
           ),
           const SizedBox(height: 10),
           _optionCard(
             title: 'Secondary',
             subtitle: 'Retailer',
             icon: Icons.store_mall_directory_outlined,
-            selected: _orderType == 'Retailer',
-            onTap: () => setState(() => _orderType = 'Retailer'),
+            selected: _orderType == 'R',
+            onTap: () => setState(() => _orderType = 'R'),
           ),
           const SizedBox(height: 18),
 

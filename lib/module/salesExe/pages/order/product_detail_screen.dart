@@ -23,12 +23,6 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   int _qty = 1;
-  int _colorIndex = 0;
-  static const _colors = [
-    AppColors.charcoal,
-    AppColors.red,
-    AppColors.steelLight,
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -69,15 +63,15 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     AppWidgets.buildBadge(
-                      'Ordering for ${widget.entityName} · ${widget.orderType}',
+                      'Ordering for ${widget.entityName} · ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
                       AppColors.aiBlueChipBg,
                       AppColors.aiBlue,
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      p.category.toUpperCase(),
+                      p.category.name.toUpperCase(),
                       style: const TextStyle(
-                        fontFamily: 'IBM Plex Mono',
+                        fontFamily: AppFonts.mono,
                         fontSize: 10,
                         color: AppColors.steel,
                       ),
@@ -85,7 +79,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                     Text(
                       p.name,
                       style: const TextStyle(
-                        fontFamily: 'Sora',
+                        fontFamily: AppFonts.display,
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
@@ -97,53 +91,79 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         Text(
                           '₹${p.price.toStringAsFixed(0)}',
                           style: const TextStyle(
-                            fontFamily: 'IBM Plex Mono',
+                            fontFamily: AppFonts.mono,
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
                             color: AppColors.red,
                           ),
                         ),
+                        if (!p.isActive)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.redLight,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: const Text(
+                              'Unavailable',
+                              style: TextStyle(
+                                fontFamily: AppFonts.display,
+                                fontSize: 9.5,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.red,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     const Divider(height: 24, color: AppColors.line),
-                    _spec('Suction capacity', p.suction),
-                    _spec('Filter type', p.filter),
-                    _spec('Warranty', p.warranty),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'COLOUR / VARIANT',
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: AppColors.steel,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    _spec(
+                      'Filter type',
+                      p.filterType.isNotEmpty ? p.filterType : '—',
                     ),
-                    const SizedBox(height: 8),
+                    _spec('Warranty', p.warranty.isNotEmpty ? p.warranty : '—'),
+                    const SizedBox(height: 12),
+                    if (p.color != null) ...[
+                      const Text(
+                        'COLOUR / VARIANT',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 10.5,
+                          color: AppColors.steel,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                    ],
                     Row(
                       children: [
-                        ...List.generate(_colors.length, (i) {
-                          final active = _colorIndex == i;
-                          return Padding(
-                            padding: const EdgeInsets.only(right: 8),
-                            child: GestureDetector(
-                              onTap: () => setState(() => _colorIndex = i),
-                              child: Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: _colors[i],
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: active
-                                        ? AppColors.red
-                                        : Colors.transparent,
-                                    width: 2,
-                                  ),
-                                ),
+                        if (p.color != null)
+                          Container(
+                            width: 24,
+                            height: 24,
+                            decoration: BoxDecoration(
+                              color: _resolveColor(p.color!.name),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.line,
+                                width: 1.5,
                               ),
                             ),
-                          );
-                        }),
+                          ),
+                        if (p.color != null) const SizedBox(width: 8),
+                        if (p.color != null)
+                          Text(
+                            p.color!.name,
+                            style: const TextStyle(
+                              fontFamily: AppFonts.display,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
                         const Spacer(),
                         AppWidgets.buildIconButton(
                           Icons.remove,
@@ -168,6 +188,16 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                       ],
                     ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Subtotal: ₹${(p.price * _qty).toStringAsFixed(0)}',
+                      style: const TextStyle(
+                        fontFamily: AppFonts.mono,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -181,23 +211,41 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               ),
               child: AppWidgets.buildButton(
                 'Add to order',
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => CartScreen(
-                      orderType: widget.orderType,
-                      entityName: widget.entityName,
-                      product: p,
-                      qty: _qty,
-                    ),
-                  ),
-                ),
+                onTap: p.isActive
+                    ? () => Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => CartScreen(
+                            orderType: widget.orderType,
+                            entityName: widget.entityName,
+                            product: p,
+                            qty: _qty,
+                          ),
+                        ),
+                      )
+                    : null,
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  Color _resolveColor(String name) {
+    switch (name.toLowerCase().trim()) {
+      case 'black':
+        return AppColors.charcoal;
+      case 'white':
+        return AppColors.white;
+      case 'red':
+        return AppColors.red;
+      case 'grey':
+      case 'gray':
+        return AppColors.steelLight;
+      default:
+        return AppColors.steel;
+    }
   }
 
   Widget _spec(String label, String value) {

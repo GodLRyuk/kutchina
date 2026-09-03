@@ -1,4 +1,5 @@
 // lib/core/widgets/speedo_painter.dart
+import 'dart:math' as math; // ← add this, needed for needle angle math
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 
@@ -13,7 +14,7 @@ class SpeedoPainter extends CustomPainter {
     const startAngle = 3.14159; // 180deg
     const sweepAngle = 3.14159; // 180deg total
     const strokeW = 38.0;
-    const borderW = strokeW + 4; // border peek 2px each side
+    const borderW = strokeW + 4;
 
     // track border
     final trackBorderPaint = Paint()
@@ -67,6 +68,37 @@ class SpeedoPainter extends CustomPainter {
       sweepAngle * percent.clamp(0.0, 1.0),
       false,
       progPaint,
+    );
+
+    // ---- needle (clock-hand style, tracks same percent) ----
+    final needleAngle = startAngle + sweepAngle * percent.clamp(0.0, 1.0);
+    final needleLen = radius - (strokeW / 2) - 6; // stop short of arc band
+    final needleEnd = Offset(
+      center.dx + needleLen * math.cos(needleAngle),
+      center.dy + needleLen * math.sin(needleAngle),
+    );
+
+    final needleShadowPaint = Paint()
+      ..color = AppColors.ink.withOpacity(0.15)
+      ..strokeWidth = 6
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(center, needleEnd, needleShadowPaint);
+
+    final needlePaint = Paint()
+      ..color = AppColors.ink
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(center, needleEnd, needlePaint);
+
+    // hub
+    canvas.drawCircle(center, 8, Paint()..color = AppColors.ink);
+    canvas.drawCircle(
+      center,
+      8,
+      Paint()
+        ..color = AppColors.white
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
     );
   }
 

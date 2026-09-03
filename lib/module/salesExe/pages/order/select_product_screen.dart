@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesExe/models/category_model.dart';
+import 'package:kutchina/module/salesExe/models/product_model.dart'
+    hide CategoryModel;
 import 'package:kutchina/module/salesExe/pages/order/product_detail_screen.dart';
 
 class SelectProductScreen extends StatefulWidget {
@@ -24,30 +27,78 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   String _category = 'All';
   Product? _selected;
 
-  static const _distributors = [
-    'Sharma Electronics',
-    'Newtown Appliances',
-    'Howrah Home Center',
-  ];
-  static const _retailers = [
-    'Baruipur Home Corner',
-    'Sonarpur Electric Mart',
-    'Garia Kitchen Studio',
-  ];
+  List<String> _distributorNames = [];
+  bool _loadingDistributors = false;
+  bool _loadingRetailers = false;
+  String? _retailerError;
+  String? _distributorError;
+  List<String> _retailers = [];
+  @override
+  void initState() {
+    super.initState();
+    if (widget.orderType == 'D') {
+      _loadDistributors();
+    } else if (widget.orderType == 'R') {
+      _loadRetailers();
+    }
+    CategoryModel.loadCategories().then((_) {
+      setState(() {});
+    });
+    Product.loadCatalog().then((_) => setState(() {}));
+  }
+
+  Future<void> _loadDistributors() async {
+    setState(() {
+      _loadingDistributors = true;
+      _distributorError = null;
+    });
+    try {
+      final list = await MastersApi.fetchDistributors();
+      setState(() {
+        _distributorNames = list.map((d) => d.name).toList();
+        _loadingDistributors = false;
+      });
+    } catch (e) {
+      setState(() {
+        _distributorError = 'Could not load distributors';
+        _loadingDistributors = false;
+      });
+    }
+  }
+
+  Future<void> _loadRetailers() async {
+    setState(() {
+      _loadingRetailers = true;
+      _retailerError = null;
+    });
+    try {
+      final list = await MastersApi.fetchRetailers();
+      setState(() {
+        _retailers = list.map((d) => d.name).toList();
+        _loadingRetailers = false;
+      });
+    } catch (e) {
+      setState(() {
+        _retailerError = 'Could not load retailers';
+        _loadingRetailers = false;
+      });
+    }
+  }
 
   List<String> get _entityOptions =>
-      widget.orderType == 'Distributor' ? _distributors : _retailers;
+      widget.orderType == 'D' ? _distributorNames : _retailers;
 
   List<Product> get _categoryFiltered => Product.catalog
-      .where((p) => _category == 'All' || p.category == _category)
+      .where((p) => _category == 'All' || p.category.name == _category)
       .toList();
-
   Future<void> _pickEntity() async {
     final picked = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) =>
-          EntityPickerSheet(label: widget.orderType, options: _entityOptions),
+      builder: (ctx) => EntityPickerSheet(
+        label: widget.orderType == 'D' ? 'Distributors' : 'Retailers',
+        options: _entityOptions,
+      ),
     );
     if (picked != null) setState(() => _entity = picked);
   }
@@ -56,8 +107,12 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     if (_entity == null) {
       AppWidgets.toast(
         context,
-        'Select a ${widget.orderType.toLowerCase()} first',
+        'Select a ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} first',
       );
+      return;
+    }
+    if (_categoryFiltered.isEmpty) {
+      AppWidgets.toast(context, 'No products found');
       return;
     }
     final picked = await showModalBottomSheet<Product>(
@@ -72,7 +127,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     if (_entity == null) {
       AppWidgets.toast(
         context,
-        'Select a ${widget.orderType.toLowerCase()} first',
+        'Select a ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} first',
       );
       return;
     }
@@ -115,7 +170,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                       runSpacing: 6,
                       children: [
                         AppWidgets.buildBadge(
-                          '${widget.orderType} order',
+                          '${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} order',
                           AppColors.rupeeIconBg,
                           AppColors.commandCentreText,
                         ),
@@ -126,14 +181,98 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    AppWidgets.buildStaticField(
-                      label: widget.orderType,
-                      value:
-                          _entity ?? 'Select ${widget.orderType.toLowerCase()}',
-                      isPlaceholder: _entity == null,
-                      onTap: _pickEntity,
-                    ),
+                    const SizedBox(height: 24),
+                    if (widget.orderType == 'D' && _loadingDistributors ||
+                        widget.orderType == 'R' && _loadingRetailers)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          border: Border.all(color: AppColors.line),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.commandCentreText,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Loading ${widget.orderType.toLowerCase()}s…',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.steel,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (widget.orderType == 'D' &&
+                            _distributorError != null ||
+                        widget.orderType == 'R' && _retailerError != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.redLight,
+                          border: Border.all(
+                            color: AppColors.red.withOpacity(0.3),
+                          ),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 16,
+                              color: AppColors.red,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _distributorError!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.redDark,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _loadDistributors,
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(
+                                  fontFamily: AppFonts.display,
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      AppWidgets.buildStaticField(
+                        label: widget.orderType == 'D'
+                            ? 'Distributor'
+                            : 'Retailer',
+                        value:
+                            _entity ??
+                            'Select ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
+                        isPlaceholder: _entity == null,
+                        onTap: _pickEntity,
+                      ),
                     const SizedBox(height: 14),
                     const Text(
                       'CATEGORY',
@@ -149,7 +288,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: ['All', ...Product.categories].map((c) {
+                      children: ['All', ...CategoryModel.categories].map((c) {
                         final active = _category == c;
                         return GestureDetector(
                           onTap: () => setState(() {
@@ -192,7 +331,9 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                     ),
                     const SizedBox(height: 14),
                     AppWidgets.buildStaticField(
-                      label: 'Product',
+                      label: _category == 'All'
+                          ? 'Product'
+                          : 'Product ($_category)',
                       value: _selected?.name ?? 'Select a product',
                       isPlaceholder: _selected == null,
                       onTap: _pickProduct,
@@ -218,7 +359,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _selected!.category,
+                              _selected!.category.name,
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.steel,
@@ -384,7 +525,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 ),
                               ),
                               subtitle: Text(
-                                p.category,
+                                p.category.name,
                                 style: const TextStyle(
                                   fontSize: 10.5,
                                   color: AppColors.steel,
