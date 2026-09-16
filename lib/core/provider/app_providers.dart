@@ -1,3 +1,4 @@
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/provider/category_provider.dart';
 import 'package:kutchina/core/provider/distributor_provider.dart';
 import 'package:kutchina/core/provider/retailer_provider.dart';
@@ -12,5 +13,8 @@ List<SingleChildWidget> appProviders() {
 
     ChangeNotifierProvider<RetailerProvider>(create: (_) => RetailerProvider()),
     ChangeNotifierProvider<CategoryProvider>(create: (_) => CategoryProvider()),
+    ChangeNotifierProvider<AuthProvider>(
+      create: (_) => AuthProvider()..loadFromStorage(),
+    ),
   ];
 }

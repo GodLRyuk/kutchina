@@ -350,3 +350,23 @@ class ApiService {
     return null;
   }
 }
+
+class UserStore {
+  UserStore._();
+  static final _storage = FlutterSecureStorage(
+    aOptions: AndroidOptions(encryptedSharedPreferences: true),
+    iOptions: IOSOptions(accessibility: KeychainAccessibility.first_unlock),
+  );
+  static const _userKey = 'current_user';
+
+  static Future<void> saveUser(Map<String, dynamic> userJson) =>
+      _storage.write(key: _userKey, value: jsonEncode(userJson));
+
+  static Future<Map<String, dynamic>?> getUser() async {
+    final raw = await _storage.read(key: _userKey);
+    if (raw == null) return null;
+    return jsonDecode(raw) as Map<String, dynamic>;
+  }
+
+  static Future<void> clear() => _storage.delete(key: _userKey);
+}

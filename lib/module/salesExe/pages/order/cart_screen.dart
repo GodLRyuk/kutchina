@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
@@ -102,6 +104,37 @@ class CartScreen extends StatelessWidget {
             child: AppWidgets.buildButton(
               'Place order',
               onTap: () async {
+                try {
+                  await OrderService.placeOrder(
+                    orderType: orderType,
+                    entityName: entityName,
+                    product: product,
+                    filter: '',
+                    qty: qty,
+                    warranty: '',
+                    price: product.price.toString(),
+                  );
+                } on ApiException catch (e) {
+                  showCheckInRequiredDialog(
+                    context,
+                    title: 'Order failed',
+                    message: e.message,
+                    buttonLabel: 'Retry',
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                } catch (_) {
+                  showCheckInRequiredDialog(
+                    context,
+                    title: 'Order failed',
+                    message:
+                        'There was an error while placing your order. Please try again later.',
+                    buttonLabel: 'Retry',
+                    icon: Icons.error_outline,
+                  );
+                  return;
+                }
+
                 final ok = await showCheckInRequiredDialog(
                   context,
                   title: 'Order placed',

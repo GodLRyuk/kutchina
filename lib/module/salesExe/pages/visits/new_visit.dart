@@ -1,16 +1,18 @@
+import 'dart:io';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:geocoding/geocoding.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 
 class NewVisitScreen extends StatefulWidget {
-  const NewVisitScreen({
-    super.key,
-    this.dealerName = 'Sharma Electronics',
-    this.address = '42 Salt Lake Sector V, Kolkata 700091',
-  });
-
-  final String dealerName;
-  final String address;
+  const NewVisitScreen({super.key});
 
   @override
   State<NewVisitScreen> createState() => _NewVisitScreenState();
@@ -21,27 +23,49 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     text: 'Stock check & new display',
   );
   final _noteController = TextEditingController();
-  bool _photoAdded = false;
   bool _noteAdded = false;
-
-  String? _visitType; // Distributor / Retailer — no default
+  File? _photoFile;
+  bool get _photoAdded => _photoFile != null;
+  String? _visitType; // 'Distributor' / 'Retailer' — used for UI only
   String? _entity;
+  String? _entityId;
 
-  static const _distributors = [
-    'Sharma Electronics',
-    'Newtown Appliances',
-    'Howrah Home Center',
-  ];
-  static const _retailers = [
-    'Baruipur Home Corner',
-    'Sonarpur Electric Mart',
-    'Garia Kitchen Studio',
-  ];
+  double? _lat;
+  double? _long;
+  bool _loadingLocation = false;
+  String? _locationError;
+  final ImagePicker _picker = ImagePicker();
+  List<dynamic> _distributors = [];
+  List<dynamic> _retailers = [];
+  bool _loadingEntities = false;
+  String? _entityError;
+  bool _submitting = false;
+  String? _address;
+  bool _loadingAddress = false;
+
+  /// Maps the UI label to the API code expected by the backend.
+  String? get _visitTypeCode {
+    switch (_visitType) {
+      case 'D':
+        return 'D';
+      case 'R':
+        return 'R';
+      default:
+        return null;
+    }
+  }
+
+  List<dynamic> get _entityList =>
+      _visitType == 'D' ? _distributors : _retailers;
 
   List<String> get _entityOptions =>
-      _visitType == 'Distributor' ? _distributors : _retailers;
+      _entityList.map<String>((e) => e.name as String).toList();
 
-  String get _displayName => _entity ?? widget.dealerName;
+  @override
+  void initState() {
+    super.initState();
+    _getCurrentLocation();
+  }
 
   @override
   void dispose() {
@@ -50,9 +74,47 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     super.dispose();
   }
 
-  void _addPhoto() {
-    setState(() => _photoAdded = true);
-    AppWidgets.toast(context, 'Photo attached');
+  Future<void> _loadEntities() async {
+    if (_visitType == null) return;
+    setState(() {
+      _loadingEntities = true;
+      _entityError = null;
+    });
+    try {
+      if (_visitType == 'D') {
+        _distributors = await MastersApi.fetchDistributors();
+      } else {
+        _retailers = await MastersApi.fetchRetailers();
+      }
+      setState(() => _loadingEntities = false);
+    } catch (e) {
+      setState(() {
+        _entityError =
+            'Could not load ${_visitType == 'D' ? 'Distributors' : 'Retailers'}';
+        _loadingEntities = false;
+      });
+    }
+  }
+
+  Future<void> _addPhoto() async {
+    try {
+      final XFile? shot = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80, // compress a bit before upload
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (shot == null) return; // user cancelled
+      setState(() => _photoFile = File(shot.path));
+      if (!mounted) return;
+      AppWidgets.toast(context, 'Photo attached');
+    } catch (e) {
+      if (!mounted) return;
+      AppWidgets.toast(context, 'Could not open camera');
+    }
+  }
+
+  void _removePhoto() {
+    setState(() => _photoFile = null);
   }
 
   Future<void> _addNote() async {
@@ -112,45 +174,209 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       AppWidgets.toast(context, 'Select Distributor or Retailer first');
       return;
     }
+
+    // Lazily load the list the first time this type is opened, or retry
+    // after a previous failure.
+    if (_entityOptions.isEmpty && !_loadingEntities) {
+      await _loadEntities();
+    }
+
+    if (!mounted) return;
+
+    if (_loadingEntities) {
+      AppWidgets.toast(
+        context,
+        'Still loading ${_visitType == 'D' ? 'Distributors' : 'Retailers'}…',
+      );
+      return;
+    }
+
+    if (_entityError != null) {
+      AppWidgets.toast(context, _entityError!);
+      return;
+    }
+
+    if (_entityOptions.isEmpty) {
+      AppWidgets.toast(
+        context,
+        'No ${_visitType == 'D' ? 'Distributors' : 'Retailers'} available',
+      );
+      return;
+    }
+
     final picked = await showModalBottomSheet<String>(
       context: context,
-      builder: (ctx) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: _entityOptions
-              .map(
-                (e) => ListTile(
-                  title: Text(e),
-                  onTap: () => Navigator.pop(ctx, e),
-                ),
-              )
-              .toList(),
-        ),
+      builder: (ctx) => EntityPickerSheet(
+        label: _visitType == 'D' ? 'Distributor' : 'Retailer',
+        options: _entityOptions,
       ),
     );
-    if (picked != null) setState(() => _entity = picked);
+    if (picked != null) {
+      // Resolve the id from the name that came back from the sheet.
+      dynamic match;
+      for (final e in _entityList) {
+        if (e.name == picked) {
+          match = e;
+          break;
+        }
+      }
+      setState(() {
+        _entity = picked;
+        _entityId = match?.id?.toString();
+      });
+    }
   }
 
-  void _checkIn() {
+  Future<void> _checkIn() async {
+    if (_submitting) return;
+
     if (_visitType == null) {
       AppWidgets.toast(context, 'Select Distributor or Retailer first');
       return;
     }
-    if (_entity == null) {
+    if (_entity == null || _entityId == null) {
       AppWidgets.toast(
         context,
         'Select a ${_visitType!.toLowerCase()} to check in',
       );
       return;
     }
-    Navigator.pop(context, {
-      'dealer': _displayName,
-      'type': _visitType,
-      'purpose': _purposeController.text.trim(),
+    if (_lat == null || _long == null) {
+      AppWidgets.toast(context, 'Fetching location, please wait…');
+      await _getCurrentLocation();
+      if (_lat == null || _long == null) return;
+    }
+
+    final payload = <String, dynamic>{
+      'visit_type': _visitTypeCode,
+      'visit_id': _entityId,
+      'visit_purpose': _purposeController.text.trim(),
       'note': _noteController.text.trim(),
-      'photo': _photoAdded,
+      'lat': _lat?.toString() ?? '',
+      'long': _long?.toString() ?? '',
+      'address': _address ?? '',
+    };
+
+    if (_photoFile != null) {
+      payload['image'] = await MultipartFile.fromFile(
+        _photoFile!.path,
+        filename: _photoFile!.path.split('/').last,
+      );
+    }
+
+    setState(() => _submitting = true);
+    try {
+      await VisitService.checkIn(payload: payload);
+      if (!mounted) return;
+      AppWidgets.toast(context, 'Checked in successfully');
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context, payload);
+      }
+    } catch (e) {
+      if (!mounted) return;
+      final message = e is ApiException
+          ? e.message
+          : 'Check-in failed. Try again.';
+      AppWidgets.toast(context, message);
+    } finally {
+      if (mounted) setState(() => _submitting = false);
+    }
+  }
+
+  Future<void> _getCurrentLocation() async {
+    setState(() {
+      _loadingLocation = true;
+      _locationError = null;
     });
-    AppWidgets.toast(context, 'Checked in at $_displayName');
+
+    try {
+      final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        setState(() {
+          _locationError = 'Location services are off';
+          _loadingLocation = false;
+        });
+        return;
+      }
+
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          setState(() {
+            _locationError = 'Location permission denied';
+            _loadingLocation = false;
+          });
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        setState(() {
+          _locationError =
+              'Location permission permanently denied. Enable it in Settings.';
+          _loadingLocation = false;
+        });
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _lat = position.latitude;
+        _long = position.longitude;
+        _loadingLocation = false;
+      });
+
+      // Reverse geocode once we have coordinates.
+      _resolveAddress(position.latitude, position.longitude);
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _locationError = 'Could not get location';
+        _loadingLocation = false;
+      });
+    }
+  }
+
+  Future<void> _resolveAddress(double lat, double long) async {
+    print('Resolving address for coordinates: $lat, $long');
+    setState(() => _loadingAddress = true);
+    try {
+      final geocoding = Geocoding();
+      final placemarks = await geocoding.placemarkFromCoordinates(lat, long);
+      if (!mounted) return;
+      if (placemarks.isNotEmpty) {
+        final p = placemarks.first;
+        final parts = [
+          p.street,
+          p.subLocality,
+          p.locality,
+          p.postalCode,
+          p.country,
+        ].where((s) => s != null && s.trim().isNotEmpty).toList();
+        setState(() {
+          _address = parts.join(', ');
+          _loadingAddress = false;
+        });
+        print('Resolved address: $_address');
+      } else {
+        setState(() {
+          _address = null;
+          _loadingAddress = false;
+        });
+      }
+    } catch (e) {
+      print('Reverse geocoding failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _address = null;
+        _loadingAddress = false;
+      });
+    }
   }
 
   @override
@@ -182,16 +408,52 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                 borderRadius: BorderRadius.circular(14),
                 color: const Color(0xFFE3E1DB),
               ),
-              child: CustomPaint(
-                painter: _MapPlaceholderPainter(),
-                child: const Align(
-                  alignment: Alignment(0, -0.2),
-                  child: Icon(
-                    Icons.location_on,
-                    color: AppColors.red,
-                    size: 30,
+              child: Stack(
+                children: [
+                  CustomPaint(
+                    size: Size.infinite,
+                    painter: _MapPlaceholderPainter(),
+                    child: const Align(
+                      alignment: Alignment(0, -0.2),
+                      child: Icon(
+                        Icons.location_on,
+                        color: AppColors.red,
+                        size: 30,
+                      ),
+                    ),
                   ),
-                ),
+                  if (_loadingAddress)
+                    const Positioned(
+                      left: 10,
+                      bottom: 10,
+                      child: Text(
+                        'Resolving address…',
+                        style: TextStyle(fontSize: 10.5),
+                      ),
+                    )
+                  else if (_address != null)
+                    Positioned(
+                      left: 10,
+                      right: 10,
+                      bottom: 10,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.9),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Text(
+                          _address!,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(fontSize: 10.5),
+                        ),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
@@ -217,11 +479,15 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                         child: _typeBox(
                           title: 'Distributor',
                           icon: Icons.storefront_outlined,
-                          selected: _visitType == 'Distributor',
-                          onTap: () => setState(() {
-                            _visitType = 'Distributor';
-                            _entity = null;
-                          }),
+                          selected: _visitType == 'D',
+                          onTap: () {
+                            setState(() {
+                              _visitType = 'D';
+                              _entity = null;
+                              _entityError = null;
+                            });
+                            _loadEntities();
+                          },
                         ),
                       ),
                       const SizedBox(width: 10),
@@ -229,23 +495,107 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                         child: _typeBox(
                           title: 'Retailer',
                           icon: Icons.store_mall_directory_outlined,
-                          selected: _visitType == 'Retailer',
-                          onTap: () => setState(() {
-                            _visitType = 'Retailer';
-                            _entity = null;
-                          }),
+                          selected: _visitType == 'R',
+                          onTap: () {
+                            setState(() {
+                              _visitType = 'R';
+                              _entity = null;
+                              _entityError = null;
+                            });
+                            _loadEntities();
+                          },
                         ),
                       ),
                     ],
                   ),
                   if (_visitType != null) ...[
                     const SizedBox(height: 12),
-                    AppWidgets.buildStaticField(
-                      label: _visitType!,
-                      value: _entity ?? 'Select $_visitType',
-                      isPlaceholder: _entity == null,
-                      onTap: _pickEntity,
-                    ),
+                    if (_loadingEntities)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          border: Border.all(color: AppColors.line),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: Row(
+                          children: [
+                            const SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: AppColors.commandCentreText,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Loading ${_visitType == 'D' ? 'Distributors' : 'Retailers'}',
+                              style: const TextStyle(
+                                fontSize: 12.5,
+                                color: AppColors.steel,
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else if (_entityError != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 14,
+                          horizontal: 14,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.redLight,
+                          border: Border.all(
+                            color: AppColors.red.withOpacity(0.3),
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.error_outline,
+                              size: 16,
+                              color: AppColors.red,
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                _entityError!,
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.redDark,
+                                ),
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: _loadEntities,
+                              child: const Text(
+                                'Retry',
+                                style: TextStyle(
+                                  fontFamily: 'Sora',
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.red,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      )
+                    else
+                      AppWidgets.buildStaticField(
+                        label: _visitType == 'D' ? 'Distributor' : 'Retailer',
+                        value:
+                            _entity ??
+                            'Select ${_visitType == 'D' ? 'Distributor' : 'Retailer'}',
+                        isPlaceholder: _entity == null,
+                        onTap: _pickEntity,
+                      ),
                   ],
                   const SizedBox(height: 12),
 
@@ -275,9 +625,46 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       ),
                     ],
                   ),
+
+                  if (_photoFile != null) ...[
+                    const SizedBox(height: 10),
+                    Stack(
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(12),
+                          child: Image.file(
+                            _photoFile!,
+                            height: 140,
+                            width: double.infinity,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        Positioned(
+                          top: 6,
+                          right: 6,
+                          child: GestureDetector(
+                            onTap: _removePhoto,
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: const BoxDecoration(
+                                color: Colors.black54,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.close,
+                                size: 16,
+                                color: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+
                   const SizedBox(height: 20),
                   AppWidgets.buildButton(
-                    'Check in now',
+                    'Submit',
                     icon: Icons.location_on_outlined,
                     onTap: _checkIn,
                   ),

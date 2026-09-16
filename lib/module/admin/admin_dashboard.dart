@@ -1,15 +1,16 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/constants/customePaint.dart';
 import 'package:kutchina/core/utils/admin_widgets.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/admin/admin_product_detail_screen.dart';
+import 'package:kutchina/module/admin/admin_products_screen.dart';
+import 'package:kutchina/module/admin/admin_region_detail_screen.dart';
+import 'package:kutchina/module/admin/admin_regions_screen.dart';
+import 'package:kutchina/module/admin/admin_team_member_detail_screen.dart';
+import 'package:kutchina/module/admin/admin_team_screen.dart';
 
-/// Admin "Sales Command Centre" dashboard.
-/// Built entirely from tokens already defined in AppColors/AppFonts —
-/// no new colors introduced. Uses its own bottom nav (Overview / Products /
-/// Regions / Team / Reports) since it's a different item set than the
-/// sales-exec AppBottomNav.
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
 
@@ -413,20 +414,52 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(
-                Icons.inventory_2_outlined,
-                size: 16,
-                color: AppColors.commandCentreText,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(
+                    Icons.inventory_2_outlined,
+                    size: 16,
+                    color: AppColors.commandCentreText,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Sales by Product',
+                    style: TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.commandCentreText,
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(width: 8),
-              Text(
-                'Sales by Product',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.commandCentreText,
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AdminProductsScreen(),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.viewAllButton,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 15,
+                      color: AppColors.viewAllButton,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -456,70 +489,86 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required double percent,
     required String label,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 26,
-              height: 26,
-              alignment: Alignment.center,
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(7),
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminProductDetailScreen(
+            name: name,
+            value: value,
+            percent: percent,
+            label: label,
+            color: color,
+            icon: icon,
+          ),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 26,
+                height: 26,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: color.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(7),
+                ),
+                child: Icon(icon, size: 14, color: color),
               ),
-              child: Icon(icon, size: 14, color: color),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                name,
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  name,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              Text(
+                value,
                 style: const TextStyle(
-                  fontFamily: AppFonts.display,
+                  fontFamily: AppFonts.mono,
                   fontSize: 12,
-                  fontWeight: FontWeight.w600,
+                  fontWeight: FontWeight.bold,
                   color: AppColors.ink,
                 ),
               ),
-            ),
-            Text(
-              value,
-              style: const TextStyle(
-                fontFamily: AppFonts.mono,
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 6),
-        Row(
-          children: [
-            Expanded(
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(4),
-                child: LinearProgressIndicator(
-                  value: percent,
-                  minHeight: 6,
-                  backgroundColor: AppColors.ash,
-                  valueColor: AlwaysStoppedAnimation(color),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(4),
+                  child: LinearProgressIndicator(
+                    value: percent,
+                    minHeight: 6,
+                    backgroundColor: AppColors.ash,
+                    valueColor: AlwaysStoppedAnimation(color),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(width: 8),
-            SizedBox(
-              width: 30,
-              child: Text(
-                label,
-                textAlign: TextAlign.right,
-                style: const TextStyle(fontSize: 10, color: AppColors.steel),
+              const SizedBox(width: 8),
+              SizedBox(
+                width: 30,
+                child: Text(
+                  label,
+                  textAlign: TextAlign.right,
+                  style: const TextStyle(fontSize: 10, color: AppColors.steel),
+                ),
               ),
-            ),
-          ],
-        ),
-      ],
+            ],
+          ),
+        ],
+      ),
     );
   }
 
@@ -537,16 +586,50 @@ class _AdminDashboardState extends State<AdminDashboard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            children: const [
-              Icon(Icons.public, size: 16, color: AppColors.commandCentreText),
-              SizedBox(width: 8),
-              Text(
-                'Sales by Region',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.commandCentreText,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: const [
+                  Icon(
+                    Icons.public,
+                    size: 16,
+                    color: AppColors.commandCentreText,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Sales by Region',
+                    style: TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.commandCentreText,
+                    ),
+                  ),
+                ],
+              ),
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminRegionsScreen()),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.viewAllButton,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 15,
+                      color: AppColors.viewAllButton,
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -557,7 +640,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               width: 170,
               height: 170,
               child: CustomPaint(
-                painter: _DonutChartPainter(
+                painter: DonutChartPainter(
                   values: _regions.map((r) => r['percent'] as double).toList(),
                   colors: _regions.map((r) => r['color'] as Color).toList(),
                 ),
@@ -585,38 +668,54 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required String value,
     required String percent,
   }) {
-    return Row(
-      children: [
-        Container(
-          width: 9,
-          height: 9,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            name,
-            style: const TextStyle(fontSize: 11.5, color: AppColors.ink),
+    return InkWell(
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminRegionDetailScreen(
+            name: name,
+            value: value,
+            percent: percent,
+            color: color,
           ),
         ),
-        Text(
-          value,
-          style: const TextStyle(
-            fontFamily: AppFonts.mono,
-            fontSize: 11.5,
-            color: AppColors.ink,
-          ),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
+        child: Row(
+          children: [
+            Container(
+              width: 9,
+              height: 9,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                name,
+                style: const TextStyle(fontSize: 11.5, color: AppColors.ink),
+              ),
+            ),
+            Text(
+              value,
+              style: const TextStyle(
+                fontFamily: AppFonts.mono,
+                fontSize: 11.5,
+                color: AppColors.ink,
+              ),
+            ),
+            const SizedBox(width: 10),
+            SizedBox(
+              width: 32,
+              child: Text(
+                percent,
+                textAlign: TextAlign.right,
+                style: const TextStyle(fontSize: 11, color: AppColors.steel),
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 32,
-          child: Text(
-            percent,
-            textAlign: TextAlign.right,
-            style: const TextStyle(fontSize: 11, color: AppColors.steel),
-          ),
-        ),
-      ],
+      ),
     );
   }
 
@@ -652,24 +751,30 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   ),
                 ),
               ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Text(
-                    'View All',
-                    style: TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
+              GestureDetector(
+                onTap: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AdminTeamScreen()),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Text(
+                      'View All',
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.viewAllButton,
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: 15,
                       color: AppColors.viewAllButton,
                     ),
-                  ),
-                  Icon(
-                    Icons.chevron_right,
-                    size: 15,
-                    color: AppColors.viewAllButton,
-                  ),
-                ],
+                  ],
+                ),
               ),
             ],
           ),
@@ -725,64 +830,82 @@ class _AdminDashboardState extends State<AdminDashboard> {
     required String month,
     required Color avatarBg,
   }) {
-    return Row(
-      children: [
-        Expanded(
-          flex: 3,
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 15,
-                backgroundColor: avatarBg,
-                child: Text(
-                  initials,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 10.5,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.commandCentreText,
+    return InkWell(
+      borderRadius: BorderRadius.circular(8),
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => AdminTeamMemberDetailScreen(
+            initials: initials,
+            name: name,
+            today: today,
+            month: month,
+            avatarBg: avatarBg,
+          ),
+        ),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            flex: 3,
+            child: Row(
+              children: [
+                CircleAvatar(
+                  radius: 15,
+                  backgroundColor: avatarBg,
+                  child: Text(
+                    initials,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.commandCentreText,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: Text(
-                  name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 11.5, color: AppColors.ink),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 11.5,
+                      color: AppColors.ink,
+                    ),
+                  ),
                 ),
+              ],
+            ),
+          ),
+          Expanded(
+            flex: 2,
+            child: Text(
+              today,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontFamily: AppFonts.mono,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.salesTodayColumn,
               ),
-            ],
-          ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            today,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontFamily: AppFonts.mono,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.salesTodayColumn,
             ),
           ),
-        ),
-        Expanded(
-          flex: 2,
-          child: Text(
-            month,
-            textAlign: TextAlign.right,
-            style: const TextStyle(
-              fontFamily: AppFonts.mono,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w600,
-              color: AppColors.salesThisMonthColumn,
+          Expanded(
+            flex: 2,
+            child: Text(
+              month,
+              textAlign: TextAlign.right,
+              style: const TextStyle(
+                fontFamily: AppFonts.mono,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.salesThisMonthColumn,
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
@@ -824,40 +947,4 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ],
     );
   }
-}
-
-/// Simple stroke-based donut chart — no external chart package needed.
-class _DonutChartPainter extends CustomPainter {
-  final List<double> values; // percentages, need not sum to exactly 100
-  final List<Color> colors;
-
-  _DonutChartPainter({required this.values, required this.colors});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 16;
-    final total = values.fold<double>(0, (a, b) => a + b);
-    double startAngle = -math.pi / 2;
-
-    for (var i = 0; i < values.length; i++) {
-      final sweep = total == 0 ? 0.0 : (values[i] / total) * 2 * math.pi;
-      final paint = Paint()
-        ..color = colors[i]
-        ..strokeWidth = 30
-        ..strokeCap = StrokeCap.butt
-        ..style = PaintingStyle.stroke;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweep,
-        false,
-        paint,
-      );
-      startAngle += sweep;
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DonutChartPainter oldDelegate) => true;
 }

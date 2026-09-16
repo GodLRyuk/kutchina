@@ -1,20 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-import 'package:kutchina/module/salesExe/pages/order/cart_screen.dart';
+import 'package:kutchina/module/salesExe/pages/order/select_product_screen.dart'
+    show CartItem;
 
 class ProductDetailScreen extends StatefulWidget {
-  final Product product;
+  final List<CartItem> cartItems;
   final String orderType;
   final String entityName;
+  final String channel;
 
   const ProductDetailScreen({
     super.key,
-    required this.product,
+    required this.cartItems,
     required this.orderType,
     required this.entityName,
-    required String channel,
+    required this.channel,
+    Object? product,
   });
 
   @override
@@ -22,186 +25,121 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  int _qty = 1;
+  late List<CartItem> _items;
+
+  @override
+  void initState() {
+    super.initState();
+    // Work off a local copy so qty edits here don't mutate the caller's map
+    // unless you want them to.
+    _items = widget.cartItems;
+  }
+
+  double get _total =>
+      _items.fold(0.0, (sum, item) => sum + item.product.price * item.quantity);
+
+  void _incrementQty(int index) {
+    setState(() => _items[index].quantity++);
+  }
+
+  void _decrementQty(int index) {
+    setState(() {
+      if (_items[index].quantity <= 1) {
+        _items.removeAt(index);
+      } else {
+        _items[index].quantity--;
+      }
+    });
+  }
+
+  void _submitOrder() {
+    if (_items.isEmpty) {
+      AppWidgets.toast(context, 'No products in the order');
+      return;
+    }
+    // TODO: call your order-creation API with widget.entityName,
+    // widget.orderType, widget.channel, and _items.
+  }
 
   @override
   Widget build(BuildContext context) {
-    final p = widget.product;
     return Scaffold(
-      backgroundColor: AppColors.ash,
+      appBar: AppTopBar(
+        title: 'Order summary',
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+      ),
       body: SafeArea(
         child: Column(
           children: [
-            Stack(
-              children: [
-                Container(
-                  height: 190,
-                  width: double.infinity,
-                  color: AppColors.charcoal,
-                  child: const Icon(
-                    Icons.deck_outlined,
-                    color: Color(0xFF8D8F96),
-                    size: 60,
-                  ),
-                ),
-                Positioned(
-                  top: 16,
-                  left: 16,
-                  child: AppWidgets.buildIconButton(
-                    Icons.arrow_back,
-                    ghost: true,
-                    darkBg: true,
-                    onTap: () => Navigator.pop(context),
-                  ),
-                ),
-              ],
-            ),
             Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppWidgets.buildBadge(
-                      'Ordering for ${widget.entityName} · ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
-                      AppColors.aiBlueChipBg,
-                      AppColors.aiBlue,
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      p.category.name.toUpperCase(),
-                      style: const TextStyle(
-                        fontFamily: AppFonts.mono,
-                        fontSize: 10,
-                        color: AppColors.steel,
+              child: _items.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No products selected',
+                        style: TextStyle(color: AppColors.steel),
                       ),
-                    ),
-                    Text(
-                      p.name,
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '₹${p.price.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontFamily: AppFonts.mono,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.red,
-                          ),
-                        ),
-                        if (!p.isActive)
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 3,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.redLight,
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: const Text(
-                              'Unavailable',
-                              style: TextStyle(
-                                fontFamily: AppFonts.display,
-                                fontSize: 9.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.red,
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(20, 16, 20, 16),
+                      itemCount: _items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 10),
+                      itemBuilder: (context, i) {
+                        final item = _items[i];
+                        return AppWidgets.buildCard(
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      item.product.name,
+                                      style: const TextStyle(
+                                        fontFamily: AppFonts.display,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      '₹${item.product.price.toStringAsFixed(0)} × ${item.quantity}',
+                                      style: const TextStyle(
+                                        fontFamily: AppFonts.mono,
+                                        fontSize: 12,
+                                        color: AppColors.steel,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    const Divider(height: 24, color: AppColors.line),
-                    _spec(
-                      'Filter type',
-                      p.filterType.isNotEmpty ? p.filterType : '—',
-                    ),
-                    _spec('Warranty', p.warranty.isNotEmpty ? p.warranty : '—'),
-                    const SizedBox(height: 12),
-                    if (p.color != null) ...[
-                      const Text(
-                        'COLOUR / VARIANT',
-                        style: TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 10.5,
-                          color: AppColors.steel,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                    ],
-                    Row(
-                      children: [
-                        if (p.color != null)
-                          Container(
-                            width: 24,
-                            height: 24,
-                            decoration: BoxDecoration(
-                              color: _resolveColor(p.color!.name),
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                color: AppColors.line,
-                                width: 1.5,
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.remove_circle_outline,
+                                  size: 20,
+                                ),
+                                onPressed: () => _decrementQty(i),
                               ),
-                            ),
+                              Text('${item.quantity}'),
+                              IconButton(
+                                icon: const Icon(
+                                  Icons.add_circle_outline,
+                                  size: 20,
+                                ),
+                                onPressed: () => _incrementQty(i),
+                              ),
+                              Text(
+                                '₹${(item.product.price * item.quantity).toStringAsFixed(0)}',
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.mono,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.commandCentreText,
+                                ),
+                              ),
+                            ],
                           ),
-                        if (p.color != null) const SizedBox(width: 8),
-                        if (p.color != null)
-                          Text(
-                            p.color!.name,
-                            style: const TextStyle(
-                              fontFamily: AppFonts.display,
-                              fontSize: 12.5,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        const Spacer(),
-                        AppWidgets.buildIconButton(
-                          Icons.remove,
-                          size: 26,
-                          onTap: () =>
-                              setState(() => _qty = _qty > 1 ? _qty - 1 : 1),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: Text(
-                            '$_qty',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        AppWidgets.buildIconButton(
-                          Icons.add,
-                          size: 26,
-                          onTap: () => setState(() => _qty++),
-                        ),
-                      ],
+                        );
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Subtotal: ₹${(p.price * _qty).toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontFamily: AppFonts.mono,
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-                  ],
-                ),
-              ),
             ),
             Container(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
@@ -209,57 +147,38 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 color: AppColors.paper,
                 border: Border(top: BorderSide(color: AppColors.line)),
               ),
-              child: AppWidgets.buildButton(
-                'Add to order',
-                onTap: p.isActive
-                    ? () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => CartScreen(
-                            orderType: widget.orderType,
-                            entityName: widget.entityName,
-                            product: p,
-                            qty: _qty,
-                          ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Total',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.steel,
                         ),
-                      )
-                    : null,
+                      ),
+                      Text(
+                        '₹${_total.toStringAsFixed(0)}',
+                        style: const TextStyle(
+                          fontFamily: AppFonts.mono,
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.commandCentreText,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  AppWidgets.buildButton('Submit order', onTap: _submitOrder),
+                ],
               ),
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Color _resolveColor(String name) {
-    switch (name.toLowerCase().trim()) {
-      case 'black':
-        return AppColors.charcoal;
-      case 'white':
-        return AppColors.white;
-      case 'red':
-        return AppColors.red;
-      case 'grey':
-      case 'gray':
-        return AppColors.steelLight;
-      default:
-        return AppColors.steel;
-    }
-  }
-
-  Widget _spec(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11.5, color: AppColors.steel),
-          ),
-          Text(value, style: const TextStyle(fontSize: 11.5)),
-        ],
       ),
     );
   }

@@ -1,14 +1,16 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
+import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/utils/speedometer.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/channel_model.dart';
 import 'package:kutchina/module/salesExe/pages/visits/new_visit.dart';
 import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
+import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -32,12 +34,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     AppWidgets.toast(context, 'Dashboard refreshed');
   }
 
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
     return Scaffold(
       appBar: AppTopBar.greeting(
-        greeting: 'Good morning',
-        subtitle: 'Rohit Sharma',
+        greeting: getGreeting(),
+        subtitle: user!.fullName,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
@@ -386,9 +396,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return InkWell(
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(
-          builder: (_) => NewVisitScreen(dealerName: name, address: address),
-        ),
+        MaterialPageRoute(builder: (_) => NewVisitScreen()),
       ),
       child: AppWidgets.buildCard(
         child: Row(

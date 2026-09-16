@@ -9,6 +9,13 @@ import 'package:kutchina/module/salesExe/models/product_model.dart'
     hide CategoryModel;
 import 'package:kutchina/module/salesExe/pages/order/product_detail_screen.dart';
 
+/// A product paired with the quantity chosen in the multi-select cart.
+class CartItem {
+  final Product product;
+  int quantity;
+  CartItem({required this.product, this.quantity = 1});
+}
+
 class SelectProductScreen extends StatefulWidget {
   final String orderType;
   final String channel;
@@ -25,7 +32,9 @@ class SelectProductScreen extends StatefulWidget {
 class _SelectProductScreenState extends State<SelectProductScreen> {
   String? _entity;
   String _category = 'All';
-  Product? _selected;
+
+  // Cart keyed by product id so quantities persist across category filtering.
+  final Map<String, CartItem> _cart = {};
 
   List<String> _distributorNames = [];
   bool _loadingDistributors = false;
@@ -33,6 +42,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   String? _retailerError;
   String? _distributorError;
   List<String> _retailers = [];
+
   @override
   void initState() {
     super.initState();
@@ -88,9 +98,26 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   List<String> get _entityOptions =>
       widget.orderType == 'D' ? _distributorNames : _retailers;
 
-  List<Product> get _categoryFiltered => Product.catalog
-      .where((p) => _category == 'All' || p.category.name == _category)
-      .toList();
+  List<Product> get _categoryFiltered {
+    final categoryId = CategoryModel.idForName(_category);
+    return Product.catalog
+        .where(
+          (p) =>
+              _category == 'All' ||
+              p.category.name == _category ||
+              p.category.id == categoryId,
+        )
+        .toList();
+  }
+
+  double get _cartTotal => _cart.values.fold(
+    0.0,
+    (sum, item) => sum + item.product.price * item.quantity,
+  );
+
+  int get _cartCount =>
+      _cart.values.fold(0, (sum, item) => sum + item.quantity);
+
   Future<void> _pickEntity() async {
     final picked = await showModalBottomSheet<String>(
       context: context,
@@ -103,7 +130,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     if (picked != null) setState(() => _entity = picked);
   }
 
-  Future<void> _pickProduct() async {
+  Future<void> _pickProducts() async {
     if (_entity == null) {
       AppWidgets.toast(
         context,
@@ -115,12 +142,47 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       AppWidgets.toast(context, 'No products found');
       return;
     }
-    final picked = await showModalBottomSheet<Product>(
+    final picked = await showModalBottomSheet<Set<Product>>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _ProductPickerSheet(products: _categoryFiltered),
+      builder: (ctx) => _ProductPickerSheet(
+        products: _categoryFiltered,
+        initiallySelected: _cart.values.map((item) => item.product).toSet(),
+      ),
     );
-    if (picked != null) setState(() => _selected = picked);
+    if (picked == null) return;
+
+    setState(() {
+      // Remove products that were unchecked (only within the current
+      // category filter, so items from other categories stay untouched).
+      final filteredIds = _categoryFiltered.map((p) => p.id).toSet();
+      _cart.removeWhere(
+        (id, _) => filteredIds.contains(id) && !picked.any((p) => p.id == id),
+      );
+      // Add newly checked products with a default quantity of 1.
+      for (final p in picked) {
+        _cart.putIfAbsent(p.id, () => CartItem(product: p, quantity: 1));
+      }
+    });
+  }
+
+  void _incrementQty(String productId) {
+    setState(() => _cart[productId]!.quantity++);
+  }
+
+  void _decrementQty(String productId) {
+    setState(() {
+      final item = _cart[productId]!;
+      if (item.quantity <= 1) {
+        _cart.remove(productId);
+      } else {
+        item.quantity--;
+      }
+    });
+  }
+
+  void _removeItem(String productId) {
+    setState(() => _cart.remove(productId));
   }
 
   void _proceed() {
@@ -131,24 +193,27 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       );
       return;
     }
-    if (_selected == null) {
-      AppWidgets.toast(context, 'Select a product to continue');
+    if (_cart.isEmpty) {
+      AppWidgets.toast(context, 'Select at least one product to continue');
       return;
     }
     Navigator.push(
       context,
       MaterialPageRoute(
+        // NOTE: ProductDetailScreen needs to accept a list of CartItem
+        // (or Map<Product,int>) instead of a single `product` now.
+        // e.g. `required List<CartItem> cartItems` in its constructor.
         builder: (_) => ProductDetailScreen(
-          product: _selected!,
+          cartItems: _cart.values.toList(),
           orderType: widget.orderType,
           entityName: _entity!,
           channel: widget.channel,
+          product: null,
         ),
       ),
     );
   }
 
-  @override
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -293,7 +358,6 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                         return GestureDetector(
                           onTap: () => setState(() {
                             _category = c;
-                            _selected = null;
                           }),
                           child: Container(
                             width:
@@ -332,51 +396,130 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                     const SizedBox(height: 14),
                     AppWidgets.buildStaticField(
                       label: _category == 'All'
-                          ? 'Product'
-                          : 'Product ($_category)',
-                      value: _selected?.name ?? 'Select a product',
-                      isPlaceholder: _selected == null,
-                      onTap: _pickProduct,
+                          ? 'Products'
+                          : 'Products ($_category)',
+                      value: _cart.isEmpty
+                          ? 'Select products'
+                          : '$_cartCount item${_cartCount == 1 ? '' : 's'} selected',
+                      isPlaceholder: _cart.isEmpty,
+                      onTap: _pickProducts,
                     ),
-                    if (_selected != null) ...[
-                      const SizedBox(height: 12),
-                      AppWidgets.buildCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    if (_cart.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      const Text(
+                        'SELECTED PRODUCTS',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 10.5,
+                          color: AppColors.steel,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: .4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ..._cart.values.map(
+                        (item) => Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: AppWidgets.buildCard(
+                            child: Row(
                               children: [
-                                Text(
-                                  _selected!.name,
-                                  style: const TextStyle(
-                                    fontFamily: AppFonts.display,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        item.product.name,
+                                        style: const TextStyle(
+                                          fontFamily: AppFonts.display,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 2),
+                                      Text(
+                                        item.product.category.name,
+                                        style: const TextStyle(
+                                          fontSize: 11,
+                                          color: AppColors.steel,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 6),
+                                      Text(
+                                        '₹${item.product.price.toStringAsFixed(0)}',
+                                        style: const TextStyle(
+                                          fontFamily: AppFonts.mono,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                          color: AppColors.commandCentreText,
+                                        ),
+                                      ),
+                                    ],
                                   ),
+                                ),
+                                Row(
+                                  children: [
+                                    _qtyButton(
+                                      icon: Icons.remove,
+                                      onTap: () =>
+                                          _decrementQty(item.product.id),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                      ),
+                                      child: Text(
+                                        '${item.quantity}',
+                                        style: const TextStyle(
+                                          fontFamily: AppFonts.mono,
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                    _qtyButton(
+                                      icon: Icons.add,
+                                      onTap: () =>
+                                          _incrementQty(item.product.id),
+                                    ),
+                                  ],
+                                ),
+                                IconButton(
+                                  icon: const Icon(
+                                    Icons.close,
+                                    size: 18,
+                                    color: AppColors.steel,
+                                  ),
+                                  onPressed: () => _removeItem(item.product.id),
                                 ),
                               ],
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              _selected!.category.name,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.steel,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '₹${_selected!.price.toStringAsFixed(0)}',
-                              style: const TextStyle(
-                                fontFamily: AppFonts.mono,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.commandCentreText,
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'Total',
+                            style: TextStyle(
+                              fontFamily: AppFonts.display,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.steel,
+                            ),
+                          ),
+                          Text(
+                            '₹${_cartTotal.toStringAsFixed(0)}',
+                            style: const TextStyle(
+                              fontFamily: AppFonts.mono,
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.commandCentreText,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ],
@@ -396,11 +539,31 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       ),
     );
   }
+
+  Widget _qtyButton({required IconData icon, required VoidCallback onTap}) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: 24,
+        height: 24,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.rupeeIconBg,
+          borderRadius: BorderRadius.circular(6),
+        ),
+        child: Icon(icon, size: 14, color: AppColors.commandCentreText),
+      ),
+    );
+  }
 }
 
 class _ProductPickerSheet extends StatefulWidget {
   final List<Product> products;
-  const _ProductPickerSheet({required this.products});
+  final Set<Product> initiallySelected;
+  const _ProductPickerSheet({
+    required this.products,
+    this.initiallySelected = const {},
+  });
 
   @override
   State<_ProductPickerSheet> createState() => _ProductPickerSheetState();
@@ -408,6 +571,13 @@ class _ProductPickerSheet extends StatefulWidget {
 
 class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   final _searchController = TextEditingController();
+  late Set<String> _selectedIds;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedIds = widget.initiallySelected.map((p) => p.id).toSet();
+  }
 
   List<Product> get _filtered {
     final q = _searchController.text.trim().toLowerCase();
@@ -415,6 +585,23 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     return widget.products
         .where((p) => p.name.toLowerCase().contains(q))
         .toList();
+  }
+
+  void _toggle(Product p) {
+    setState(() {
+      if (_selectedIds.contains(p.id)) {
+        _selectedIds.remove(p.id);
+      } else {
+        _selectedIds.add(p.id);
+      }
+    });
+  }
+
+  void _confirm() {
+    final selected = widget.products
+        .where((p) => _selectedIds.contains(p.id))
+        .toSet();
+    Navigator.pop(context, selected);
   }
 
   @override
@@ -453,13 +640,28 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'Select product',
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Select products',
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    if (_selectedIds.isNotEmpty)
+                      Text(
+                        '${_selectedIds.length} selected',
+                        style: const TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.commandCentreText,
+                        ),
+                      ),
+                  ],
                 ),
                 const SizedBox(height: 10),
                 Container(
@@ -493,7 +695,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                 const SizedBox(height: 8),
                 ConstrainedBox(
                   constraints: BoxConstraints(
-                    maxHeight: MediaQuery.of(context).size.height * .5,
+                    maxHeight: MediaQuery.of(context).size.height * .45,
                   ),
                   child: _filtered.isEmpty
                       ? const Padding(
@@ -513,8 +715,13 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                               const Divider(height: 1, color: AppColors.line),
                           itemBuilder: (context, i) {
                             final p = _filtered[i];
-                            return ListTile(
+                            final checked = _selectedIds.contains(p.id);
+                            return CheckboxListTile(
+                              value: checked,
+                              onChanged: (_) => _toggle(p),
+                              controlAffinity: ListTileControlAffinity.leading,
                               contentPadding: EdgeInsets.zero,
+                              activeColor: AppColors.commandCentreText,
                               title: Text(
                                 p.name,
                                 style: const TextStyle(
@@ -531,7 +738,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                   color: AppColors.steel,
                                 ),
                               ),
-                              trailing: Text(
+                              secondary: Text(
                                 '₹${p.price.toStringAsFixed(0)}',
                                 style: const TextStyle(
                                   fontFamily: AppFonts.mono,
@@ -539,10 +746,16 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                   color: AppColors.regionCyan,
                                 ),
                               ),
-                              onTap: () => Navigator.pop(context, p),
                             );
                           },
                         ),
+                ),
+                const SizedBox(height: 12),
+                AppWidgets.buildButton(
+                  _selectedIds.isEmpty
+                      ? 'Select products'
+                      : 'Add ${_selectedIds.length} product${_selectedIds.length == 1 ? '' : 's'}',
+                  onTap: _selectedIds.isEmpty ? null : _confirm,
                 ),
               ],
             ),

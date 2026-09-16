@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 
 class Distributor {
@@ -55,7 +57,6 @@ class Channel {
 
 class MastersApi {
   MastersApi._();
-
   static Future<List<Distributor>> fetchDistributors() async {
     final res = await ApiService.instance.get('/api/v1/masters/distributors/');
     final raw = res.data;
@@ -119,5 +120,50 @@ class MastersApi {
         .whereType<Map<String, dynamic>>()
         .map(Product.fromJson)
         .toList();
+  }
+}
+
+class OrderService {
+  OrderService._();
+  static Future<void> placeOrder({
+    required String orderType,
+    required String entityName,
+    required Product product,
+    required int qty,
+    required String price,
+    String? filter,
+    String? warranty,
+  }) async {
+    final payload = {
+      'user_type': orderType,
+      'product_id': product.id,
+      'quantity': qty,
+      'price': price,
+      'filter_type': filter,
+      'warranty': warranty,
+    };
+    await ApiService.instance.post('/api/v1/orders/place/', data: payload);
+  }
+
+  static Future<List<OrderEntry>> fetchOrders() async {
+    final res = await ApiService.instance.get('/api/v1/orders/place/');
+    final raw = res.data;
+    final list = raw is List
+        ? raw
+        : (raw is Map
+              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              : []);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(OrderEntry.fromJson)
+        .toList();
+  }
+}
+
+class VisitService {
+  static Future<void> checkIn({required Map<String, dynamic> payload}) async {
+    final formData = FormData.fromMap(payload);
+    await ApiService.instance.post('/api/v1/orders/visits/', data: formData);
   }
 }

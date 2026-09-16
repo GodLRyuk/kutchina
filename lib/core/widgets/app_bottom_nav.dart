@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
+import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
 
 /// Shared bottom nav bar. Manages its own selected index and shows a
 /// default "Coming soon" toast on tap. Pass [onTap] only if a specific
@@ -41,10 +42,17 @@ class _AppBottomNavState extends State<AppBottomNav> {
   void _onNavTap(int index) {
     if (index == _navIndex) return;
 
-    if (index == 0) {
+    if (index == 1) {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => OrderListScreen()),
+      );
+      return; // handled — skip toast/setState, don't steal selection
+    }
+    if (index == 4) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => ProfileScreen()),
       );
       return; // handled — skip toast/setState, don't steal selection
     }

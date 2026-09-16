@@ -42,16 +42,15 @@ class _SplashScreenState extends State<SplashScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Container(
-                  width: 64,
-                  height: 64,
                   decoration: BoxDecoration(
                     color: Colors.white.withOpacity(0.15),
                     borderRadius: BorderRadius.circular(18),
                   ),
-                  child: const Icon(
-                    Icons.local_fire_department,
-                    color: Colors.white,
-                    size: 30,
+                  child: Image(
+                    image: AssetImage('assets/images/logo.jpg'),
+                    width: 100,
+                    // height: 50,
+                    fit: BoxFit.contain,
                   ),
                 ),
                 const SizedBox(height: 14),

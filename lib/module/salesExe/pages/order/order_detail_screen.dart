@@ -4,23 +4,8 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 
 class OrderDetailScreen extends StatelessWidget {
-  final KOrder order;
+  final OrderEntry order;
   const OrderDetailScreen({super.key, required this.order});
-
-  static const _stages = [
-    OrderStatus.placed,
-    OrderStatus.confirmed,
-    OrderStatus.dispatched,
-    OrderStatus.delivered,
-  ];
-  static const _stageLabels = [
-    'Placed',
-    'Confirmed',
-    'Dispatched',
-    'Delivered',
-  ];
-
-  int get _stageIndex => _stages.indexOf(order.status);
 
   @override
   Widget build(BuildContext context) {
@@ -31,9 +16,9 @@ class OrderDetailScreen extends StatelessWidget {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          order.id,
+          '#${order.id}',
           style: const TextStyle(
-            fontFamily: 'Sora',
+            fontFamily: AppFonts.display,
             fontSize: 15.5,
             fontWeight: FontWeight.bold,
           ),
@@ -44,6 +29,7 @@ class OrderDetailScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // ---- Summary card ----
             AppWidgets.buildCard(
               padding: const EdgeInsets.all(18),
               child: Column(
@@ -52,147 +38,96 @@ class OrderDetailScreen extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text(
-                            'CURRENT STATUS',
-                            style: TextStyle(
-                              fontSize: 10,
-                              color: AppColors.steel,
-                              fontWeight: FontWeight.bold,
-                              letterSpacing: .4,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'PRODUCT',
+                              style: TextStyle(
+                                fontSize: 10,
+                                color: AppColors.steel,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: .4,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 4),
-                          Text(
-                            _stageLabels[_stageIndex],
-                            style: const TextStyle(
-                              fontFamily: 'Sora',
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
+                            const SizedBox(height: 4),
+                            Text(
+                              order.productName,
+                              style: const TextStyle(
+                                fontFamily: AppFonts.display,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.ink,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                       Container(
                         width: 44,
                         height: 44,
                         decoration: BoxDecoration(
-                          color: AppColors.redLight,
+                          color: order.isActive
+                              ? AppColors.greenLight
+                              : AppColors.redLight,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
-                          _stageIndex == _stages.length - 1
+                          order.isActive
                               ? Icons.check_circle_outline
-                              : Icons.local_shipping_outlined,
-                          color: AppColors.redDark,
+                              : Icons.pause_circle_outline,
+                          color: order.isActive
+                              ? AppColors.green
+                              : AppColors.redDark,
                         ),
                       ),
                     ],
                   ),
                   const SizedBox(height: 14),
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(4),
-                    child: LinearProgressIndicator(
-                      value: (_stageIndex + 1) / _stages.length,
-                      minHeight: 7,
-                      backgroundColor: const Color(0xFFEDEBE6),
-                      color: AppColors.red,
-                    ),
+                  AppWidgets.buildBadge(
+                    order.orderTypeLabel,
+                    AppColors.aiBlueChipBg,
+                    AppColors.aiBlue,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Step ${_stageIndex + 1} of ${_stages.length}',
-                    style: const TextStyle(
-                      fontFamily: 'IBM Plex Mono',
-                      fontSize: 10,
-                      color: AppColors.steel,
+                  const SizedBox(height: 10),
+                  if (order.createdAt != null)
+                    Text(
+                      'Placed on ${_formatDate(order.createdAt!)}',
+                      style: const TextStyle(
+                        fontSize: 11,
+                        color: AppColors.steel,
+                      ),
                     ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 14),
+
+            // ---- Item detail card ----
+            AppWidgets.buildCard(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  _row('Product ID', order.productId),
+                  const Divider(height: 20, color: AppColors.line),
+                  _row('Quantity', order.quantity.toStringAsFixed(0)),
+                  const Divider(height: 20, color: AppColors.line),
+                  _row(
+                    'Filter type',
+                    order.filterType.isNotEmpty ? order.filterType : '—',
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${order.entityName} · ${order.orderType}',
-                    style: const TextStyle(
-                      fontSize: 11,
-                      color: AppColors.steel,
-                    ),
+                  const Divider(height: 20, color: AppColors.line),
+                  _row(
+                    'Warranty',
+                    order.warranty.isNotEmpty ? order.warranty : '—',
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 14),
-            AppWidgets.buildCard(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: List.generate(_stages.length, (i) {
-                  final done = i < _stageIndex;
-                  final active = i == _stageIndex;
-                  final color = done
-                      ? AppColors.green
-                      : (active ? AppColors.amber : AppColors.steelLight);
-                  return Expanded(
-                    child: Column(
-                      children: [
-                        Icon(
-                          done
-                              ? Icons.check_circle
-                              : (active
-                                    ? Icons.radio_button_checked
-                                    : Icons.radio_button_unchecked),
-                          color: color,
-                          size: 18,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          _stageLabels[i],
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: active
-                                ? FontWeight.bold
-                                : FontWeight.normal,
-                            color: color,
-                          ),
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Items',
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 12,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            ...order.items.map(
-              (i) => AppWidgets.buildCard(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      '${i.product.name} ×${i.qty}',
-                      style: const TextStyle(fontSize: 12),
-                    ),
-                    Text(
-                      '₹${i.total.toStringAsFixed(0)}',
-                      style: const TextStyle(
-                        fontFamily: 'IBM Plex Mono',
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            const SizedBox(height: 6),
+
+            // ---- Total ----
             AppWidgets.buildCard(
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -200,24 +135,29 @@ class OrderDetailScreen extends StatelessWidget {
                   const Text(
                     'Total',
                     style: TextStyle(
-                      fontFamily: 'Sora',
+                      fontFamily: AppFonts.display,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   Text(
-                    '₹${order.amount.toStringAsFixed(0)}',
-                    style: const TextStyle(
-                      fontFamily: 'IBM Plex Mono',
+                    order.price != null
+                        ? '₹${order.total.toStringAsFixed(0)}'
+                        : 'Price pending',
+                    style: TextStyle(
+                      fontFamily: AppFonts.mono,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.red,
+                      color: order.price != null
+                          ? AppColors.red
+                          : AppColors.steel,
                     ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 20),
+
             AppWidgets.buildButton(
               'Download invoice',
               variant: AppButtonVariant.outline,
@@ -228,5 +168,44 @@ class OrderDetailScreen extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  Widget _row(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.steel),
+        ),
+        Text(
+          value,
+          style: const TextStyle(
+            fontFamily: AppFonts.mono,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
+        ),
+      ],
+    );
+  }
+
+  String _formatDate(DateTime d) {
+    const months = [
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
+    ];
+    return '${months[d.month - 1]} ${d.day}, ${d.year}';
   }
 }

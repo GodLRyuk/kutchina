@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
+import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/services/auth_api.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/utils/responsive.dart';
 import 'package:kutchina/module/admin/admin_dashboard.dart';
+import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -12,8 +16,12 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  bool isSalesExec = true;
-  bool isAdmin = false;
+  static const List<String> _roles = ['Sales exec', 'Dealer'];
+
+  String _selectedRole = 'Sales exec';
+  bool get isAdmin => _selectedRole == 'Dealer';
+
+  bool _loading = false;
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -31,14 +39,34 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
-    if (isAdmin) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => AdminDashboard()),
-      );
-    } else {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    }
+    setState(() => _loading = true);
+
+    AuthApi.login(
+          username: _mobileController.text.trim(),
+          password: _passwordController.text,
+        )
+        .then((loginResult) {
+          if (!mounted) return;
+          context.read<AuthProvider>().setUser(loginResult.user);
+          setState(() => _loading = false);
+
+          if (isAdmin) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (_) => AdminDashboard()),
+            );
+          } else {
+            Navigator.pushReplacementNamed(context, '/dashboard');
+          }
+        })
+        .catchError((error) {
+          if (!mounted) return;
+          setState(() => _loading = false);
+          final message = error is ApiException
+              ? error.message
+              : 'Login failed. Try again.';
+          AppWidgets.toast(context, message);
+        });
   }
 
   @override
@@ -54,28 +82,20 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     Container(
-                      width: 55,
-                      height: 55,
+                      // width: 100,
+                      // height: 55,
                       decoration: BoxDecoration(
                         color: AppColors.commandCentreText,
                         borderRadius: BorderRadius.circular(14),
                       ),
-                      child: const Icon(
-                        Icons.local_fire_department,
-                        color: Colors.white,
-                        size: 55,
+                      child: Image(
+                        image: AssetImage('assets/images/logo.jpg'),
+                        width: 100,
+                        // height: 50,
+                        fit: BoxFit.contain,
                       ),
                     ),
                     const SizedBox(height: 14),
-                    const Text(
-                      'Welcome back',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
                     const Text(
                       'Sign in to manage your territory',
                       style: TextStyle(fontSize: 11.5, color: AppColors.steel),
@@ -85,26 +105,14 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 28),
 
-              // Functional role switcher
-              Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFECEAE5),
-                  borderRadius: BorderRadius.circular(11),
-                ),
-                child: Row(
-                  children: [
-                    Expanded(child: _roleTab('Sales exec', isSalesExec)),
-                    Expanded(child: _roleTab('Dealer', !isSalesExec)),
-                  ],
-                ),
-              ),
+              // Role selector (dropdown)
+              _roleDropdown(),
               const SizedBox(height: 16),
 
               AppWidgets.buildTextField(
-                label: 'Mobile number',
+                label: 'User Id',
                 controller: _mobileController,
-                hint: '+91 98XXX XXXXX',
+                hint: 'KUT***',
                 keyboardType: TextInputType.phone,
               ),
               const SizedBox(height: 12),
@@ -136,7 +144,10 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
-              AppWidgets.buildButton('Log in', onTap: _login),
+              AppWidgets.buildButton(
+                _loading ? 'Logging in…' : 'Log in',
+                onTap: _loading ? null : _login,
+              ),
               const SizedBox(height: 10),
             ],
           ),
@@ -145,29 +156,44 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _roleTab(String label, bool active) {
-    return GestureDetector(
-      onTap: () {
-        setState(() {
-          isSalesExec = label == 'Sales exec';
-          isAdmin = !isSalesExec;
-        });
-      },
-      child: Container(
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(vertical: 8),
-        decoration: BoxDecoration(
-          color: active ? AppColors.white : Colors.transparent,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 11.5,
-            fontWeight: active ? FontWeight.bold : FontWeight.w600,
-            color: active ? AppColors.commandCentreText : AppColors.steel,
+  Widget _roleDropdown() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFECEAE5),
+        borderRadius: BorderRadius.circular(11),
+      ),
+      child: DropdownButtonHideUnderline(
+        child: DropdownButton<String>(
+          value: _selectedRole,
+          isExpanded: true,
+          icon: const Icon(
+            Icons.keyboard_arrow_down_rounded,
+            color: AppColors.steel,
           ),
+          borderRadius: BorderRadius.circular(11),
+          dropdownColor: AppColors.white,
+          items: _roles
+              .map(
+                (role) => DropdownMenuItem<String>(
+                  value: role,
+                  child: Text(
+                    role,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.commandCentreText,
+                    ),
+                  ),
+                ),
+              )
+              .toList(),
+          onChanged: (value) {
+            if (value == null) return;
+            setState(() => _selectedRole = value);
+          },
         ),
       ),
     );

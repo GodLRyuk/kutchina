@@ -1,7 +1,7 @@
 class ApiConfig {
   ApiConfig._();
 
-  static const String baseUrl = 'http://192.168.1.13:8000';
+  static const String baseUrl = 'http://72.61.114.210:8082';
   static const Duration connectTimeout = Duration(seconds: 15);
   static const Duration receiveTimeout = Duration(seconds: 20);
 
@@ -9,7 +9,7 @@ class ApiConfig {
   /// key. Pin the DER-encoded SubjectPublicKeyInfo, not the whole cert, so
   /// pinning survives cert renewal as long as the key pair is reused.
   static const List<String> pinnedCertSha256 = [
-    'REPLACE_WITH_REAL_SHA256_FINGERPRINT_1', // current cert
-    'REPLACE_WITH_REAL_SHA256_FINGERPRINT_2', // backup / next cert
+    'REPLACE_WITH_REAL_SHA256_FINGERPRINT_1',
+    'REPLACE_WITH_REAL_SHA256_FINGERPRINT_2',
   ];
 }

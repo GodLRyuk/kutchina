@@ -24,6 +24,7 @@ dependencies:
   dio: ^5.11.0
   crypto: ^3.0.7
   flutter_secure_storage: ^9.0.0
+  geocoding: ^5.0.0
   
 
 dev_dependencies:

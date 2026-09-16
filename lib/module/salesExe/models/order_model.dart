@@ -1,109 +1,50 @@
-import 'package:kutchina/core/network/masters_api.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-
-enum OrderStatus { placed, confirmed, dispatched, delivered }
-
-class OrderLineItem {
-  final Product product;
-  final int qty;
-  const OrderLineItem({required this.product, required this.qty});
-  double get total => product.price * qty;
-}
-
-class KOrder {
+class OrderEntry {
   final String id;
-  final String entityName;
-  final String orderType; // Distributor / Retailer
-  final String date;
-  final OrderStatus status;
-  final List<OrderLineItem> items;
+  final String productId;
+  final String productName;
+  final double quantity;
+  final String userType; // 'D' = Distributor, 'R' = Retailer
+  final String filterType;
+  final String warranty;
+  final double? price; // nullable — API sends null sometimes (see id:1 above)
+  final String createdBy;
+  final bool isActive;
+  final DateTime? createdAt;
 
-  const KOrder({
+  const OrderEntry({
     required this.id,
-    required this.entityName,
-    required this.orderType,
-    required this.date,
-    required this.status,
-    required this.items,
+    required this.productId,
+    required this.productName,
+    required this.quantity,
+    required this.userType,
+    required this.filterType,
+    required this.warranty,
+    this.price,
+    required this.createdBy,
+    required this.isActive,
+    this.createdAt,
   });
 
-  double get amount => items.fold(0, (sum, i) => sum + i.total);
+  double get total => (price ?? 0) * quantity;
+  String get orderTypeLabel => userType == 'D' ? 'Distributor' : 'Retailer';
 
-  // const → final: Product/Category aren't const-constructible anymore
-  // now that Product.id and Product.category (a Category object) are
-  // required non-const fields.
-  static final List<KOrder> mockList = [
-    KOrder(
-      id: '#KUT-08213',
-      entityName: 'Sharma Electronics',
-      orderType: 'Distributor',
-      date: 'Jul 18',
-      status: OrderStatus.dispatched,
-      items: [
-        OrderLineItem(
-          product: Product(
-            id: 'mock-1',
-            name: 'Neo Elica 90cm',
-            category: Category(id: 'mock-cat-1', name: 'Chimneys'),
-            price: 18990,
-          ),
-          qty: 2,
-        ),
-        OrderLineItem(
-          product: Product(
-            id: 'mock-2',
-            name: '3-Burner Auto Hob',
-            category: Category(id: 'mock-cat-2', name: 'Hobs'),
-            price: 9500,
-          ),
-          qty: 1,
-        ),
-      ],
-    ),
-    KOrder(
-      id: '#KUT-08190',
-      entityName: 'Newtown Appliances',
-      orderType: 'Distributor',
-      date: 'Jul 12',
-      status: OrderStatus.delivered,
-      items: [
-        OrderLineItem(
-          product: Product(
-            id: 'mock-3',
-            name: 'Zeus Auto Clean',
-            category: Category(id: 'mock-cat-1', name: 'Chimneys'),
-            price: 24500,
-          ),
-          qty: 3,
-        ),
-        OrderLineItem(
-          product: Product(
-            id: 'mock-4',
-            name: 'Built-in Oven 60L',
-            category: Category(id: 'mock-cat-3', name: 'Ovens'),
-            price: 21500,
-          ),
-          qty: 1,
-        ),
-      ],
-    ),
-    KOrder(
-      id: '#KUT-08150',
-      entityName: 'Baruipur Home Corner',
-      orderType: 'Retailer',
-      date: 'Jul 9',
-      status: OrderStatus.confirmed,
-      items: [
-        OrderLineItem(
-          product: Product(
-            id: 'mock-5',
-            name: 'Curvo 60cm',
-            category: Category(id: 'mock-cat-1', name: 'Chimneys'),
-            price: 14250,
-          ),
-          qty: 2,
-        ),
-      ],
-    ),
-  ];
+  factory OrderEntry.fromJson(Map<String, dynamic> json) {
+    return OrderEntry(
+      id: (json['id'] ?? '').toString(),
+      productId: (json['product_id'] ?? '').toString(),
+      productName: json['product_name']?.toString().trim() ?? '',
+      quantity: double.tryParse(json['quantity']?.toString() ?? '') ?? 0,
+      userType: json['user_type']?.toString() ?? '',
+      filterType: json['filter_type']?.toString() ?? '',
+      warranty: json['warranty']?.toString() ?? '',
+      price: json['price'] != null
+          ? double.tryParse(json['price'].toString())
+          : null,
+      createdBy: (json['created_by'] ?? '').toString(),
+      isActive: json['is_active'] as bool? ?? true,
+      createdAt: json['created_at'] != null
+          ? DateTime.tryParse(json['created_at'])
+          : null,
+    );
+  }
 }
