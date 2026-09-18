@@ -35,7 +35,6 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
   }
 
   void _continue() {
-    print('Selected order type: $_orderType, channel: $_channel');
     if (_orderType == null || _channel == null) {
       AppWidgets.toast(context, 'Select order type and channel');
       return;

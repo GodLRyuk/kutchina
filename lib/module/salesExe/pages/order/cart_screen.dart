@@ -115,7 +115,7 @@ class CartScreen extends StatelessWidget {
                     price: product.price.toString(),
                   );
                 } on ApiException catch (e) {
-                  showCheckInRequiredDialog(
+                  showCheckInRequiredDialogall(
                     context,
                     title: 'Order failed',
                     message: e.message,
@@ -124,7 +124,7 @@ class CartScreen extends StatelessWidget {
                   );
                   return;
                 } catch (_) {
-                  showCheckInRequiredDialog(
+                  showCheckInRequiredDialogall(
                     context,
                     title: 'Order failed',
                     message:
@@ -135,7 +135,7 @@ class CartScreen extends StatelessWidget {
                   return;
                 }
 
-                final ok = await showCheckInRequiredDialog(
+                final ok = await showCheckInRequiredDialogall(
                   context,
                   title: 'Order placed',
                   message:

@@ -109,6 +109,8 @@ class AuthApi {
     final refresh = data['refresh_token'] as String;
     final userJson = data['user'] as Map<String, dynamic>;
     final user = KUser.fromJson(userJson);
+    print("User Json ${userJson}");
+    print("User ${user}");
     await TokenStore.saveTokens(accessToken: access, refreshToken: refresh);
     await UserStore.saveUser(userJson);
     return LoginResult(user: user, accessToken: access, refreshToken: refresh);

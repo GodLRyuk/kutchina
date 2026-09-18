@@ -43,7 +43,7 @@ class EntityPickerSheetState extends State<EntityPickerSheet> {
         color: Colors.transparent,
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(20, 16, 20, 12),
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,

@@ -21,8 +21,18 @@ class AuthProvider extends ChangeNotifier {
   }
 
   Future<void> logout() async {
-    await TokenStore.clear();
-    await UserStore.clear();
+    try {
+      await TokenStore.clear();
+    } catch (_) {
+      // Continue clearing the user record even if token storage fails.
+    }
+
+    try {
+      await UserStore.clear();
+    } catch (_) {
+      // The in-memory session is still cleared below.
+    }
+
     _user = null;
     notifyListeners();
   }

@@ -28,6 +28,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   bool get _photoAdded => _photoFile != null;
   String? _visitType; // 'Distributor' / 'Retailer' — used for UI only
   String? _entity;
+  String? _entityName;
   String? _entityId;
 
   double? _lat;
@@ -220,10 +221,14 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
           break;
         }
       }
+
       setState(() {
         _entity = picked;
-        _entityId = match?.id?.toString();
+        _entityId = match?.id;
+        _entityName = match?.name?.toString();
       });
+      print('Selected entity: $_entity ($_entityId)');
+      print('Entity name: $_entityName');
     }
   }
 
@@ -249,7 +254,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
     final payload = <String, dynamic>{
       'visit_type': _visitTypeCode,
-      'visit_id': _entityId,
+      'visitor_id': _entityId,
+      'visitor_name': _entityName,
       'visit_purpose': _purposeController.text.trim(),
       'note': _noteController.text.trim(),
       'lat': _lat?.toString() ?? '',
@@ -481,10 +487,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           icon: Icons.storefront_outlined,
                           selected: _visitType == 'D',
                           onTap: () {
+                            if (_visitType == 'D')
+                              return; // no-op if already selected
                             setState(() {
                               _visitType = 'D';
                               _entity = null;
+                              _entityId = null;
+                              _entityName = null;
                               _entityError = null;
+                              _purposeController.text =
+                                  'Stock check & new display';
+                              _noteController.clear();
+                              _noteAdded = false;
+                              _photoFile = null;
                             });
                             _loadEntities();
                           },
@@ -497,10 +512,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           icon: Icons.store_mall_directory_outlined,
                           selected: _visitType == 'R',
                           onTap: () {
+                            if (_visitType == 'R')
+                              return; // no-op if already selected
                             setState(() {
                               _visitType = 'R';
                               _entity = null;
+                              _entityId = null;
+                              _entityName = null;
                               _entityError = null;
+                              _purposeController.text =
+                                  'Stock check & new display';
+                              _noteController.clear();
+                              _noteAdded = false;
+                              _photoFile = null;
                             });
                             _loadEntities();
                           },

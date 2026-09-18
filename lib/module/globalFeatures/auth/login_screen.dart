@@ -16,10 +16,10 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const List<String> _roles = ['Sales exec', 'Dealer'];
+  static const List<String> _roles = ['Sales Exec', 'Admin'];
 
-  String _selectedRole = 'Sales exec';
-  bool get isAdmin => _selectedRole == 'Dealer';
+  String _selectedRole = 'Sales Exec';
+  bool get isAdmin => _selectedRole == 'Admin';
 
   bool _loading = false;
   final _mobileController = TextEditingController();
@@ -113,7 +113,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 label: 'User Id',
                 controller: _mobileController,
                 hint: 'KUT***',
-                keyboardType: TextInputType.phone,
+                keyboardType: TextInputType.text,
               ),
               const SizedBox(height: 12),
               AppWidgets.buildTextField(

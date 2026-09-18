@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
-import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/utils/speedometer.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/salesExe/models/visit_model.dart';
 import 'package:kutchina/module/salesExe/pages/visits/new_visit.dart';
 import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
@@ -22,10 +23,44 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   bool _checkedIn = false;
   int _refreshTick = 0;
+  bool _statusLoading = true;
+  List<VisitEntry> _todayVisits = [];
+  bool _visitsLoading = true;
   @override
   void initState() {
     super.initState();
-    // WidgetsBinding.instance.addPostFrameCallback((_) => _showCheckInGate());
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _checkAttendanceStatus(),
+    );
+    _loadTodayVisits();
+  }
+
+  Future<void> _loadTodayVisits() async {
+    try {
+      final visits = await VisitService.fetchTodayVisits();
+      if (!mounted) return;
+      setState(() {
+        _todayVisits = visits;
+        _visitsLoading = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _visitsLoading = false);
+      AppWidgets.toast(context, 'Could not load visits');
+    }
+  }
+
+  Future<void> _checkAttendanceStatus() async {
+    final isLoggedIn = await CheckInService.getStatus();
+    if (!mounted) return;
+
+    setState(() {
+      _checkedIn = isLoggedIn;
+      _statusLoading = false;
+    });
+    if (!isLoggedIn) {
+      _showCheckInGate();
+    }
   }
 
   Future<void> _onRefresh() async {
@@ -44,10 +79,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       appBar: AppTopBar.greeting(
         greeting: getGreeting(),
-        subtitle: user!.fullName,
+        subtitle: user.fullName,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
@@ -290,12 +329,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  const Text(
-                    "Today's visits · 3",
-                    style: TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      "Today's visits · ${_todayVisits.length}",
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   Container(
@@ -320,25 +363,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               const SizedBox(height: 8),
-              _visitCard(
-                context,
-                'Sharma Electronics',
-                'Salt Lake, Kolkata',
-                '42 Salt Lake Sector V, Kolkata 700091',
-                '10:30 AM',
-                AppColors.amberLight,
-                AppColors.amberDark,
-              ),
+
+              if (_visitsLoading)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 20),
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_todayVisits.isEmpty)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Text('No visits scheduled for today.'),
+                )
+              else
+                SizedBox(
+                  height: 320,
+                  child: ListView.builder(
+                    padding: EdgeInsets.zero,
+                    itemCount: _todayVisits.length,
+                    itemBuilder: (context, index) {
+                      final visit = _todayVisits[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _visitCard(
+                          context,
+                          visit.visitorName,
+                          visit.address,
+                          visit.address,
+                          visit.timeLabel,
+                          AppColors.amberLight,
+                          AppColors.amberDark,
+                        ),
+                      );
+                    },
+                  ),
+                ),
               const SizedBox(height: 8),
-              _visitCard(
-                context,
-                'Newtown Appliances',
-                'Newtown, Kolkata',
-                'Newtown, Kolkata 700156',
-                '1:00 PM',
-                AppColors.coldBg,
-                AppColors.coldText,
-              ),
             ],
           ),
         ),
@@ -402,27 +461,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  location,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: AppColors.steel,
+                  const SizedBox(height: 2),
+                  Text(
+                    location,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.steel,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
+            const SizedBox(width: 8),
             AppWidgets.buildBadge(time, badgeBg, badgeColor),
           ],
         ),
@@ -432,6 +498,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Future<void> _showCheckInGate() async {
     final result = await showCheckInRequiredDialog(context);
+    if (!mounted) return;
     if (result) setState(() => _checkedIn = true);
   }
 }

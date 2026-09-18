@@ -1,7 +1,11 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/services/location_service.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesExe/models/visit_model.dart';
 
 class Distributor {
   final String id;
@@ -52,6 +56,54 @@ class Channel {
       id: (json['id'] ?? '').toString(),
       name: json['name']?.toString().trim() ?? '',
     );
+  }
+}
+
+class CheckInService {
+  /// GET current attendance status. Returns true if user is already
+  /// checked in for the day (`is_logged_in: true`).
+  static Future<bool> getStatus() async {
+    try {
+      final response = await ApiService.instance.get(
+        '/api/v1/users/attendance/check-in/',
+      );
+
+      if (response.statusCode == 200) {
+        final body = response.data; // already a Map, no jsonDecode needed
+        final attendance = body['data'];
+
+        if (attendance != null && attendance['is_checked_in'] == true) {
+          return true;
+        }
+        return false;
+      }
+
+      // If the API errors out, fail safe and force the check-in gate
+      return false;
+    } catch (e) {
+      print('Attendance status error: $e');
+      return false;
+    }
+  }
+
+  static Future<bool> checkIn({
+    required String locationName,
+    required double latitude,
+    required double longitude,
+  }) async {
+    try {
+      final response = await ApiService.instance.post(
+        '/api/v1/users/attendance/check-in/',
+        data: {
+          "location_name": locationName,
+          "latitude": latitude,
+          "longitude": longitude,
+        },
+      );
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (_) {
+      return false;
+    }
   }
 }
 
@@ -125,6 +177,7 @@ class MastersApi {
 
 class OrderService {
   OrderService._();
+
   static Future<void> placeOrder({
     required String orderType,
     required String entityName,
@@ -134,6 +187,8 @@ class OrderService {
     String? filter,
     String? warranty,
   }) async {
+    final position = await LocationService.getCurrentLocation();
+
     final payload = {
       'user_type': orderType,
       'product_id': product.id,
@@ -141,7 +196,10 @@ class OrderService {
       'price': price,
       'filter_type': filter,
       'warranty': warranty,
+      'lat': position.latitude.toString(),
+      'long': position.longitude.toString(),
     };
+
     await ApiService.instance.post('/api/v1/orders/place/', data: payload);
   }
 
@@ -165,5 +223,21 @@ class VisitService {
   static Future<void> checkIn({required Map<String, dynamic> payload}) async {
     final formData = FormData.fromMap(payload);
     await ApiService.instance.post('/api/v1/orders/visits/', data: formData);
+  }
+
+  static Future<List<VisitEntry>> fetchTodayVisits() async {
+    final res = await ApiService.instance.get('/api/v1/orders/visits/');
+    final raw = res.data;
+
+    final list = raw is List
+        ? raw
+        : (raw is Map
+              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              : []);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(VisitEntry.fromJson)
+        .toList();
   }
 }
