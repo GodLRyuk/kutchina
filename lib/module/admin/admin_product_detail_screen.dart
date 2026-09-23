@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 
 class AdminProductDetailScreen extends StatelessWidget {
   final String name;
@@ -23,20 +24,7 @@ class AdminProductDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: AppTopBar.simple(title: name),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -58,7 +46,7 @@ class AdminProductDetailScreen extends StatelessWidget {
                       height: 56,
                       alignment: Alignment.center,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(14),
                       ),
                       child: Icon(icon, size: 28, color: color),
@@ -76,7 +64,10 @@ class AdminProductDetailScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$label of total sales',
-                      style: const TextStyle(fontSize: 12, color: AppColors.steel),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.steel,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     ClipRRect(

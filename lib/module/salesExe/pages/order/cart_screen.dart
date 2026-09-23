@@ -7,11 +7,12 @@ import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 
-class CartScreen extends StatelessWidget {
+class CartScreen extends StatefulWidget {
   final String orderType;
   final String entityName;
   final Product product;
   final int qty;
+  final String entityId;
 
   const CartScreen({
     super.key,
@@ -19,11 +20,73 @@ class CartScreen extends StatelessWidget {
     required this.entityName,
     required this.product,
     required this.qty,
+    required this.entityId,
   });
 
   @override
+  State<CartScreen> createState() => _CartScreenState();
+}
+
+class _CartScreenState extends State<CartScreen> {
+  bool _placingOrder = false;
+
+  Future<void> _placeOrder() async {
+    if (_placingOrder) return;
+    setState(() => _placingOrder = true);
+
+    try {
+      await OrderService.placeOrder(
+        orderType: widget.orderType,
+        entityName: widget.entityName,
+        product: widget.product,
+        filter: '',
+        qty: widget.qty,
+        warranty: '',
+        price: widget.product.price.toString(),
+        entityId: widget.entityId,
+      );
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      await showCheckInRequiredDialogall(
+        context,
+        title: 'Order failed',
+        message: e.message,
+        buttonLabel: 'Retry',
+        icon: Icons.error_outline,
+      );
+      return;
+    } catch (_) {
+      if (!mounted) return;
+      await showCheckInRequiredDialogall(
+        context,
+        title: 'Order failed',
+        message:
+            'There was an error while placing your order. Please try again later.',
+        buttonLabel: 'Retry',
+        icon: Icons.error_outline,
+      );
+      return;
+    } finally {
+      if (mounted) setState(() => _placingOrder = false);
+    }
+
+    if (!mounted) return;
+    final ok = await showCheckInRequiredDialogall(
+      context,
+      title: 'Order placed',
+      message:
+          'Your order for ${widget.entityName} has been created successfully. You can track it from My Orders.',
+      buttonLabel: 'Done',
+      icon: Icons.check_circle_outline,
+    );
+    if (ok && mounted) {
+      Navigator.popUntil(context, (r) => r.isFirst);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final subtotal = product.price * qty;
+    final subtotal = widget.product.price * widget.qty;
     final total = subtotal;
 
     return Scaffold(
@@ -40,10 +103,10 @@ class CartScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   AppWidgets.buildStaticField(
-                    label: orderType == 'Distributor'
+                    label: widget.orderType == 'Distributor'
                         ? 'Ordering for distributor'
                         : 'Ordering for retailer',
-                    value: entityName,
+                    value: widget.entityName,
                   ),
                   const SizedBox(height: 14),
                   AppWidgets.buildCard(
@@ -54,7 +117,7 @@ class CartScreen extends StatelessWidget {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              product.name,
+                              widget.product.name,
                               style: const TextStyle(
                                 fontFamily: AppFonts.display,
                                 fontSize: 12.5,
@@ -62,7 +125,7 @@ class CartScreen extends StatelessWidget {
                               ),
                             ),
                             Text(
-                              '₹${product.price.toStringAsFixed(0)} × $qty',
+                              '₹${widget.product.price.toStringAsFixed(0)} × ${widget.qty}',
                               style: const TextStyle(
                                 fontFamily: AppFonts.mono,
                                 fontSize: 11,
@@ -102,51 +165,9 @@ class CartScreen extends StatelessWidget {
               border: Border(top: BorderSide(color: AppColors.line)),
             ),
             child: AppWidgets.buildButton(
-              'Place order',
-              onTap: () async {
-                try {
-                  await OrderService.placeOrder(
-                    orderType: orderType,
-                    entityName: entityName,
-                    product: product,
-                    filter: '',
-                    qty: qty,
-                    warranty: '',
-                    price: product.price.toString(),
-                  );
-                } on ApiException catch (e) {
-                  showCheckInRequiredDialogall(
-                    context,
-                    title: 'Order failed',
-                    message: e.message,
-                    buttonLabel: 'Retry',
-                    icon: Icons.error_outline,
-                  );
-                  return;
-                } catch (_) {
-                  showCheckInRequiredDialogall(
-                    context,
-                    title: 'Order failed',
-                    message:
-                        'There was an error while placing your order. Please try again later.',
-                    buttonLabel: 'Retry',
-                    icon: Icons.error_outline,
-                  );
-                  return;
-                }
-
-                final ok = await showCheckInRequiredDialogall(
-                  context,
-                  title: 'Order placed',
-                  message:
-                      'Your order for $entityName has been created successfully. You can track it from My Orders.',
-                  buttonLabel: 'Done',
-                  icon: Icons.check_circle_outline,
-                );
-                if (ok) {
-                  Navigator.popUntil(context, (r) => r.isFirst);
-                }
-              },
+              _placingOrder ? 'Placing order...' : 'Place order',
+              onTap: _placingOrder ? null : _placeOrder,
+              loading: _placingOrder,
             ),
           ),
         ],

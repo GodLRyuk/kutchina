@@ -18,7 +18,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.actions,
     this.onBack,
-    this.centerImage,
+    this.centerImage = const AssetImage('assets/images/logo.jpg'),
   }) : assert(
          title != null || subtitle != null,
          'Provide either title or (greeting + subtitle)',
@@ -30,7 +30,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = true,
     this.actions,
     this.onBack,
-    this.centerImage,
+    this.centerImage = const AssetImage('assets/images/logo.jpg'),
   }) : greeting = null,
        subtitle = null;
 
@@ -41,7 +41,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.showBackButton = false,
     this.actions,
     this.onBack,
-    this.centerImage,
+    this.centerImage = const AssetImage('assets/images/logo.jpg'),
   }) : title = null;
 
   @override
@@ -54,51 +54,70 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
               onPressed: onBack ?? () => Navigator.pop(context),
             )
           : null,
-      centerTitle: false,
-      title: Row(
-        children: [
-          Expanded(
-            child: title != null
-                ? Text(
-                    title!,
-                    style: const TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 15.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  )
-                : Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        greeting!,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.steel,
-                        ),
-                      ),
-                      Text(
-                        subtitle!,
-                        style: const TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ],
+      centerTitle: title != null,
+      flexibleSpace: title == null && centerImage != null
+          ? Padding(
+              padding: const EdgeInsets.only(top: 25),
+              child: Center(
+                child: SizedBox(
+                  width: 100,
+                  height: 22,
+                  child: Image(image: centerImage!, fit: BoxFit.contain),
+                ),
+              ),
+            )
+          : null,
+      title: title != null
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (centerImage != null) ...[
+                  Image(
+                    image: centerImage!,
+                    width: 120,
+                    height: 30,
+                    fit: BoxFit.contain,
                   ),
-          ),
-          if (centerImage != null) ...[
-            Image(
-              image: centerImage!,
-              width: 100,
-              height: 50,
-              fit: BoxFit.contain,
+                  const SizedBox(width: 8),
+                ],
+                Text(
+                  title!,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ],
+            )
+          : Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      greeting!,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: AppColors.steel,
+                      ),
+                    ),
+                    Text(
+                      subtitle!,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-          ],
-        ],
-      ),
       actions: actions,
     );
   }

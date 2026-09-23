@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 
 class AdminRegionsScreen extends StatelessWidget {
   const AdminRegionsScreen({super.key});
@@ -40,20 +41,7 @@ class AdminRegionsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: const Text(
-          'Regions',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: const AppTopBar.simple(title: 'Regions'),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),

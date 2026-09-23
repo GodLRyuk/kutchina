@@ -23,6 +23,8 @@ class _NewOrderSheet extends StatefulWidget {
 class _NewOrderSheetState extends State<_NewOrderSheet> {
   String? _orderType;
   String? _channel;
+  String? _channelError;
+  String? _orderTypeError;
 
   @override
   void initState() {
@@ -35,10 +37,13 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
   }
 
   void _continue() {
-    if (_orderType == null || _channel == null) {
-      AppWidgets.toast(context, 'Select order type and channel');
-      return;
-    }
+    setState(() {
+      _channelError = _channel == null ? 'Select a channel' : null;
+      _orderTypeError = _orderType == null ? 'Select an order type' : null;
+    });
+
+    if (_channelError != null || _orderTypeError != null) return;
+
     Navigator.pop(context);
     Navigator.push(
       context,
@@ -73,15 +78,33 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
           ),
           const SizedBox(height: 14),
 
-          const Text(
-            'CHANNEL',
-            style: TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 10.5,
-              color: AppColors.steel,
-              fontWeight: FontWeight.bold,
-              letterSpacing: .4,
-            ),
+          Row(
+            children: [
+              const Text(
+                'CHANNEL',
+                style: TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 10.5,
+                  color: AppColors.steel,
+                  fontWeight: FontWeight.bold,
+                  letterSpacing: .4,
+                ),
+              ),
+              if (_channelError != null) ...[
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _channelError!,
+                    textAlign: TextAlign.right,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.red,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
           const SizedBox(height: 8),
           Wrap(
@@ -90,7 +113,10 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
             children: ChannelModel.channels.map((c) {
               final active = _channel == c;
               return GestureDetector(
-                onTap: () => setState(() => _channel = c),
+                onTap: () => setState(() {
+                  _channel = c;
+                  _channelError = null;
+                }),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -100,7 +126,9 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
                     color: active ? AppColors.charcoal : AppColors.white,
                     borderRadius: BorderRadius.circular(AppRadius.sm),
                     border: Border.all(
-                      color: active ? AppColors.charcoal : AppColors.line,
+                      color: _channelError != null
+                          ? AppColors.red
+                          : (active ? AppColors.charcoal : AppColors.line),
                     ),
                   ),
                   child: Text(
@@ -117,12 +145,30 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
             }).toList(),
           ),
           const SizedBox(height: 14),
+
+          if (_orderTypeError != null) ...[
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Text(
+                _orderTypeError!,
+                style: const TextStyle(
+                  fontSize: 10.5,
+                  color: AppColors.red,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
           _optionCard(
             title: 'Primary',
             subtitle: 'Distributor',
             icon: Icons.storefront_outlined,
             selected: _orderType == 'D',
-            onTap: () => setState(() => _orderType = 'D'),
+            error: _orderTypeError != null,
+            onTap: () => setState(() {
+              _orderType = 'D';
+              _orderTypeError = null;
+            }),
           ),
           const SizedBox(height: 10),
           _optionCard(
@@ -130,7 +176,11 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
             subtitle: 'Retailer',
             icon: Icons.store_mall_directory_outlined,
             selected: _orderType == 'R',
-            onTap: () => setState(() => _orderType = 'R'),
+            error: _orderTypeError != null,
+            onTap: () => setState(() {
+              _orderType = 'R';
+              _orderTypeError = null;
+            }),
           ),
           const SizedBox(height: 18),
 
@@ -147,6 +197,7 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
     required IconData icon,
     required bool selected,
     required VoidCallback onTap,
+    bool error = false,
   }) {
     return InkWell(
       onTap: onTap,
@@ -157,7 +208,9 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
           color: selected ? AppColors.rupeeIconBg : AppColors.white,
           borderRadius: BorderRadius.circular(AppRadius.md),
           border: Border.all(
-            color: selected ? AppColors.commandCentreText : AppColors.line,
+            color: error
+                ? AppColors.red
+                : (selected ? AppColors.commandCentreText : AppColors.line),
             width: selected ? 1.6 : 1,
           ),
         ),

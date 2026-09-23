@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 
 class AdminTeamScreen extends StatelessWidget {
   const AdminTeamScreen({super.key});
@@ -46,20 +47,7 @@ class AdminTeamScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: const Text(
-          'Sales Team',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: const AppTopBar.simple(title: 'Sales Team'),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
@@ -84,7 +72,7 @@ class AdminTeamScreen extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   itemCount: _team.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
                   itemBuilder: (context, i) => _teamCard(_team[i], rank: i + 1),
                 ),
               ),

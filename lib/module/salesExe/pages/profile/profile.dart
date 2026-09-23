@@ -101,10 +101,10 @@ class ProfileScreen extends StatelessWidget {
                     height: 84,
                     alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.15),
+                      color: AppColors.white.withValues(alpha: 0.15),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppColors.white.withOpacity(0.4),
+                        color: AppColors.white.withValues(alpha: 0.4),
                         width: 2,
                       ),
                     ),
@@ -137,7 +137,7 @@ class ProfileScreen extends StatelessWidget {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.white.withOpacity(0.15),
+                      color: AppColors.white.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
@@ -146,7 +146,7 @@ class ProfileScreen extends StatelessWidget {
                         Icon(
                           Icons.badge_outlined,
                           size: 12,
-                          color: AppColors.white.withOpacity(0.9),
+                          color: AppColors.white.withValues(alpha: 0.9),
                         ),
                         const SizedBox(width: 5),
                         Text(
@@ -155,7 +155,7 @@ class ProfileScreen extends StatelessWidget {
                             fontFamily: AppFonts.mono,
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.white.withOpacity(0.9),
+                            color: AppColors.white.withValues(alpha: 0.9),
                           ),
                         ),
                       ],
@@ -287,9 +287,9 @@ class ProfileScreen extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color ?? AppColors.white.withOpacity(0.12),
+        color: color ?? AppColors.white.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: AppColors.white.withOpacity(0.25)),
+        border: Border.all(color: AppColors.white.withValues(alpha: 0.25)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,

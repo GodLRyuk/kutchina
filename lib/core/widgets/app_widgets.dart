@@ -121,6 +121,7 @@ class AppWidgets {
     AppButtonVariant variant = AppButtonVariant.primary,
     IconData? icon,
     bool fullWidth = true,
+    bool loading = false,
   }) {
     Color bg;
     Color fg;
@@ -144,7 +145,16 @@ class AppWidgets {
       mainAxisSize: fullWidth ? MainAxisSize.max : MainAxisSize.min,
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        if (icon != null) ...[
+        if (loading)
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              valueColor: AlwaysStoppedAnimation<Color>(fg),
+            ),
+          )
+        else if (icon != null) ...[
           Icon(icon, size: 16, color: fg),
           const SizedBox(width: 6),
         ],
@@ -285,14 +295,16 @@ class AppWidgets {
         height: size,
         decoration: BoxDecoration(
           color: ghost
-              ? (darkBg ? Colors.white.withOpacity(.15) : Colors.transparent)
+              ? (darkBg
+                    ? Colors.white.withValues(alpha: .15)
+                    : Colors.transparent)
               : AppColors.white,
           shape: BoxShape.circle,
           boxShadow: ghost
               ? null
               : [
                   BoxShadow(
-                    color: Colors.black.withOpacity(.08),
+                    color: Colors.black.withValues(alpha: .08),
                     blurRadius: 2,
                   ),
                 ],
@@ -433,9 +445,9 @@ class AppWidgets {
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.06),
+        color: color.withValues(alpha: 0.06),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withOpacity(0.18)),
+        border: Border.all(color: color.withValues(alpha: 0.18)),
       ),
       child: Stack(
         clipBehavior: Clip.none,
@@ -469,7 +481,7 @@ class AppWidgets {
                 width: 40,
                 height: 40,
                 decoration: BoxDecoration(
-                  color: color.withOpacity(0.14),
+                  color: color.withValues(alpha: 0.14),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(icon, color: color, size: 20),
