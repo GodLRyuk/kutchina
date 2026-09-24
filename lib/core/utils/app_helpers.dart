@@ -10,7 +10,5 @@ class AppHelpers {
     return formatter.format(amount);
   }
 
-  static void triggerAiAction(String actionName) {
-    print('Executing AI Action: $actionName');
-  }
+  static void triggerAiAction(String actionName) {}
 }

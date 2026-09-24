@@ -8,12 +8,14 @@ class ProductDetailScreen extends StatefulWidget {
   final Product product;
   final String orderType;
   final String entityName;
+  final String entityId;
 
   const ProductDetailScreen({
     super.key,
     required this.product,
     required this.orderType,
     required this.entityName,
+    required this.entityId,
     required String channel,
   });
 
@@ -218,6 +220,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           builder: (_) => CartScreen(
                             orderType: widget.orderType,
                             entityName: widget.entityName,
+                            entityId: widget.entityId,
                             product: p,
                             qty: _qty,
                           ),

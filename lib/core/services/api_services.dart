@@ -146,13 +146,28 @@ class AuthInterceptor extends Interceptor {
 /// or response bodies in release builds.
 class LoggingInterceptor extends Interceptor {
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
-    if (kDebugMode) {
-      debugPrint('→ ${options.method} ${options.uri}');
-    }
-    handler.next(options);
-  }
-
+  // void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
+  //   if (kDebugMode) {
+  //     // debugPrint('→ ${options.method} ${options.uri}');
+  //     final data = options.data;
+  //     if (data is FormData) {
+  //       for (final field in data.fields) {
+  //         debugPrint('   FIELD: ${field.key} = ${field.value}');
+  //       }
+  //       for (final file in data.files) {
+  //         debugPrint(
+  //           '   FILE: ${file.key} -> '
+  //           'filename=${file.value.filename}, '
+  //           'length=${file.value.length}, '
+  //           'contentType=${file.value.contentType}',
+  //         );
+  //       }
+  //     } else if (data != null) {
+  //       debugPrint('   BODY: $data');
+  //     }
+  //   }
+  //   handler.next(options);
+  // }
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) {
     if (kDebugMode) {
@@ -271,9 +286,9 @@ class ApiService {
     return _dio
         .get<T>(
           path,
-          // data: data,
-          // queryParameters: queryParams,
-          // options: Options(extra: {'skipAuth': skipAuth}),
+          data: data,
+          queryParameters: queryParams,
+          options: Options(extra: {'skipAuth': skipAuth}),
         )
         .catchError(_handleError);
   }

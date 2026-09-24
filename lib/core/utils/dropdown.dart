@@ -86,7 +86,7 @@ class EntityPickerSheetState extends State<EntityPickerSheet> {
                       : ListView.separated(
                           shrinkWrap: true,
                           itemCount: _filtered.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const Divider(height: 1, color: AppColors.line),
                           itemBuilder: (context, i) {
                             final e = _filtered[i];

@@ -1,11 +1,9 @@
-import 'dart:convert';
-
-import 'package:dio/dio.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/location_service.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
+import 'package:dio/dio.dart';
 
 class Distributor {
   final String id;
@@ -81,7 +79,6 @@ class CheckInService {
       // If the API errors out, fail safe and force the check-in gate
       return false;
     } catch (e) {
-      print('Attendance status error: $e');
       return false;
     }
   }
@@ -178,9 +175,29 @@ class MastersApi {
 class OrderService {
   OrderService._();
 
+  static Future<MonthlyTarget> fetchCurrentTarget({
+    required String userId,
+  }) async {
+    final res = await ApiService.instance.get(
+      '/api/v1/orders/target/',
+      data: {'user_id': int.tryParse(userId) ?? userId},
+    );
+    final data = res.data is Map ? res.data['data'] : null;
+    if (data is! Map) {
+      throw ApiException('Monthly target was not found');
+    }
+
+    return MonthlyTarget(
+      amount: double.tryParse(data['target']?.toString() ?? '') ?? 0,
+      month: DateTime.tryParse(data['month']?.toString() ?? ''),
+      targetDate: DateTime.tryParse(data['target_date']?.toString() ?? ''),
+    );
+  }
+
   static Future<void> placeOrder({
     required String orderType,
     required String entityName,
+    required String entityId,
     required Product product,
     required int qty,
     required String price,
@@ -198,6 +215,7 @@ class OrderService {
       'warranty': warranty,
       'lat': position.latitude.toString(),
       'long': position.longitude.toString(),
+      'order_for': entityId,
     };
 
     await ApiService.instance.post('/api/v1/orders/place/', data: payload);
@@ -219,14 +237,33 @@ class OrderService {
   }
 }
 
+class MonthlyTarget {
+  final double amount;
+  final DateTime? month;
+  final DateTime? targetDate;
+
+  const MonthlyTarget({
+    required this.amount,
+    required this.month,
+    required this.targetDate,
+  });
+}
+
 class VisitService {
   static Future<void> checkIn({required Map<String, dynamic> payload}) async {
     final formData = FormData.fromMap(payload);
     await ApiService.instance.post('/api/v1/orders/visits/', data: formData);
   }
 
-  static Future<List<VisitEntry>> fetchTodayVisits() async {
-    final res = await ApiService.instance.get('/api/v1/orders/visits/');
+  static Future<List<VisitEntry>> fetchTodayVisits({
+    required String date,
+  }) async {
+    String currentDate = date;
+    String dataParam = "?created_at=";
+    dataParam = dataParam + currentDate;
+    final res = await ApiService.instance.get(
+      '/api/v1/orders/visits/$dataParam',
+    );
     final raw = res.data;
 
     final list = raw is List

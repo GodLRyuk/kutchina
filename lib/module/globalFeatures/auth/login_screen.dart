@@ -19,7 +19,6 @@ class _LoginScreenState extends State<LoginScreen> {
   static const List<String> _roles = ['Sales Exec', 'Admin'];
 
   String _selectedRole = 'Sales Exec';
-  bool get isAdmin => _selectedRole == 'Admin';
 
   bool _loading = false;
   final _mobileController = TextEditingController();
@@ -50,7 +49,7 @@ class _LoginScreenState extends State<LoginScreen> {
           context.read<AuthProvider>().setUser(loginResult.user);
           setState(() => _loading = false);
 
-          if (isAdmin) {
+          if (loginResult.user.role?.toLowerCase() == 'admin') {
             Navigator.push(
               context,
               MaterialPageRoute(builder: (_) => AdminDashboard()),

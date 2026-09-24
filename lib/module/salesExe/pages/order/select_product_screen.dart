@@ -24,15 +24,19 @@ class SelectProductScreen extends StatefulWidget {
 
 class _SelectProductScreenState extends State<SelectProductScreen> {
   String? _entity;
+  String? _entityId;
   String _category = 'All';
   Product? _selected;
 
-  List<String> _distributorNames = [];
+  // Full entity objects (id + name), not just display names, so the id
+  // can be resolved once a name is picked in the sheet.
+  List<dynamic> _distributors = [];
+  List<dynamic> _retailers = [];
   bool _loadingDistributors = false;
   bool _loadingRetailers = false;
   String? _retailerError;
   String? _distributorError;
-  List<String> _retailers = [];
+
   @override
   void initState() {
     super.initState();
@@ -55,7 +59,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     try {
       final list = await MastersApi.fetchDistributors();
       setState(() {
-        _distributorNames = list.map((d) => d.name).toList();
+        _distributors = list;
         _loadingDistributors = false;
       });
     } catch (e) {
@@ -74,7 +78,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     try {
       final list = await MastersApi.fetchRetailers();
       setState(() {
-        _retailers = list.map((d) => d.name).toList();
+        _retailers = list;
         _loadingRetailers = false;
       });
     } catch (e) {
@@ -85,8 +89,11 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     }
   }
 
+  List<dynamic> get _entityList =>
+      widget.orderType == 'D' ? _distributors : _retailers;
+
   List<String> get _entityOptions =>
-      widget.orderType == 'D' ? _distributorNames : _retailers;
+      _entityList.map<String>((e) => e.name as String).toList();
 
   List<Product> get _categoryFiltered {
     final categoryId = CategoryModel.idForName(_category);
@@ -109,7 +116,20 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
         options: _entityOptions,
       ),
     );
-    if (picked != null) setState(() => _entity = picked);
+    if (picked != null) {
+      // Resolve the id from the name that came back from the sheet.
+      dynamic match;
+      for (final e in _entityList) {
+        if (e.name == picked) {
+          match = e;
+          break;
+        }
+      }
+      setState(() {
+        _entity = picked;
+        _entityId = match?.id?.toString();
+      });
+    }
   }
 
   Future<void> _pickProduct() async {
@@ -133,7 +153,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   }
 
   void _proceed() {
-    if (_entity == null) {
+    if (_entity == null || _entityId == null) {
       AppWidgets.toast(
         context,
         'Select a ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} first',
@@ -151,6 +171,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
           product: _selected!,
           orderType: widget.orderType,
           entityName: _entity!,
+          entityId: _entityId!,
           channel: widget.channel,
         ),
       ),
@@ -164,6 +185,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
 
     setState(() {
       _entity = null;
+      _entityId = null;
       _category = 'All';
       _selected = null;
       _distributorError = null;
@@ -254,7 +276,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.redLight,
                           border: Border.all(
-                            color: AppColors.red.withOpacity(0.3),
+                            color: AppColors.red.withValues(alpha: 0.3),
                           ),
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
@@ -537,7 +559,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                       : ListView.separated(
                           shrinkWrap: true,
                           itemCount: _filtered.length,
-                          separatorBuilder: (_, __) =>
+                          separatorBuilder: (_, _) =>
                               const Divider(height: 1, color: AppColors.line),
                           itemBuilder: (context, i) {
                             final p = _filtered[i];

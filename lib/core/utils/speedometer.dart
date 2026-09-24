@@ -18,7 +18,7 @@ class SpeedoPainter extends CustomPainter {
 
     // track border
     final trackBorderPaint = Paint()
-      ..color = AppColors.ink.withOpacity(0.15)
+      ..color = AppColors.ink.withValues(alpha: 0.15)
       ..strokeWidth = borderW
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -45,7 +45,7 @@ class SpeedoPainter extends CustomPainter {
 
     // progress border
     final progBorderPaint = Paint()
-      ..color = AppColors.green.withOpacity(0.25)
+      ..color = AppColors.green.withValues(alpha: 0.25)
       ..strokeWidth = borderW
       ..strokeCap = StrokeCap.round
       ..style = PaintingStyle.stroke;
@@ -79,7 +79,7 @@ class SpeedoPainter extends CustomPainter {
     );
 
     final needleShadowPaint = Paint()
-      ..color = AppColors.ink.withOpacity(0.15)
+      ..color = AppColors.ink.withValues(alpha: 0.15)
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round;
     canvas.drawLine(center, needleEnd, needleShadowPaint);

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 
 class AdminRegionDetailScreen extends StatelessWidget {
   final String name;
@@ -19,20 +20,7 @@ class AdminRegionDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: AppTopBar.simple(title: name),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -53,8 +41,15 @@ class AdminRegionDetailScreen extends StatelessWidget {
                       width: 56,
                       height: 56,
                       alignment: Alignment.center,
-                      decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
-                      child: Icon(Icons.location_on_outlined, size: 26, color: color),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.location_on_outlined,
+                        size: 26,
+                        color: color,
+                      ),
                     ),
                     const SizedBox(height: 14),
                     Text(
@@ -69,7 +64,10 @@ class AdminRegionDetailScreen extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       '$percent of company sales',
-                      style: const TextStyle(fontSize: 12, color: AppColors.steel),
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.steel,
+                      ),
                     ),
                   ],
                 ),
