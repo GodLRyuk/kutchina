@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 
 class AdminTeamMemberDetailScreen extends StatelessWidget {
-  final String initials;
   final String name;
   final String today;
   final String month;
@@ -10,7 +10,6 @@ class AdminTeamMemberDetailScreen extends StatelessWidget {
 
   const AdminTeamMemberDetailScreen({
     super.key,
-    required this.initials,
     required this.name,
     required this.today,
     required this.month,
@@ -21,20 +20,7 @@ class AdminTeamMemberDetailScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: Text(
-          name,
-          style: const TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: AppTopBar.simple(title: name),
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -51,19 +37,6 @@ class AdminTeamMemberDetailScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    CircleAvatar(
-                      radius: 32,
-                      backgroundColor: avatarBg,
-                      child: Text(
-                        initials,
-                        style: const TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.commandCentreText,
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 12),
                     Text(
                       name,
@@ -80,7 +53,11 @@ class AdminTeamMemberDetailScreen extends StatelessWidget {
                       children: [
                         _stat('Today', today, AppColors.salesTodayColumn),
                         Container(width: 1, height: 32, color: AppColors.line),
-                        _stat('This Month', month, AppColors.salesThisMonthColumn),
+                        _stat(
+                          'This Month',
+                          month,
+                          AppColors.salesThisMonthColumn,
+                        ),
                       ],
                     ),
                   ],
@@ -122,10 +99,18 @@ class AdminTeamMemberDetailScreen extends StatelessWidget {
       children: [
         Text(
           value,
-          style: TextStyle(fontFamily: AppFonts.mono, fontSize: 16, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontFamily: AppFonts.mono,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
         const SizedBox(height: 2),
-        Text(label, style: const TextStyle(fontSize: 10.5, color: AppColors.steel)),
+        Text(
+          label,
+          style: const TextStyle(fontSize: 10.5, color: AppColors.steel),
+        ),
       ],
     );
   }

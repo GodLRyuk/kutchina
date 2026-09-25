@@ -43,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
               children: [
                 Container(
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(18),
                   ),
                   child: Image(
@@ -54,17 +54,6 @@ class _SplashScreenState extends State<SplashScreen> {
                   ),
                 ),
                 const SizedBox(height: 14),
-                const Text(
-                  'KUTCHINA',
-                  style: TextStyle(
-                    fontFamily: 'Sora',
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                const SizedBox(height: 4),
                 const Text(
                   'SALES COMPANION',
                   style: TextStyle(
@@ -88,7 +77,7 @@ class _SplashScreenState extends State<SplashScreen> {
                       shape: BoxShape.circle,
                       color: i == 0
                           ? Colors.white
-                          : Colors.white.withOpacity(0.4),
+                          : Colors.white.withValues(alpha: 0.4),
                     ),
                   );
                 }),

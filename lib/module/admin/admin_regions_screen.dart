@@ -1,62 +1,71 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/module/admin/detailsScreen/admin_regions_screen.dart';
 
-class AdminRegionsScreen extends StatelessWidget {
+class AdminRegionsScreen extends StatefulWidget {
   const AdminRegionsScreen({super.key});
 
-  static const _regions = [
-    {
-      'name': 'Kolkata',
-      'value': '₹18.6L',
-      'percent': 38.0,
-      'color': AppColors.regionBlue,
-      'dealers': 42,
-    },
-    {
-      'name': 'Howrah & Hooghly',
-      'value': '₹11.7L',
-      'percent': 24.0,
-      'color': AppColors.regionPurple,
-      'dealers': 28,
-    },
-    {
-      'name': 'North Bengal',
-      'value': '₹10.2L',
-      'percent': 21.0,
-      'color': AppColors.regionCyan,
-      'dealers': 19,
-    },
-    {
-      'name': 'South Bengal',
-      'value': '₹8.1L',
-      'percent': 17.0,
-      'color': AppColors.regionOrange,
-      'dealers': 15,
-    },
+  @override
+  State<AdminRegionsScreen> createState() => _AdminRegionsScreenState();
+}
+
+class _AdminRegionsScreenState extends State<AdminRegionsScreen> {
+  List<Zone> _zones = [];
+  bool _isLoading = true;
+  String? _loadError;
+
+  static const List<Color> _colors = [
+    AppColors.regionBlue,
+    AppColors.regionPurple,
+    AppColors.regionCyan,
+    AppColors.regionOrange,
   ];
+
+  @override
+  void initState() {
+    super.initState();
+    _loadZones();
+  }
+
+  Future<void> _loadZones() async {
+    setState(() {
+      _isLoading = true;
+      _loadError = null;
+    });
+    try {
+      final data = await MastersApi.fetchZones();
+      if (!mounted) return;
+      setState(() => _zones = data);
+    } on ApiException catch (error) {
+      if (!mounted) return;
+      setState(() => _loadError = error.message);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _loadError = 'Unable to load regions');
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  void _openZone(Zone zone, Color color) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AdminRegionSalesScreen(zone: zone, color: color),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppBar(
-        backgroundColor: AppColors.white,
-        elevation: 0,
-        iconTheme: const IconThemeData(color: AppColors.ink),
-        title: const Text(
-          'Regions',
-          style: TextStyle(
-            fontFamily: AppFonts.display,
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
-            color: AppColors.ink,
-          ),
-        ),
-      ),
+      appBar: const AppTopBar.simple(title: 'Regions'),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -71,29 +80,11 @@ class AdminRegionsScreen extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               const Text(
-                'Sales split across territories',
+                'Select a region to view its sales',
                 style: TextStyle(fontSize: 12, color: AppColors.steel),
               ),
-              const SizedBox(height: 20),
-              Center(
-                child: SizedBox(
-                  width: 190,
-                  height: 190,
-                  child: CustomPaint(
-                    painter: _DonutChartPainter(
-                      values: _regions
-                          .map((r) => r['percent'] as double)
-                          .toList(),
-                      colors: _regions.map((r) => r['color'] as Color).toList(),
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              for (final r in _regions) ...[
-                _regionCard(r),
-                if (r != _regions.last) const SizedBox(height: 10),
-              ],
+              const SizedBox(height: 16),
+              Expanded(child: _buildBody()),
             ],
           ),
         ),
@@ -101,102 +92,105 @@ class AdminRegionsScreen extends StatelessWidget {
     );
   }
 
-  Widget _regionCard(Map<String, dynamic> r) {
-    final color = r['color'] as Color;
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.white,
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: AppColors.line),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 4,
-            height: 36,
-            decoration: BoxDecoration(
-              color: color,
-              borderRadius: BorderRadius.circular(4),
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    if (_loadError != null) {
+      return Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              _loadError!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: AppColors.steel),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  r['name'] as String,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
-                Text(
-                  '${r['dealers']} dealers',
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: AppColors.steel,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                r['value'] as String,
-                style: const TextStyle(
-                  fontFamily: AppFonts.mono,
-                  fontSize: 13,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.ink,
-                ),
-              ),
-              Text(
-                '${(r['percent'] as double).toInt()}%',
-                style: const TextStyle(fontSize: 10.5, color: AppColors.steel),
-              ),
-            ],
-          ),
-        ],
+            const SizedBox(height: 12),
+            TextButton(onPressed: _loadZones, child: const Text('Retry')),
+          ],
+        ),
+      );
+    }
+
+    if (_zones.isEmpty) {
+      return const Center(
+        child: Text(
+          'No regions found',
+          style: TextStyle(color: AppColors.steel),
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadZones,
+      child: ListView.separated(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.only(bottom: 16),
+        itemCount: _zones.length,
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
+        itemBuilder: (context, i) => _regionCard(_zones[i], i),
       ),
     );
   }
-}
 
-class _DonutChartPainter extends CustomPainter {
-  final List<double> values;
-  final List<Color> colors;
-  _DonutChartPainter({required this.values, required this.colors});
+  Widget _regionCard(Zone zone, int index) {
+    final color = _colors[index % _colors.length];
+    final statusColor = zone.isActive ? AppColors.steel : AppColors.steelLight;
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = size.width / 2 - 16;
-    final total = values.fold<double>(0, (a, b) => a + b);
-    double startAngle = -math.pi / 2;
-    for (var i = 0; i < values.length; i++) {
-      final sweep = total == 0 ? 0.0 : (values[i] / total) * 2 * math.pi;
-      final paint = Paint()
-        ..color = colors[i]
-        ..strokeWidth = 30
-        ..strokeCap = StrokeCap.butt
-        ..style = PaintingStyle.stroke;
-      canvas.drawArc(
-        Rect.fromCircle(center: center, radius: radius),
-        startAngle,
-        sweep,
-        false,
-        paint,
-      );
-      startAngle += sweep;
-    }
+    return Material(
+      color: AppColors.white,
+      borderRadius: BorderRadius.circular(AppRadius.md),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        onTap: () => _openZone(zone, color),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.line),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 4,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: color,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      zone.name,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
+                    ),
+                    Text(
+                      zone.isActive ? 'Active' : 'Inactive',
+                      style: TextStyle(fontSize: 10.5, color: statusColor),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(
+                Icons.chevron_right,
+                size: 20,
+                color: AppColors.steelLight,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
-
-  @override
-  bool shouldRepaint(covariant _DonutChartPainter oldDelegate) => true;
 }

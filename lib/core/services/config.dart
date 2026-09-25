@@ -3,7 +3,8 @@ class ApiConfig {
 
   static const String baseUrl = 'http://72.61.114.210:8082';
   static const Duration connectTimeout = Duration(seconds: 15);
-  static const Duration receiveTimeout = Duration(seconds: 20);
+  static const Duration receiveTimeout = Duration(seconds: 100);
+  static const Duration sendTimeout = Duration(seconds: 100);
 
   /// SHA-256 fingerprints (hex, lowercase) of the server's leaf cert public
   /// key. Pin the DER-encoded SubjectPublicKeyInfo, not the whole cert, so

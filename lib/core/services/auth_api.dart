@@ -69,7 +69,9 @@ class KUser {
           ? UserLocation.fromJson(json['location'])
           : null,
       zone: json['zone'] != null ? UserZone.fromJson(json['zone']) : null,
-      role: json['role']?.toString(),
+      role: json['role'] is Map<String, dynamic>
+          ? json['role']['name']?.toString().trim()
+          : json['role']?.toString().trim(),
       isActive: json['is_active'] as bool? ?? true,
     );
   }
@@ -109,8 +111,6 @@ class AuthApi {
     final refresh = data['refresh_token'] as String;
     final userJson = data['user'] as Map<String, dynamic>;
     final user = KUser.fromJson(userJson);
-    print("User Json ${userJson}");
-    print("User ${user}");
     await TokenStore.saveTokens(accessToken: access, refreshToken: refresh);
     await UserStore.saveUser(userJson);
     return LoginResult(user: user, accessToken: access, refreshToken: refresh);
