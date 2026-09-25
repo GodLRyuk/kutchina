@@ -63,7 +63,7 @@ class AdminDashboardData {
         data['sales_by_category'],
       ).map(DashboardCategory.fromJson).toList(),
       salesByRegion: _list(
-        data['sales_by_region'],
+        data['sales_by_zone'],
       ).map(DashboardRegion.fromJson).toList(),
       salesTeamPerformance: _list(
         data['sales_team_performance'],
@@ -132,25 +132,26 @@ class DashboardRegion {
   final String name;
   final double value;
   final double percentage;
+  final double target;
 
   const DashboardRegion({
     required this.name,
     required this.value,
     required this.percentage,
+    required this.target,
   });
 
   factory DashboardRegion.fromJson(Map<String, dynamic> json) {
+    print("Region Json ${json}");
     return DashboardRegion(
       name: _string(
-        json['name'] ?? json['region_name'] ?? json['zone_name'],
+        json['zone'] ?? json['region_name'] ?? json['zone'],
         fallback: 'Other',
       ),
-      value: _number(
-        json['value'] ?? json['sales_value'] ?? json['total_sales_value'],
-      ),
-      percentage: _number(
-        json['percentage'] ?? json['percent'] ?? json['share_percentage'],
-      ),
+      value: _number(json['sales_value']),
+      // percentage: _number(json['achievement_percentage']),
+      percentage: _number(26.77),
+      target: _number(json['target_value']),
     );
   }
 }

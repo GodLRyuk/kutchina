@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/constants/customePaint.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/admin_widgets.dart';
 import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/admin/admin_product_detail_screen.dart';
+import 'package:kutchina/module/admin/detailsScreen/admin_product_detail_screen.dart';
 import 'package:kutchina/module/admin/admin_products_screen.dart';
-import 'package:kutchina/module/admin/admin_region_detail_screen.dart';
+import 'package:kutchina/module/admin/detailsScreen/admin_region_detail_screen.dart';
 import 'package:kutchina/module/admin/admin_regions_screen.dart';
-import 'package:kutchina/module/admin/admin_team_member_detail_screen.dart';
+import 'package:kutchina/module/admin/detailsScreen/admin_team_member_detail_screen.dart';
 import 'package:kutchina/module/admin/admin_team_screen.dart';
-import 'package:kutchina/module/admin/admin_dashboard_api.dart';
+import 'package:kutchina/core/services/admin_dashboard_api.dart';
+import 'package:provider/provider.dart';
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({super.key});
@@ -56,13 +58,25 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
   }
 
+  String getGreeting() {
+    final hour = DateTime.now().hour;
+    if (hour < 12) return 'Good morning';
+    if (hour < 17) return 'Good afternoon';
+    return 'Good evening';
+  }
+
   @override
   Widget build(BuildContext context) {
+    final user = context.watch<AuthProvider>().user;
+    if (user == null) {
+      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
     return Scaffold(
       backgroundColor: AppColors.ash,
       appBar: AppTopBar.greeting(
-        greeting: 'Good morning',
-        subtitle: 'Sylvester Rajesh Mondal',
+        greeting: getGreeting(),
+        subtitle: user.fullName,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
@@ -602,6 +616,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               'name': region.name,
               'value': _currency(region.value),
               'percent': region.percentage,
+              'target': region.target,
               'color': [
                 AppColors.regionBlue,
                 AppColors.regionPurple,
