@@ -106,7 +106,7 @@ class _LoginScreenState extends State<LoginScreen> {
               const SizedBox(height: 28),
 
               // Role selector (dropdown)
-              _roleDropdown(),
+              // _roleDropdown(),
               const SizedBox(height: 16),
 
               AppWidgets.buildTextField(
