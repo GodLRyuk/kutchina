@@ -33,8 +33,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
   double? _lat;
   double? _long;
-  bool _loadingLocation = false;
-  String? _locationError;
   final ImagePicker _picker = ImagePicker();
   List<dynamic> _distributors = [];
   List<dynamic> _retailers = [];
@@ -42,6 +40,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   String? _entityError;
   bool _submitting = false;
   String? _address;
+  bool _loadingLocation = true;
   bool _loadingAddress = false;
 
   /// Maps the UI label to the API code expected by the backend.
@@ -227,8 +226,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         _entityId = match?.id;
         _entityName = match?.name?.toString();
       });
-      print('Selected entity: $_entity ($_entityId)');
-      print('Entity name: $_entityName');
     }
   }
 
@@ -242,14 +239,32 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     if (_entity == null || _entityId == null) {
       AppWidgets.toast(
         context,
-        'Select a ${_visitType!.toLowerCase()} to check in',
+        'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
       );
       return;
     }
     if (_lat == null || _long == null) {
       AppWidgets.toast(context, 'Fetching location, please wait…');
       await _getCurrentLocation();
+      if (!mounted) return;
       if (_lat == null || _long == null) return;
+    }
+    if (_address == null || _address!.trim().isEmpty) {
+      AppWidgets.toast(context, 'Resolving address, please wait…');
+      await _resolveAddress(_lat!, _long!);
+      if (!mounted) return;
+    }
+    if (!_hasCapturedAddress) {
+      await _showLocationNotCapturedAlert();
+      return;
+    }
+    if (_noteController.text == "") {
+      AppWidgets.toast(context, "Please Enter Note");
+      return;
+    }
+    if (_photoFile == null) {
+      AppWidgets.toast(context, "Please Take a selfe");
+      return;
     }
 
     final payload = <String, dynamic>{
@@ -260,7 +275,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       'note': _noteController.text.trim(),
       'lat': _lat?.toString() ?? '',
       'long': _long?.toString() ?? '',
-      'address': _address ?? '',
+      'address': _address!.trim(),
     };
 
     if (_photoFile != null) {
@@ -272,7 +287,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
     setState(() => _submitting = true);
     try {
+      // final shouldSubmit = await _confirmPayload(context, payload);
+      // if (!shouldSubmit) return;
       await VisitService.checkIn(payload: payload);
+      // print("Showing popup $shouldSubmit");
       if (!mounted) return;
       AppWidgets.toast(context, 'Checked in successfully');
       if (Navigator.canPop(context)) {
@@ -289,19 +307,57 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     }
   }
 
+  // Future<bool> _confirmPayload(
+  //   BuildContext context,
+  //   Map<String, dynamic> payload,
+  // ) async {
+  //   final buffer = StringBuffer();
+
+  //   for (final entry in payload.entries) {
+  //     final value = entry.value;
+
+  //     if (value is File) {
+  //       final size = await value.length();
+  //       buffer.writeln(
+  //         '${entry.key}: ${value.path.split('/').last} ($size bytes)',
+  //       );
+  //     } else if (value is List) {
+  //       buffer.writeln('${entry.key}: [${value.length} items]');
+  //     } else {
+  //       buffer.writeln('${entry.key}: $value');
+  //     }
+  //   }
+
+  //   if (!context.mounted) return false;
+
+  //   final confirmed = await showDialog<bool>(
+  //     context: context,
+  //     builder: (ctx) => AlertDialog(
+  //       title: const Text('Payload to submit'),
+  //       content: SingleChildScrollView(child: Text(buffer.toString())),
+  //       actions: [
+  //         TextButton(
+  //           onPressed: () => Navigator.pop(ctx, false),
+  //           child: const Text('Cancel'),
+  //         ),
+  //         FilledButton(
+  //           onPressed: () => Navigator.pop(ctx, true),
+  //           child: const Text('Submit'),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+
+  //   return confirmed ?? false;
+  // }
+
   Future<void> _getCurrentLocation() async {
-    setState(() {
-      _loadingLocation = true;
-      _locationError = null;
-    });
+    setState(() => _loadingLocation = true);
 
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       if (!serviceEnabled) {
-        setState(() {
-          _locationError = 'Location services are off';
-          _loadingLocation = false;
-        });
+        setState(() {});
         return;
       }
 
@@ -309,20 +365,13 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
         if (permission == LocationPermission.denied) {
-          setState(() {
-            _locationError = 'Location permission denied';
-            _loadingLocation = false;
-          });
+          setState(() {});
           return;
         }
       }
 
       if (permission == LocationPermission.deniedForever) {
-        setState(() {
-          _locationError =
-              'Location permission permanently denied. Enable it in Settings.';
-          _loadingLocation = false;
-        });
+        setState(() {});
         return;
       }
 
@@ -334,22 +383,18 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       setState(() {
         _lat = position.latitude;
         _long = position.longitude;
-        _loadingLocation = false;
       });
 
       // Reverse geocode once we have coordinates.
-      _resolveAddress(position.latitude, position.longitude);
+      await _resolveAddress(position.latitude, position.longitude);
     } catch (e) {
       if (!mounted) return;
-      setState(() {
-        _locationError = 'Could not get location';
-        _loadingLocation = false;
-      });
+    } finally {
+      if (mounted) setState(() => _loadingLocation = false);
     }
   }
 
   Future<void> _resolveAddress(double lat, double long) async {
-    print('Resolving address for coordinates: $lat, $long');
     setState(() => _loadingAddress = true);
     try {
       final geocoding = Geocoding();
@@ -357,32 +402,74 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       if (!mounted) return;
       if (placemarks.isNotEmpty) {
         final p = placemarks.first;
-        final parts = [
-          p.street,
-          p.subLocality,
-          p.locality,
-          p.postalCode,
-          p.country,
-        ].where((s) => s != null && s.trim().isNotEmpty).toList();
+        final parts =
+            [
+                  p.name,
+                  p.subThoroughfare,
+                  p.thoroughfare,
+                  p.street,
+                  p.subLocality,
+                  p.locality,
+                  p.subAdministrativeArea,
+                  p.administrativeArea,
+                  p.postalCode,
+                  p.country,
+                ]
+                .whereType<String>()
+                .map((part) => part.trim())
+                .where((part) => part.isNotEmpty)
+                .toSet()
+                .toList();
+        final resolvedAddress = parts.join(', ');
         setState(() {
-          _address = parts.join(', ');
+          _address = resolvedAddress.isEmpty ? '$lat, $long' : resolvedAddress;
           _loadingAddress = false;
         });
-        print('Resolved address: $_address');
       } else {
         setState(() {
-          _address = null;
+          _address = '$lat, $long';
           _loadingAddress = false;
         });
       }
     } catch (e) {
-      print('Reverse geocoding failed: $e');
       if (!mounted) return;
       setState(() {
-        _address = null;
+        _address = '$lat, $long';
         _loadingAddress = false;
       });
     }
+  }
+
+  bool get _hasCapturedAddress {
+    final address = _address?.trim();
+    if (address == null || address.isEmpty) return false;
+    final coordinateFallback = '$_lat, $_long';
+    return address != coordinateFallback;
+  }
+
+  Future<void> _showLocationNotCapturedAlert() async {
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Location not captured'),
+        content: const Text(
+          'The address could not be captured. Please retry your location before submitting the visit.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              _getCurrentLocation();
+            },
+            child: const Text('Retry'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancel'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -419,22 +506,32 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   CustomPaint(
                     size: Size.infinite,
                     painter: _MapPlaceholderPainter(),
-                    child: const Align(
-                      alignment: Alignment(0, -0.2),
-                      child: Icon(
-                        Icons.location_on,
-                        color: AppColors.red,
-                        size: 30,
-                      ),
+                    child: Center(
+                      child: _loadingLocation || _loadingAddress
+                          ? const CircularProgressIndicator(
+                              color: AppColors.red,
+                            )
+                          : const Icon(
+                              Icons.location_on,
+                              color: AppColors.red,
+                              size: 30,
+                            ),
                     ),
                   ),
-                  if (_loadingAddress)
-                    const Positioned(
-                      left: 10,
-                      bottom: 10,
+                  if (_loadingLocation || _loadingAddress)
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 12,
                       child: Text(
-                        'Resolving address…',
-                        style: TextStyle(fontSize: 10.5),
+                        _loadingLocation
+                            ? 'Getting your location…'
+                            : 'Resolving address…',
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(
+                          fontSize: 10.5,
+                          color: AppColors.ink,
+                        ),
                       ),
                     )
                   else if (_address != null)
@@ -448,7 +545,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Text(
@@ -487,8 +584,9 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           icon: Icons.storefront_outlined,
                           selected: _visitType == 'D',
                           onTap: () {
-                            if (_visitType == 'D')
+                            if (_visitType == 'D') {
                               return; // no-op if already selected
+                            }
                             setState(() {
                               _visitType = 'D';
                               _entity = null;
@@ -512,8 +610,9 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           icon: Icons.store_mall_directory_outlined,
                           selected: _visitType == 'R',
                           onTap: () {
-                            if (_visitType == 'R')
+                            if (_visitType == 'R') {
                               return; // no-op if already selected
+                            }
                             setState(() {
                               _visitType = 'R';
                               _entity = null;
@@ -575,7 +674,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                         decoration: BoxDecoration(
                           color: AppColors.redLight,
                           border: Border.all(
-                            color: AppColors.red.withOpacity(0.3),
+                            color: AppColors.red.withValues(alpha: 0.3),
                           ),
                           borderRadius: BorderRadius.circular(12),
                         ),
@@ -688,9 +787,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
                   const SizedBox(height: 20),
                   AppWidgets.buildButton(
-                    'Submit',
+                    _submitting
+                        ? 'Submitting...'
+                        : (_loadingLocation || _loadingAddress
+                              ? 'Loading location...'
+                              : 'Submit'),
                     icon: Icons.location_on_outlined,
-                    onTap: _checkIn,
+                    onTap: _submitting || _loadingLocation || _loadingAddress
+                        ? null
+                        : _checkIn,
+                    loading: _submitting,
                   ),
                 ],
               ),

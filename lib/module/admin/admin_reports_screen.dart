@@ -66,8 +66,9 @@ class AdminReportsScreen extends StatelessWidget {
               Expanded(
                 child: ListView.separated(
                   itemCount: _reports.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (context, i) => _reportCard(context, _reports[i]),
+                  separatorBuilder: (_, _) => const SizedBox(height: 10),
+                  itemBuilder: (context, i) =>
+                      _reportCard(context, _reports[i]),
                 ),
               ),
             ],
@@ -93,7 +94,7 @@ class AdminReportsScreen extends StatelessWidget {
             height: 40,
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: color.withOpacity(0.12),
+              color: color.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Icon(r['icon'] as IconData, size: 20, color: color),
@@ -114,14 +115,22 @@ class AdminReportsScreen extends StatelessWidget {
                 ),
                 Text(
                   r['subtitle'] as String,
-                  style: const TextStyle(fontSize: 10.5, color: AppColors.steel),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: AppColors.steel,
+                  ),
                 ),
               ],
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.download_outlined, color: AppColors.commandCentreText, size: 20),
-            onPressed: () => AppWidgets.toast(context, 'Downloading ${r['title']}…'),
+            icon: const Icon(
+              Icons.download_outlined,
+              color: AppColors.commandCentreText,
+              size: 20,
+            ),
+            onPressed: () =>
+                AppWidgets.toast(context, 'Downloading ${r['title']}…'),
           ),
         ],
       ),
