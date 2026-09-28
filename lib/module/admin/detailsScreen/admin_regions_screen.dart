@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
@@ -61,265 +62,29 @@ String _fmtDate(DateTime? d) {
   return '${l.day} ${months[l.month - 1]} ${l.year}, $h:$min $ap';
 }
 
-// ─────────────────────── categories list screen ───────────────────────
+// ─────────────────────────── screen ───────────────────────────
 
-class AdminProductsScreen extends StatefulWidget {
-  const AdminProductsScreen({super.key});
-
-  @override
-  State<AdminProductsScreen> createState() => _AdminProductsScreenState();
-}
-
-class _AdminProductsScreenState extends State<AdminProductsScreen> {
-  final _searchController = TextEditingController();
-  List<Category> _categories = [];
-  bool _isLoading = true;
-  String? _loadError;
-
-  static const List<Color> _colors = [
-    AppColors.productChimney,
-    AppColors.productHobs,
-    AppColors.productWaterPurifiers,
-    AppColors.productOvens,
-  ];
-
-  static const List<IconData> _icons = [
-    Icons.kitchen_outlined,
-    Icons.local_fire_department_outlined,
-    Icons.water_drop_outlined,
-    Icons.microwave_outlined,
-  ];
-
-  @override
-  void initState() {
-    super.initState();
-    _loadCategories();
-  }
-
-  Future<void> _loadCategories() async {
-    setState(() {
-      _isLoading = true;
-      _loadError = null;
-    });
-    try {
-      final data = await MastersApi.fetchCategories();
-      if (!mounted) return;
-      setState(() => _categories = data);
-    } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _loadError = error.message);
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadError = 'Unable to load categories');
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  @override
-  void dispose() {
-    _searchController.dispose();
-    super.dispose();
-  }
-
-  /// Categories filtered by the search box. Keeps the original index so
-  /// each category keeps the same color/icon while filtering.
-  List<MapEntry<int, Category>> get _filtered {
-    final query = _searchController.text.trim().toLowerCase();
-    final entries = _categories.asMap().entries.toList();
-    if (query.isEmpty) return entries;
-    return entries
-        .where((e) => e.value.name.toLowerCase().contains(query))
-        .toList();
-  }
-
-  void _openCategory(Category category, Color color, IconData icon) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => AdminCategoryProductsScreen(
-          category: category,
-          color: color,
-          icon: icon,
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.ash,
-      appBar: const AppTopBar.simple(title: 'Products'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select a category to view its orders',
-                style: TextStyle(fontSize: 12, color: AppColors.steel),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  border: Border.all(color: AppColors.line, width: 1.3),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  style: const TextStyle(fontSize: 13, color: AppColors.ink),
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.search, size: 18, color: AppColors.steel),
-                    hintText: 'Search categories',
-                    hintStyle: TextStyle(
-                      color: AppColors.steelLight,
-                      fontSize: 13,
-                    ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 11),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 14),
-              Expanded(child: _buildBody()),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBody() {
-    if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
-    }
-
-    if (_loadError != null) {
-      return Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              _loadError!,
-              textAlign: TextAlign.center,
-              style: const TextStyle(color: AppColors.steel),
-            ),
-            const SizedBox(height: 12),
-            TextButton(onPressed: _loadCategories, child: const Text('Retry')),
-          ],
-        ),
-      );
-    }
-
-    final items = _filtered;
-    if (items.isEmpty) {
-      return const Center(
-        child: Text(
-          'No categories found',
-          style: TextStyle(color: AppColors.steel),
-        ),
-      );
-    }
-
-    return RefreshIndicator(
-      onRefresh: _loadCategories,
-      child: ListView.separated(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.only(bottom: 16),
-        itemCount: items.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 10),
-        itemBuilder: (context, i) {
-          final entry = items[i];
-          return _categoryCard(entry.value, entry.key);
-        },
-      ),
-    );
-  }
-
-  Widget _categoryCard(Category category, int index) {
-    final color = _colors[index % _colors.length];
-    final icon = _icons[index % _icons.length];
-
-    return Material(
-      color: AppColors.white,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        onTap: () => _openCategory(category, color, icon),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 34,
-                height: 34,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(icon, size: 18, color: color),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  category.name,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 13,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.ink,
-                  ),
-                ),
-              ),
-              const Icon(
-                Icons.chevron_right,
-                size: 20,
-                color: AppColors.steelLight,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ─────────────────────── category orders screen ───────────────────────
-
-/// Orders placed for products in one category, from
-/// GET /api/v1/masters/categories/{id}/products/?page=&page_size=
-class AdminCategoryProductsScreen extends StatefulWidget {
-  final Category category;
+/// Sales (orders) for one region, from
+/// GET /api/v1/orders/regions/{id}/sales/?page=&page_size=
+class AdminRegionSalesScreen extends StatefulWidget {
+  final Zone zone;
   final Color color;
-  final IconData icon;
 
-  const AdminCategoryProductsScreen({
+  const AdminRegionSalesScreen({
     super.key,
-    required this.category,
+    required this.zone,
     required this.color,
-    required this.icon,
   });
 
   @override
-  State<AdminCategoryProductsScreen> createState() =>
-      _AdminCategoryProductsScreenState();
+  State<AdminRegionSalesScreen> createState() => _AdminRegionSalesScreenState();
 }
 
-class _AdminCategoryProductsScreenState
-    extends State<AdminCategoryProductsScreen> {
+class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
   static const int _pageSize = 10;
 
   final List<SalesOrder> _orders = [];
+  String _regionName = '';
   int _count = 0;
   int _page = 1;
   bool _hasMore = false;
@@ -327,6 +92,8 @@ class _AdminCategoryProductsScreenState
   bool _isLoading = true;
   bool _isLoadingMore = false;
   String? _loadError;
+
+  String get _title => _regionName.isNotEmpty ? _regionName : widget.zone.name;
 
   @override
   void initState() {
@@ -340,8 +107,8 @@ class _AdminCategoryProductsScreenState
       _loadError = null;
     });
     try {
-      final data = await CategoryOrdersApi.fetch(
-        categoryId: widget.category.id,
+      final data = await RegionOrdersApi.fetch(
+        regionId: widget.zone.id,
         pageSize: _pageSize,
       );
       if (!mounted) return;
@@ -349,16 +116,25 @@ class _AdminCategoryProductsScreenState
         _orders
           ..clear()
           ..addAll(data.orders);
+        _regionName = data.regionName;
         _count = data.count;
         _hasMore = data.hasMore;
         _page = 1;
       });
     } on ApiException catch (error) {
+      if (kDebugMode) debugPrint('[RegionSales] ApiException: $error');
       if (!mounted) return;
       setState(() => _loadError = error.message);
-    } catch (_) {
+    } catch (error, stack) {
+      if (kDebugMode) {
+        debugPrint('[RegionSales] unexpected error: $error\n$stack');
+      }
       if (!mounted) return;
-      setState(() => _loadError = 'Unable to load orders');
+      setState(
+        () => _loadError = kDebugMode
+            ? 'Unable to load sales\n$error'
+            : 'Unable to load sales',
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -369,8 +145,8 @@ class _AdminCategoryProductsScreenState
     setState(() => _isLoadingMore = true);
     try {
       final next = _page + 1;
-      final data = await CategoryOrdersApi.fetch(
-        categoryId: widget.category.id,
+      final data = await RegionOrdersApi.fetch(
+        regionId: widget.zone.id,
         page: next,
         pageSize: _pageSize,
       );
@@ -386,7 +162,7 @@ class _AdminCategoryProductsScreenState
       _snack(error.message);
     } catch (_) {
       if (!mounted) return;
-      _snack('Unable to load more orders');
+      _snack('Unable to load more sales');
     } finally {
       if (mounted) setState(() => _isLoadingMore = false);
     }
@@ -406,7 +182,7 @@ class _AdminCategoryProductsScreenState
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.ash,
-      appBar: AppTopBar.simple(title: widget.category.name),
+      appBar: AppTopBar.simple(title: _title),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
@@ -460,15 +236,29 @@ class _AdminCategoryProductsScreenState
           ),
         ),
       const SizedBox(height: 22),
-      _sectionTitle('Orders', _count),
+      _sectionTitle('Sales', _count),
       const SizedBox(height: 10),
       if (_orders.isEmpty)
-        const Padding(
-          padding: EdgeInsets.symmetric(vertical: 24),
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 24),
           child: Center(
-            child: Text(
-              'No orders in this category',
-              style: TextStyle(color: AppColors.steel),
+            child: Column(
+              children: [
+                const Text(
+                  'No sales in this region',
+                  style: TextStyle(color: AppColors.steel),
+                ),
+                if (kDebugMode) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'region id: ${widget.zone.id}  •  see [RegionSales] in console',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      color: AppColors.steelLight,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         )
@@ -521,7 +311,11 @@ class _AdminCategoryProductsScreenState
                       width: 1.5,
                     ),
                   ),
-                  child: Icon(widget.icon, size: 28, color: Colors.white),
+                  child: const Icon(
+                    Icons.map_outlined,
+                    size: 28,
+                    color: Colors.white,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -529,7 +323,7 @@ class _AdminCategoryProductsScreenState
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        widget.category.name,
+                        _title,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: const TextStyle(
@@ -541,7 +335,7 @@ class _AdminCategoryProductsScreenState
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        'Orders placed in this category',
+                        'Sales in this region',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.white.withValues(alpha: 0.8),
@@ -811,6 +605,12 @@ class _AdminCategoryProductsScreenState
                             o.status,
                             color: AppColors.regionOrange,
                             icon: Icons.check_circle_outline,
+                          ),
+                        if (o.createdBy.isNotEmpty)
+                          _chip(
+                            'By user #${o.createdBy}',
+                            color: AppColors.regionBlue,
+                            icon: Icons.person_outline,
                           ),
                       ],
                     ),

@@ -15,14 +15,51 @@ class OrderListScreen extends StatefulWidget {
 }
 
 class _OrderListScreenState extends State<OrderListScreen> {
+  static const int _pageSize = 10;
+
   List<OrderEntry> _orders = [];
   bool _loading = false;
   String? _error;
 
+  // ---- Client-side pagination ----
+  final ScrollController _scrollController = ScrollController();
+  int _visibleCount = _pageSize;
+  bool _loadingMore = false;
+
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _loadOrders();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients) return;
+    final nearBottom =
+        _scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200;
+    if (nearBottom && !_loadingMore && _visibleCount < _orders.length) {
+      _loadMore();
+    }
+  }
+
+  Future<void> _loadMore() async {
+    setState(() => _loadingMore = true);
+    // Small delay so the loader is visible rather than an instant snap —
+    // remove this if/when this becomes a real paginated API call.
+    await Future.delayed(const Duration(milliseconds: 350));
+    if (!mounted) return;
+    setState(() {
+      _visibleCount = (_visibleCount + _pageSize).clamp(0, _orders.length);
+      _loadingMore = false;
+    });
   }
 
   Future<void> _loadOrders() async {
@@ -32,8 +69,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
     });
     try {
       final orders = await OrderService.fetchOrders();
+      if (!mounted) return;
       setState(() {
         _orders = orders;
+        _visibleCount = _pageSize.clamp(0, orders.length);
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -113,12 +152,33 @@ class _OrderListScreenState extends State<OrderListScreen> {
       );
     }
 
+    final visibleOrders = _orders.take(_visibleCount).toList();
+    final hasMore = _visibleCount < _orders.length;
+
     return ListView.separated(
+      controller: _scrollController,
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
-      itemCount: _orders.length,
+      itemCount: visibleOrders.length + (hasMore ? 1 : 0),
       separatorBuilder: (_, _) => const SizedBox(height: 10),
-      itemBuilder: (context, i) => _orderCard(_orders[i]),
+      itemBuilder: (context, i) {
+        if (i >= visibleOrders.length) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 20),
+            child: Center(
+              child: SizedBox(
+                width: 22,
+                height: 22,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2.2,
+                  color: AppColors.commandCentreText,
+                ),
+              ),
+            ),
+          );
+        }
+        return _orderCard(visibleOrders[i]);
+      },
     );
   }
 

@@ -1,4 +1,4 @@
-import 'package:kutchina/module/admin/admin_dashboard_api.dart';
+import 'package:kutchina/core/services/admin_dashboard_api.dart';
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
@@ -444,7 +444,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
               ),
 
               const SizedBox(height: 12),
-              // ---- Top selling categories, from AdminDashboardApi ----
               AppWidgets.buildCard(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -504,12 +503,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ],
                 ),
               ),
-              const SizedBox(height: 12),
-
-              AppWidgets.aiRecommendCard(
-                'Call Ananya Das before noon — score 92, highest close-probability lead this week. '
-                'Behala Kitchen World is 18 days without a visit — at risk of churn.',
-              ),
               const SizedBox(height: 16),
 
               Row(
@@ -537,7 +530,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: const Text(
-                      '✦ AI-sequenced route',
+                      '✦ Yours Visit',
                       style: TextStyle(
                         fontFamily: AppFonts.display,
                         fontSize: 9.5,
