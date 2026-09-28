@@ -23,6 +23,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     text: 'Stock check & new display',
   );
   final _noteController = TextEditingController();
+  final _otherController = TextEditingController();
   bool _noteAdded = false;
   File? _photoFile;
   bool get _photoAdded => _photoFile != null;
@@ -50,13 +51,20 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         return 'D';
       case 'R':
         return 'R';
+      case 'O':
+        return 'O';
       default:
         return null;
     }
   }
 
   List<dynamic> get _entityList =>
-      _visitType == 'D' ? _distributors : _retailers;
+      // _visitType == 'D' ? _distributors : _retailers;
+      _visitType == 'D'
+      ? _distributors
+      : _visitType == 'R'
+      ? _retailers
+      : [];
 
   List<String> get _entityOptions =>
       _entityList.map<String>((e) => e.name as String).toList();
@@ -71,6 +79,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   void dispose() {
     _purposeController.dispose();
     _noteController.dispose();
+    _otherController.dispose();
     super.dispose();
   }
 
@@ -83,7 +92,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     try {
       if (_visitType == 'D') {
         _distributors = await MastersApi.fetchDistributors();
-      } else {
+      } else if (_visitType == 'R') {
         _retailers = await MastersApi.fetchRetailers();
       }
       setState(() => _loadingEntities = false);
@@ -171,7 +180,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
   Future<void> _pickEntity() async {
     if (_visitType == null) {
-      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      AppWidgets.toast(
+        context,
+        'Select Distributor or Retailer or Others first',
+      );
       return;
     }
 
@@ -233,14 +245,28 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     if (_submitting) return;
 
     if (_visitType == null) {
-      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      AppWidgets.toast(
+        context,
+        'Select Distributor or Retailer or Others first',
+      );
       return;
     }
-    if (_entity == null || _entityId == null) {
+    // if (_entity == null || _entityId == null) {
+    //   AppWidgets.toast(
+    //     context,
+    //     'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
+    //   );
+    //   return;
+    // }
+    if (_visitType != 'O' && (_entity == null || _entityId == null)) {
       AppWidgets.toast(
         context,
         'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
       );
+      return;
+    }
+    if (_visitType == 'O' && _otherController.text.trim().isEmpty) {
+      AppWidgets.toast(context, 'Please specify visit type');
       return;
     }
     if (_lat == null || _long == null) {
@@ -263,14 +289,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       return;
     }
     if (_photoFile == null) {
-      AppWidgets.toast(context, "Please Take a selfe");
+      AppWidgets.toast(context, "Please Take a selfie");
       return;
     }
+
+    final isOther = _visitType == 'O';
 
     final payload = <String, dynamic>{
       'visit_type': _visitTypeCode,
       'visitor_id': _entityId,
-      'visitor_name': _entityName,
+      'visitor_name': isOther ? _otherController.text.trim() : _entityName,
       'visit_purpose': _purposeController.text.trim(),
       'note': _noteController.text.trim(),
       'lat': _lat?.toString() ?? '',
@@ -284,6 +312,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         filename: _photoFile!.path.split('/').last,
       );
     }
+
+    debugPrint('===== CHECK-IN PAYLOAD =====');
+    payload.forEach((key, value) {
+      if (value is MultipartFile) {
+        debugPrint('$key: ${value.filename} (${value.length} bytes)');
+      } else {
+        debugPrint('$key: $value');
+      }
+    });
+    debugPrint('============================');
 
     setState(() => _submitting = true);
     try {
@@ -576,62 +614,107 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Column(
                     children: [
-                      Expanded(
-                        child: _typeBox(
-                          title: 'Distributor',
-                          icon: Icons.storefront_outlined,
-                          selected: _visitType == 'D',
-                          onTap: () {
-                            if (_visitType == 'D') {
-                              return; // no-op if already selected
-                            }
-                            setState(() {
-                              _visitType = 'D';
-                              _entity = null;
-                              _entityId = null;
-                              _entityName = null;
-                              _entityError = null;
-                              _purposeController.text =
-                                  'Stock check & new display';
-                              _noteController.clear();
-                              _noteAdded = false;
-                              _photoFile = null;
-                            });
-                            _loadEntities();
-                          },
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _typeBox(
+                              title: 'Distributor',
+                              icon: Icons.storefront_outlined,
+                              selected: _visitType == 'D',
+                              onTap: () {
+                                if (_visitType == 'D') {
+                                  return; // no-op if already selected
+                                }
+                                setState(() {
+                                  _visitType = 'D';
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                                _loadEntities();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _typeBox(
+                              title: 'Retailer',
+                              icon: Icons.store_mall_directory_outlined,
+                              selected: _visitType == 'R',
+                              onTap: () {
+                                if (_visitType == 'R') {
+                                  return; // no-op if already selected
+                                }
+                                setState(() {
+                                  _visitType = 'R';
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                                _loadEntities();
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _typeBox(
-                          title: 'Retailer',
-                          icon: Icons.store_mall_directory_outlined,
-                          selected: _visitType == 'R',
-                          onTap: () {
-                            if (_visitType == 'R') {
-                              return; // no-op if already selected
-                            }
-                            setState(() {
-                              _visitType = 'R';
-                              _entity = null;
-                              _entityId = null;
-                              _entityName = null;
-                              _entityError = null;
-                              _purposeController.text =
-                                  'Stock check & new display';
-                              _noteController.clear();
-                              _noteAdded = false;
-                              _photoFile = null;
-                            });
-                            _loadEntities();
-                          },
-                        ),
+                      // Add others fields (28/9/2026)
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Expanded(flex: 1, child: SizedBox()),
+                          Expanded(
+                            flex: 2,
+                            child: _typeBox(
+                              title: 'Others',
+                              icon: Icons.more_horiz,
+                              selected: _visitType == "O",
+                              onTap: () {
+                                if (_visitType == "O") return;
+                                setState(() {
+                                  _visitType = "O";
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _loadingEntities = false;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                              },
+                            ),
+                          ),
+                          const Expanded(flex: 1, child: SizedBox()),
+                        ],
                       ),
+                      _visitType == "O"
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 14),
+                              child: AppWidgets.buildTextField(
+                                label: 'Specify visit type',
+                                controller: _otherController,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ],
                   ),
-                  if (_visitType != null) ...[
+                  if (_visitType == 'D' || _visitType == 'R') ...[
                     const SizedBox(height: 12),
                     if (_loadingEntities)
                       Container(
