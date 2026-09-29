@@ -142,7 +142,6 @@ class DashboardRegion {
   });
 
   factory DashboardRegion.fromJson(Map<String, dynamic> json) {
-    print("Region Json ${json}");
     return DashboardRegion(
       name: _string(
         json['zone'] ?? json['region_name'] ?? json['zone'],

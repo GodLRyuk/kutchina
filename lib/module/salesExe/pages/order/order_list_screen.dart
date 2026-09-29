@@ -279,7 +279,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 ),
                 Text(
                   o.price != null
-                      ? '₹${o.total.toStringAsFixed(0)}'
+
+                      ? '₹${o.total.toStringAsFixed(2)}'
                       : 'Price pending',
                   style: TextStyle(
                     fontFamily: AppFonts.mono,

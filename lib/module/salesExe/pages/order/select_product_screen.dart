@@ -26,7 +26,8 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   String? _entity;
   String? _entityId;
   String _category = 'All';
-  Product? _selected;
+  //Product? _selected;
+  List<Product> _selectedProducts = [];
 
   // Full entity objects (id + name), not just display names, so the id
   // can be resolved once a name is picked in the sheet.
@@ -144,12 +145,15 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       AppWidgets.toast(context, 'No products found');
       return;
     }
-    final picked = await showModalBottomSheet<Product>(
+    final picked = await showModalBottomSheet<List<Product>>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) => _ProductPickerSheet(products: _categoryFiltered),
+      builder: (ctx) => _ProductPickerSheet(
+        products: _categoryFiltered,
+        initiallySelected: _selectedProducts,
+      ),
     );
-    if (picked != null) setState(() => _selected = picked);
+    if (picked != null) setState(() => _selectedProducts = picked);
   }
 
   void _proceed() {
@@ -158,9 +162,10 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
         context,
         'Select a ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} first',
       );
+
       return;
     }
-    if (_selected == null) {
+    if (_selectedProducts.isEmpty) {
       AppWidgets.toast(context, 'Select a product to continue');
       return;
     }
@@ -168,7 +173,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => ProductDetailScreen(
-          product: _selected!,
+         products: _selectedProducts,
           orderType: widget.orderType,
           entityName: _entity!,
           entityId: _entityId!,
@@ -176,6 +181,10 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
         ),
       ),
     );
+
+    
+
+    
   }
 
   @override
@@ -187,7 +196,8 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       _entity = null;
       _entityId = null;
       _category = 'All';
-      _selected = null;
+      // _selected = null;
+      _selectedProducts = [];
       _distributorError = null;
       _retailerError = null;
     });
@@ -343,7 +353,8 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                         return GestureDetector(
                           onTap: () => setState(() {
                             _category = c;
-                            _selected = null;
+                            // _selected = null;
+                            _selectedProducts = [];
                           }),
                           child: Container(
                             width:
@@ -380,15 +391,20 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                       }).toList(),
                     ),
                     const SizedBox(height: 14),
+
                     AppWidgets.buildStaticField(
                       label: _category == 'All'
                           ? 'Product'
                           : 'Product ($_category)',
-                      value: _selected?.name ?? 'Select a product',
-                      isPlaceholder: _selected == null,
+                      value: _selectedProducts.isEmpty
+                          ? 'Select a product'
+                          : _selectedProducts.length == 1
+                          ? _selectedProducts.first.name
+                          : '${_selectedProducts.length} products selected',
+                      isPlaceholder: _selectedProducts.isEmpty,
                       onTap: _pickProduct,
                     ),
-                    if (_selected != null) ...[
+                    for (final p in _selectedProducts) ...[
                       const SizedBox(height: 12),
                       AppWidgets.buildCard(
                         child: Column(
@@ -398,7 +414,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 Text(
-                                  _selected!.name,
+                                  p.name,
                                   style: const TextStyle(
                                     fontFamily: AppFonts.display,
                                     fontSize: 13,
@@ -409,7 +425,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              _selected!.category.name,
+                              p.category.name,
                               style: const TextStyle(
                                 fontSize: 11,
                                 color: AppColors.steel,
@@ -417,7 +433,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                             ),
                             const SizedBox(height: 8),
                             Text(
-                              '₹${_selected!.price.toStringAsFixed(0)}',
+                              '₹${p.price.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontFamily: AppFonts.mono,
                                 fontSize: 15,
@@ -450,7 +466,11 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
 
 class _ProductPickerSheet extends StatefulWidget {
   final List<Product> products;
-  const _ProductPickerSheet({required this.products});
+  final List<Product> initiallySelected;
+  const _ProductPickerSheet({
+    required this.products,
+    this.initiallySelected = const [],
+  });
 
   @override
   State<_ProductPickerSheet> createState() => _ProductPickerSheetState();
@@ -458,6 +478,11 @@ class _ProductPickerSheet extends StatefulWidget {
 
 class _ProductPickerSheetState extends State<_ProductPickerSheet> {
   final _searchController = TextEditingController();
+  late final Set<Product> _checked = {...widget.initiallySelected};
+
+  void _toggle(Product p) => setState(() {
+    _checked.contains(p) ? _checked.remove(p) : _checked.add(p);
+  });
 
   List<Product> get _filtered {
     final q = _searchController.text.trim().toLowerCase();
@@ -581,18 +606,38 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                   color: AppColors.steel,
                                 ),
                               ),
-                              trailing: Text(
-                                '₹${p.price.toStringAsFixed(0)}',
-                                style: const TextStyle(
-                                  fontFamily: AppFonts.mono,
-                                  fontSize: 12,
-                                  color: AppColors.regionCyan,
-                                ),
+                              trailing: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text(
+                                    '₹${p.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontFamily: AppFonts.mono,
+                                      fontSize: 12,
+                                      color: AppColors.regionCyan,
+                                    ),
+                                  ),
+
+                                  const SizedBox(width: 4),
+
+                                  Checkbox(
+                                    value: _checked.contains(p),
+                                    onChanged: (_) => _toggle(p),
+                                    materialTapTargetSize:
+                                        MaterialTapTargetSize.shrinkWrap,
+                                    visualDensity: VisualDensity.compact,
+                                  ),
+                                ],
                               ),
-                              onTap: () => Navigator.pop(context, p),
+                              onTap: () => _toggle(p),
                             );
                           },
                         ),
+                ),
+                const SizedBox(height: 12),
+                AppWidgets.buildButton(
+                  _checked.isEmpty ? 'Done' : 'Done (${_checked.length})',
+                  onTap: () => Navigator.pop(context, _checked.toList()),
                 ),
               ],
             ),

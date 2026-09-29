@@ -23,6 +23,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     text: 'Stock check & new display',
   );
   final _noteController = TextEditingController();
+  final _otherController = TextEditingController();
   bool _noteAdded = false;
   File? _photoFile;
   bool get _photoAdded => _photoFile != null;
@@ -42,6 +43,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   String? _address;
   bool _loadingLocation = true;
   bool _loadingAddress = false;
+  final List<File> _extraPhotos = [];
 
   /// Maps the UI label to the API code expected by the backend.
   String? get _visitTypeCode {
@@ -50,13 +52,20 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         return 'D';
       case 'R':
         return 'R';
+      case 'O':
+        return 'O';
       default:
         return null;
     }
   }
 
   List<dynamic> get _entityList =>
-      _visitType == 'D' ? _distributors : _retailers;
+      // _visitType == 'D' ? _distributors : _retailers;
+      _visitType == 'D'
+      ? _distributors
+      : _visitType == 'R'
+      ? _retailers
+      : [];
 
   List<String> get _entityOptions =>
       _entityList.map<String>((e) => e.name as String).toList();
@@ -71,6 +80,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   void dispose() {
     _purposeController.dispose();
     _noteController.dispose();
+    _otherController.dispose();
     super.dispose();
   }
 
@@ -83,7 +93,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     try {
       if (_visitType == 'D') {
         _distributors = await MastersApi.fetchDistributors();
-      } else {
+      } else if (_visitType == 'R') {
         _retailers = await MastersApi.fetchRetailers();
       }
       setState(() => _loadingEntities = false);
@@ -116,6 +126,58 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   void _removePhoto() {
     setState(() => _photoFile = null);
   }
+
+  // Add 29-9-2026
+  Future<void> _pickPhoto() async {
+    try {
+      final XFile? shot = await _picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 80,
+        preferredCameraDevice: CameraDevice.rear,
+      );
+      if (shot == null) return;
+      setState(() => _extraPhotos.add(File(shot.path)));
+    } catch (e) {
+      if (!mounted) return;
+      AppWidgets.toast(context, 'Could not open camera');
+    }
+  }
+
+  void _removeExtraPhoto(int index) {
+    setState(() => _extraPhotos.removeAt(index));
+  }
+
+  void _viewPhoto(File files) {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => Dialog(
+        backgroundColor: Colors.black,
+        insetPadding: const EdgeInsets.all(12),
+        child: Stack(
+          children: [
+            InteractiveViewer(child: Image.file(files, fit: BoxFit.contain)),
+            Positioned(
+              top: 6,
+              right: 6,
+              child: GestureDetector(
+                onTap: () => Navigator.pop(ctx),
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: Colors.black54,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.close, size: 18, color: Colors.white),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Done
 
   Future<void> _addNote() async {
     final result = await showModalBottomSheet<String>(
@@ -171,7 +233,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
   Future<void> _pickEntity() async {
     if (_visitType == null) {
-      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      AppWidgets.toast(
+        context,
+        'Select Distributor or Retailer or Others first',
+      );
       return;
     }
 
@@ -233,14 +298,28 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     if (_submitting) return;
 
     if (_visitType == null) {
-      AppWidgets.toast(context, 'Select Distributor or Retailer first');
+      AppWidgets.toast(
+        context,
+        'Select Distributor or Retailer or Others first',
+      );
       return;
     }
-    if (_entity == null || _entityId == null) {
+    // if (_entity == null || _entityId == null) {
+    //   AppWidgets.toast(
+    //     context,
+    //     'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
+    //   );
+    //   return;
+    // }
+    if (_visitType != 'O' && (_entity == null || _entityId == null)) {
       AppWidgets.toast(
         context,
         'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
       );
+      return;
+    }
+    if (_visitType == 'O' && _otherController.text.trim().isEmpty) {
+      AppWidgets.toast(context, 'Please specify visit type');
       return;
     }
     if (_lat == null || _long == null) {
@@ -263,14 +342,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       return;
     }
     if (_photoFile == null) {
-      AppWidgets.toast(context, "Please Take a selfe");
+      AppWidgets.toast(context, "Please Take a selfie");
       return;
     }
+
+    final isOther = _visitType == 'O';
 
     final payload = <String, dynamic>{
       'visit_type': _visitTypeCode,
       'visitor_id': _entityId,
-      'visitor_name': _entityName,
+      'visitor_name': isOther ? _otherController.text.trim() : _entityName,
       'visit_purpose': _purposeController.text.trim(),
       'note': _noteController.text.trim(),
       'lat': _lat?.toString() ?? '',
@@ -278,12 +359,40 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       'address': _address!.trim(),
     };
 
+    final images = <MultipartFile>[];
+
     if (_photoFile != null) {
-      payload['image'] = await MultipartFile.fromFile(
-        _photoFile!.path,
-        filename: _photoFile!.path.split('/').last,
+      images.add(
+        await MultipartFile.fromFile(
+          _photoFile!.path,
+          filename: _photoFile!.path.split('/').last,
+        ),
       );
     }
+
+    for (final file in _extraPhotos) {
+      images.add(
+        await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+        ),
+      );
+    }
+
+    if (images.isNotEmpty) {
+      payload['image'] = images;
+      print("payload ${payload['image']}");
+    }
+
+    debugPrint('===== CHECK-IN PAYLOAD =====');
+    payload.forEach((key, value) {
+      if (value is MultipartFile) {
+        debugPrint('$key: ${value.filename} (${value.length} bytes)');
+      } else {
+        debugPrint('$key: $value');
+      }
+    });
+    debugPrint('============================');
 
     setState(() => _submitting = true);
     try {
@@ -576,62 +685,107 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
                   ),
                   const SizedBox(height: 8),
-                  Row(
+                  Column(
                     children: [
-                      Expanded(
-                        child: _typeBox(
-                          title: 'Distributor',
-                          icon: Icons.storefront_outlined,
-                          selected: _visitType == 'D',
-                          onTap: () {
-                            if (_visitType == 'D') {
-                              return; // no-op if already selected
-                            }
-                            setState(() {
-                              _visitType = 'D';
-                              _entity = null;
-                              _entityId = null;
-                              _entityName = null;
-                              _entityError = null;
-                              _purposeController.text =
-                                  'Stock check & new display';
-                              _noteController.clear();
-                              _noteAdded = false;
-                              _photoFile = null;
-                            });
-                            _loadEntities();
-                          },
-                        ),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _typeBox(
+                              title: 'Distributor',
+                              icon: Icons.storefront_outlined,
+                              selected: _visitType == 'D',
+                              onTap: () {
+                                if (_visitType == 'D') {
+                                  return; // no-op if already selected
+                                }
+                                setState(() {
+                                  _visitType = 'D';
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                                _loadEntities();
+                              },
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _typeBox(
+                              title: 'Retailer',
+                              icon: Icons.store_mall_directory_outlined,
+                              selected: _visitType == 'R',
+                              onTap: () {
+                                if (_visitType == 'R') {
+                                  return; // no-op if already selected
+                                }
+                                setState(() {
+                                  _visitType = 'R';
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                                _loadEntities();
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: _typeBox(
-                          title: 'Retailer',
-                          icon: Icons.store_mall_directory_outlined,
-                          selected: _visitType == 'R',
-                          onTap: () {
-                            if (_visitType == 'R') {
-                              return; // no-op if already selected
-                            }
-                            setState(() {
-                              _visitType = 'R';
-                              _entity = null;
-                              _entityId = null;
-                              _entityName = null;
-                              _entityError = null;
-                              _purposeController.text =
-                                  'Stock check & new display';
-                              _noteController.clear();
-                              _noteAdded = false;
-                              _photoFile = null;
-                            });
-                            _loadEntities();
-                          },
-                        ),
+                      // Add others fields (28/9/2026)
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          const Expanded(flex: 1, child: SizedBox()),
+                          Expanded(
+                            flex: 2,
+                            child: _typeBox(
+                              title: 'Others',
+                              icon: Icons.more_horiz,
+                              selected: _visitType == "O",
+                              onTap: () {
+                                if (_visitType == "O") return;
+                                setState(() {
+                                  _visitType = "O";
+                                  _entity = null;
+                                  _entityId = null;
+                                  _entityName = null;
+                                  _entityError = null;
+                                  _loadingEntities = false;
+                                  _purposeController.text =
+                                      'Stock check & new display';
+                                  _noteController.clear();
+                                  _noteAdded = false;
+                                  _photoFile = null;
+                                });
+                              },
+                            ),
+                          ),
+                          const Expanded(flex: 1, child: SizedBox()),
+                        ],
                       ),
+                      _visitType == "O"
+                          ? Padding(
+                              padding: const EdgeInsets.only(top: 14),
+                              child: AppWidgets.buildTextField(
+                                label: 'Specify visit type',
+                                controller: _otherController,
+                              ),
+                            )
+                          : const SizedBox.shrink(),
                     ],
                   ),
-                  if (_visitType != null) ...[
+                  if (_visitType == 'D' || _visitType == 'R') ...[
                     const SizedBox(height: 12),
                     if (_loadingEntities)
                       Container(
@@ -785,7 +939,14 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ),
                   ],
 
-                  const SizedBox(height: 20),
+                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
+                  _photoSection(),
+                  SizedBox(
+                    height: (_photoFile != null || _extraPhotos.isNotEmpty)
+                        ? 40
+                        : 24,
+                  ),
+
                   AppWidgets.buildButton(
                     _submitting
                         ? 'Submitting...'
@@ -807,6 +968,177 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
+  Widget _photoSection() {
+    final screenWidth = MediaQuery.of(context).size.width;
+    const perRow = 4;
+    final box = ((screenWidth - 36 - 10 * (perRow - 1)) / perRow)
+        .floorToDouble();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Header: title on the left, button on the right
+        Row(
+          children: [
+            Icon(
+              Icons.photo_library_outlined,
+              size: 18,
+              color: AppColors.redDark,
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'PHOTOS',
+              style: TextStyle(
+                fontSize: 11,
+                color: AppColors.steel,
+                fontWeight: FontWeight.w700,
+                letterSpacing: .5,
+              ),
+            ),
+            const Spacer(),
+            InkWell(
+              onTap: _pickPhoto, // opens camera, adds photo to the grid
+              borderRadius: BorderRadius.circular(20),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.redLight.withOpacity(.25),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: AppColors.redDark.withOpacity(.35)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      _extraPhotos.isEmpty
+                          ? Icons.photo_camera_outlined
+                          : Icons.add_a_photo_outlined,
+                      size: 16,
+                      color: AppColors.redDark,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _extraPhotos.isEmpty
+                          ? 'Capture Photos'
+                          : 'Add more photos',
+                      style: TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.redDark,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+
+        const SizedBox(height: 15),
+
+        // Photos wrap onto the next line automatically
+        if (_extraPhotos.isNotEmpty)
+          Wrap(
+            spacing: 10,
+            runSpacing: 12,
+            children: [
+              for (int i = 0; i < _extraPhotos.length; i++)
+                _thumb(_extraPhotos[i], () => _removeExtraPhoto(i), size: box),
+            ],
+          ),
+      ],
+    );
+  }
+
+  Widget _thumb(
+    File file,
+    VoidCallback onRemove, {
+    String? label,
+    double size = 72,
+  }) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          // Photo
+          GestureDetector(
+            onTap: () => _viewPhoto(file),
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(14),
+                border: Border.all(color: Colors.white, width: 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(.10),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Image.file(file, fit: BoxFit.cover, cacheWidth: 300),
+              ),
+            ),
+          ),
+
+          // Selfie label
+          if (label != null)
+            Positioned(
+              left: 5,
+              bottom: 5,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(.60),
+                  borderRadius: BorderRadius.circular(6),
+                ),
+                child: Text(
+                  label,
+                  style: const TextStyle(
+                    fontSize: 8.5,
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ),
+
+          // Remove button
+          Positioned(
+            top: -3,
+            right: -3,
+            child: GestureDetector(
+              onTap: onRemove,
+              child: Container(
+                width: 20,
+                height: 20,
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(.72),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 1.2),
+                ),
+                child: const Icon(
+                  Icons.close_rounded,
+                  size: 12,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ***************************************************************
   Widget _typeBox({
     required String title,
     required IconData icon,
@@ -914,4 +1246,37 @@ class _MapPlaceholderPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DashedBorderPainter extends CustomPainter {
+  final Color color;
+  final double radius;
+  _DashedBorderPainter({required this.color, this.radius = 12});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.5;
+
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
+      );
+
+    const dash = 5.0;
+    const gap = 4.0;
+    for (final metric in path.computeMetrics()) {
+      double distance = 0;
+      while (distance < metric.length) {
+        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant _DashedBorderPainter old) =>
+      old.color != color || old.radius != radius;
 }
