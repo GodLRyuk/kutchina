@@ -1,8 +1,97 @@
 import 'package:kutchina/core/services/api_services.dart';
 
-// ===========================================================================
-// Product demand
-// ===========================================================================
+class TrackedValue {
+  final dynamic raw;
+  final bool notTracked;
+  final String? label;
+  final String? status;
+
+  const TrackedValue({
+    this.raw,
+    this.notTracked = true,
+    this.label,
+    this.status,
+  });
+
+  factory TrackedValue.fromJson(dynamic json) {
+    if (json is Map) {
+      final v = json['value'];
+      return TrackedValue(
+        raw: v,
+        notTracked: json['not_tracked'] == true || v == null,
+        label: json['label']?.toString(),
+        status: json['status']?.toString(),
+      );
+    }
+    return TrackedValue(raw: json, notTracked: json == null);
+  }
+
+  bool get hasValue => !notTracked && raw != null;
+
+  double? get number {
+    final v = raw;
+    if (v is num) return v.toDouble();
+    if (v is String) return double.tryParse(v);
+    return null;
+  }
+
+  String? get text => raw?.toString();
+}
+
+class TrendPoint {
+  final DateTime? date;
+  final double value;
+  const TrendPoint({required this.date, required this.value});
+
+  factory TrendPoint.fromJson(Map<String, dynamic> json) => TrendPoint(
+    date: DateTime.tryParse(json['date']?.toString() ?? ''),
+    value: _number(json['value']),
+  );
+}
+
+List<TrendPoint> _trendFrom(dynamic v) => v is List
+    ? v.whereType<Map>().map((e) => TrendPoint.fromJson(_asMap(e))).toList()
+    : <TrendPoint>[];
+
+/// Action used by dealer / regional / team reports.
+class ReportAction {
+  final int? id;
+  final String name;
+  final String action;
+  final String reason;
+  final String impactType;
+  const ReportAction({
+    required this.id,
+    required this.name,
+    required this.action,
+    required this.reason,
+    required this.impactType,
+  });
+
+  factory ReportAction.fromJson(Map<String, dynamic> json) => ReportAction(
+    id: _nullableNumber(
+      json['dealer_id'] ??
+          json['zone_id'] ??
+          json['user_id'] ??
+          json['product_id'],
+    )?.round(),
+    name:
+        (json['dealer_name'] ??
+                json['zone'] ??
+                json['salesperson'] ??
+                json['product_name'])
+            ?.toString() ??
+        '',
+    action: json['action']?.toString() ?? '',
+    reason: json['reason']?.toString() ?? '',
+    impactType: json['impact_type']?.toString() ?? '',
+  );
+}
+
+List<ReportAction> _actionsFromJson(dynamic v) => v is List
+    ? v.whereType<Map>().map((e) => ReportAction.fromJson(_asMap(e))).toList()
+    : <ReportAction>[];
+
 class ProductDemandReport {
   final String period;
   final DateTime? generatedAt;
@@ -42,11 +131,12 @@ class ProductDemandItem {
   final double previousPeriodSales;
   final double? growthPercentage;
   final double averageSellingPrice;
-  final String demandDirection;
-  final double confidence;
-  final double projectedDemandUnits;
-  final double projectedRevenue;
-  final String insight;
+  final List<TrendPoint> trend;
+  final double nextMonthProjected;
+  final TrackedValue targetValue;
+  final TrackedValue achievementPercentage;
+  final TrackedValue achievementStatus;
+  final TrackedValue nextMonthTarget;
 
   const ProductDemandItem({
     required this.productId,
@@ -59,14 +149,16 @@ class ProductDemandItem {
     required this.previousPeriodSales,
     required this.growthPercentage,
     required this.averageSellingPrice,
-    required this.demandDirection,
-    required this.confidence,
-    required this.projectedDemandUnits,
-    required this.projectedRevenue,
-    required this.insight,
+    required this.trend,
+    required this.nextMonthProjected,
+    required this.targetValue,
+    required this.achievementPercentage,
+    required this.achievementStatus,
+    required this.nextMonthTarget,
   });
 
   factory ProductDemandItem.fromJson(Map<String, dynamic> json) {
+    final rawTrend = json['trend'] is List ? json['trend'] as List : const [];
     return ProductDemandItem(
       productId: _number(json['product_id']).round(),
       productName: json['product_name']?.toString() ?? '',
@@ -78,54 +170,132 @@ class ProductDemandItem {
       previousPeriodSales: _number(json['previous_period_sales']),
       growthPercentage: _nullableNumber(json['growth_percentage']),
       averageSellingPrice: _number(json['average_selling_price']),
-      demandDirection: json['demand_direction']?.toString() ?? '',
-      confidence: _number(json['confidence']),
-      projectedDemandUnits: _number(json['projected_demand_units']),
-      projectedRevenue: _number(json['projected_revenue']),
-      insight: json['insight']?.toString() ?? 'No Product Demand',
+      trend: rawTrend
+          .whereType<Map>()
+          .map((e) => TrendPoint.fromJson(_asMap(e)))
+          .toList(),
+      nextMonthProjected: _number(json['next_month_projected']),
+      targetValue: TrackedValue.fromJson(json['target_value']),
+      achievementPercentage: TrackedValue.fromJson(
+        json['achievement_percentage'],
+      ),
+      achievementStatus: TrackedValue.fromJson(json['achievement_status']),
+      nextMonthTarget: TrackedValue.fromJson(json['next_month_target']),
     );
   }
+}
+
+class ProductDemandTopSku {
+  final int productId;
+  final String productName;
+  final double salesValue;
+
+  const ProductDemandTopSku({
+    required this.productId,
+    required this.productName,
+    required this.salesValue,
+  });
+
+  factory ProductDemandTopSku.fromJson(Map<String, dynamic> json) =>
+      ProductDemandTopSku(
+        productId: _number(json['product_id']).round(),
+        productName: json['product_name']?.toString() ?? '',
+        salesValue: _number(json['sales_value']),
+      );
+}
+
+class ProductDemandAction {
+  final int productId;
+  final String productName;
+  final String action;
+  final String reason;
+  final String impactType; // good / warn / risk
+
+  const ProductDemandAction({
+    required this.productId,
+    required this.productName,
+    required this.action,
+    required this.reason,
+    required this.impactType,
+  });
+
+  factory ProductDemandAction.fromJson(Map<String, dynamic> json) =>
+      ProductDemandAction(
+        productId: _number(json['product_id']).round(),
+        productName: json['product_name']?.toString() ?? '',
+        action: json['action']?.toString() ?? '',
+        reason: json['reason']?.toString() ?? '',
+        impactType: json['impact_type']?.toString() ?? '',
+      );
 }
 
 class ProductDemandSummary {
-  final String topProductName;
-  final double topProductSalesValue;
-  final int slowMoversCount;
-  final double? averageGrowthPercentage;
+  final int productsTracked;
+  final ProductDemandTopSku topSku;
+  final TrackedValue missedTarget;
+  final TrackedValue averageAchievementPercentage;
+  final TrackedValue needsRecoveryCount;
+  final double projectedRevenueNextMonth;
+  final String headline;
+  final List<ProductDemandAction> actions;
 
   const ProductDemandSummary({
-    required this.topProductName,
-    required this.topProductSalesValue,
-    required this.slowMoversCount,
-    required this.averageGrowthPercentage,
+    required this.productsTracked,
+    required this.topSku,
+    required this.missedTarget,
+    required this.averageAchievementPercentage,
+    required this.needsRecoveryCount,
+    required this.projectedRevenueNextMonth,
+    required this.headline,
+    required this.actions,
   });
 
+  /// Convenience getters (kept so existing callers don't break).
+  String get topProductName => topSku.productName;
+  double get topProductSalesValue => topSku.salesValue;
+
   factory ProductDemandSummary.fromJson(Map<String, dynamic> json) {
-    final topProduct = _asMap(json['top_product']);
+    final rawActions = json['actions'] is List
+        ? json['actions'] as List
+        : const [];
     return ProductDemandSummary(
-      topProductName: topProduct['product_name']?.toString() ?? '',
-      topProductSalesValue: _number(topProduct['sales_value']),
-      slowMoversCount: _number(json['slow_movers_count']).round(),
-      averageGrowthPercentage: _nullableNumber(
-        json['average_growth_percentage'],
+      productsTracked: _number(json['products_tracked']).round(),
+      // key is `top_sku` (was misspelled `top_suk` before)
+      topSku: ProductDemandTopSku.fromJson(_asMap(json['top_sku'])),
+      missedTarget: TrackedValue.fromJson(json['missed_target']),
+      averageAchievementPercentage: TrackedValue.fromJson(
+        json['average_achievement_percentage'],
       ),
+      needsRecoveryCount: TrackedValue.fromJson(json['needs_recovery_count']),
+      projectedRevenueNextMonth: _number(json['projected_revenue_next_month']),
+      headline: json['headline']?.toString() ?? '',
+      actions: rawActions
+          .whereType<Map>()
+          .map((e) => ProductDemandAction.fromJson(_asMap(e)))
+          .toList(),
     );
   }
 }
 
-// ===========================================================================
-// Dealer potential — no `summary` block; KPIs are computed client-side
-// ===========================================================================
 class DealerPotentialItem {
   final int dealerId;
   final String dealerName;
-  final String dealerCategory; // Distributor / Retailer
+  final String dealerCategory;
   final DateTime? lastVisitDate;
   final int visitFrequency;
-  final int daysSinceLastVisit;
-  final String dealerSegment; // steady / at_risk / high_potential
-  final String visitEngagementLevel; // low / medium / high
-  final String insight;
+  final int? daysSinceLastVisit;
+  final TrackedValue salesValue;
+  final TrackedValue orderCount;
+  final TrackedValue averageOrderValue;
+  final List<TrendPoint> trend;
+  final TrackedValue nextMonthProjected;
+  final TrackedValue growthTarget;
+  final TrackedValue potentialValue;
+  final TrackedValue achievementPercentage;
+  final TrackedValue achievementStatus;
+  final TrackedValue nextMonthTarget;
+  final TrackedValue outstandingAmount;
+  final TrackedValue city;
 
   const DealerPotentialItem({
     required this.dealerId,
@@ -134,9 +304,18 @@ class DealerPotentialItem {
     required this.lastVisitDate,
     required this.visitFrequency,
     required this.daysSinceLastVisit,
-    required this.dealerSegment,
-    required this.visitEngagementLevel,
-    required this.insight,
+    required this.salesValue,
+    required this.orderCount,
+    required this.averageOrderValue,
+    required this.trend,
+    required this.nextMonthProjected,
+    required this.growthTarget,
+    required this.potentialValue,
+    required this.achievementPercentage,
+    required this.achievementStatus,
+    required this.nextMonthTarget,
+    required this.outstandingAmount,
+    required this.city,
   });
 
   factory DealerPotentialItem.fromJson(Map<String, dynamic> json) {
@@ -148,17 +327,69 @@ class DealerPotentialItem {
         json['last_visit_date']?.toString() ?? '',
       ),
       visitFrequency: _number(json['visit_frequency']).round(),
-      daysSinceLastVisit: _number(json['days_since_last_visit']).round(),
-      dealerSegment: json['dealer_segment']?.toString() ?? '',
-      visitEngagementLevel: json['visit_engagement_level']?.toString() ?? '',
-      insight: json['insight']?.toString() ?? 'No Dealer Potential',
+      daysSinceLastVisit: _nullableNumber(
+        json['days_since_last_visit'],
+      )?.round(),
+      salesValue: TrackedValue.fromJson(json['sales_value']),
+      orderCount: TrackedValue.fromJson(json['order_count']),
+      averageOrderValue: TrackedValue.fromJson(json['average_order_value']),
+      trend: _trendFrom(json['trend']),
+      nextMonthProjected: TrackedValue.fromJson(json['next_month_projected']),
+      growthTarget: TrackedValue.fromJson(json['growth_target']),
+      potentialValue: TrackedValue.fromJson(json['potential_value']),
+      achievementPercentage: TrackedValue.fromJson(
+        json['achievement_percentage'],
+      ),
+      achievementStatus: TrackedValue.fromJson(json['achievement_status']),
+      nextMonthTarget: TrackedValue.fromJson(json['next_month_target']),
+      outstandingAmount: TrackedValue.fromJson(json['outstanding_amount']),
+      city: TrackedValue.fromJson(json['city']),
     );
   }
 }
 
+class DealerPotentialSummary {
+  final int dealersTracked;
+  final TrackedValue atChurnRisk;
+  final double? averageOrderValue;
+  final TrackedValue highGrowthPotential;
+  final TrackedValue outstanding60d;
+  final TrackedValue needsRecoveryCount;
+  final String headline;
+  final List<ReportAction> actions;
+
+  const DealerPotentialSummary({
+    required this.dealersTracked,
+    required this.atChurnRisk,
+    required this.averageOrderValue,
+    required this.highGrowthPotential,
+    required this.outstanding60d,
+    required this.needsRecoveryCount,
+    required this.headline,
+    required this.actions,
+  });
+
+  factory DealerPotentialSummary.fromJson(Map<String, dynamic> json) =>
+      DealerPotentialSummary(
+        dealersTracked: _number(json['dealers_tracked']).round(),
+        atChurnRisk: TrackedValue.fromJson(json['at_churn_risk']),
+        averageOrderValue: TrackedValue.fromJson(
+          json['average_order_value'],
+        ).number,
+        highGrowthPotential: TrackedValue.fromJson(
+          json['high_growth_potential'],
+        ),
+        outstanding60d: TrackedValue.fromJson(json['outstanding_60d']),
+        needsRecoveryCount: TrackedValue.fromJson(json['needs_recovery_count']),
+        headline: json['headline']?.toString() ?? '',
+        actions: _actionsFromJson(json['actions']),
+      );
+}
+
 class DealerPotentialReport {
   final List<DealerPotentialItem> items;
-  const DealerPotentialReport({required this.items});
+  final DealerPotentialSummary summary;
+  const DealerPotentialReport({required this.items, required this.summary});
 
   factory DealerPotentialReport.fromJson(Map<String, dynamic> json) {
     final rawItems = json['data'] is List ? json['data'] as List : const [];
@@ -167,23 +398,11 @@ class DealerPotentialReport {
           .whereType<Map>()
           .map((e) => DealerPotentialItem.fromJson(_asMap(e)))
           .toList(),
+      summary: DealerPotentialSummary.fromJson(_asMap(json['summary'])),
     );
   }
-
-  int get atRiskCount =>
-      items.where((e) => e.dealerSegment == 'at_risk').length;
-  int get highPotentialCount =>
-      items.where((e) => e.dealerSegment == 'high_potential').length;
-  int get steadyCount => items.where((e) => e.dealerSegment == 'steady').length;
-  double get avgVisitFrequency => items.isEmpty
-      ? 0
-      : items.map((e) => e.visitFrequency).reduce((a, b) => a + b) /
-            items.length;
 }
 
-// ===========================================================================
-// Order fulfilment — no `summary` block; KPIs are computed client-side
-// ===========================================================================
 class FulfilmentOrderItem {
   final int orderId;
   final String orderNumber;
@@ -249,10 +468,6 @@ class OrderFulfilmentReport {
       items.where((e) => e.riskLevel.toLowerCase() != 'low').length;
 }
 
-// ===========================================================================
-// Sales projection — usually one aggregate row per period; `summary.forecast`
-// only appears for horizon=next_3_months and its shape isn't confirmed yet.
-// ===========================================================================
 class SalesProjectionItem {
   final String period;
   final String targetPeriod;
@@ -327,8 +542,6 @@ class SalesProjectionItem {
 class SalesProjectionReport {
   final List<SalesProjectionItem> items;
 
-  /// Raw forecast block — only present for horizon=next_3_months. Shape not
-  /// confirmed yet, kept as a raw map until a sample response is available.
   final Map<String, dynamic>? forecast;
 
   const SalesProjectionReport({required this.items, this.forecast});
@@ -346,92 +559,228 @@ class SalesProjectionReport {
   }
 }
 
-// ===========================================================================
-// Team performance — no `summary` block; KPIs are computed client-side
-// ===========================================================================
 class TeamPerformanceItem {
   final int userId;
   final String salesperson;
-  final double target;
+  final String? zone;
+  final TrackedValue target;
   final double achievedSales;
   final int ordersBooked;
-  final double achievementPercentage;
+  final TrackedValue achievementPercentage;
+  final String? achievementStatus;
+  final double? changePercentage;
+  final List<TrendPoint> trend;
+  final double nextMonthProjected;
+  final TrackedValue nextMonthTarget;
   final int dealersCovered;
   final int completedVisits;
   final double attendancePct;
-  final double? aiPerformanceScore;
+  final double? aiScore;
   final bool coachingFlag;
   final String? coachingReason;
-  final String insight;
 
   const TeamPerformanceItem({
     required this.userId,
     required this.salesperson,
+    required this.zone,
     required this.target,
     required this.achievedSales,
     required this.ordersBooked,
     required this.achievementPercentage,
+    required this.achievementStatus,
+    required this.changePercentage,
+    required this.trend,
+    required this.nextMonthProjected,
+    required this.nextMonthTarget,
     required this.dealersCovered,
     required this.completedVisits,
     required this.attendancePct,
-    required this.aiPerformanceScore,
+    required this.aiScore,
     required this.coachingFlag,
     required this.coachingReason,
-    required this.insight,
   });
 
   factory TeamPerformanceItem.fromJson(Map<String, dynamic> json) {
     return TeamPerformanceItem(
       userId: _number(json['user_id']).round(),
       salesperson: json['salesperson']?.toString() ?? '',
-      target: _number(json['target']),
+      zone: json['zone']?.toString(),
+      target: TrackedValue.fromJson(json['target']),
       achievedSales: _number(json['achieved_sales']),
       ordersBooked: _number(json['orders_booked']).round(),
-      achievementPercentage: _number(json['achievement_percentage']),
+      achievementPercentage: TrackedValue.fromJson(
+        json['achievement_percentage'],
+      ),
+      achievementStatus: json['achievement_status']?.toString(),
+      changePercentage: _nullableNumber(json['change_percentage']),
+      trend: _trendFrom(json['trend']),
+      nextMonthProjected: _number(json['next_month_projected']),
+      nextMonthTarget: TrackedValue.fromJson(json['next_month_target']),
       dealersCovered: _number(json['dealers_covered']).round(),
       completedVisits: _number(json['completed_visits']).round(),
       attendancePct: _number(json['attendance_pct']),
-      aiPerformanceScore: _nullableNumber(json['ai_performance_score']),
+      aiScore: _nullableNumber(json['ai_score']),
       coachingFlag: json['coaching_flag'] == true,
       coachingReason: json['coaching_reason']?.toString(),
-      insight: json['insight']?.toString() ?? 'No Team Perfomance',
     );
   }
 }
 
 class TeamPerformanceReport {
   final List<TeamPerformanceItem> items;
-  const TeamPerformanceReport({required this.items});
+  final int repsTracked;
+  final double? teamAchievementPercentage;
+  final double? averageAiScore;
+  final int visitsCompleted;
+  final int flaggedForCoaching;
+  final String headline;
+  final List<ReportAction> actions;
+
+  const TeamPerformanceReport({
+    required this.items,
+    required this.repsTracked,
+    required this.teamAchievementPercentage,
+    required this.averageAiScore,
+    required this.visitsCompleted,
+    required this.flaggedForCoaching,
+    required this.headline,
+    required this.actions,
+  });
 
   factory TeamPerformanceReport.fromJson(Map<String, dynamic> json) {
     final rawItems = json['data'] is List ? json['data'] as List : const [];
+    final s = _asMap(json['summary']);
+    final items = rawItems
+        .whereType<Map>()
+        .map((e) => TeamPerformanceItem.fromJson(_asMap(e)))
+        .toList();
     return TeamPerformanceReport(
-      items: rawItems
-          .whereType<Map>()
-          .map((e) => TeamPerformanceItem.fromJson(_asMap(e)))
-          .toList(),
+      items: items,
+      repsTracked: s['reps_tracked'] == null
+          ? items.length
+          : _number(s['reps_tracked']).round(),
+      teamAchievementPercentage: _nullableNumber(
+        s['team_achievement_percentage'],
+      ),
+      averageAiScore: _nullableNumber(s['average_ai_score']),
+      visitsCompleted: _number(s['visits_completed']).round(),
+      flaggedForCoaching: s['flagged_for_coaching'] == null
+          ? items.where((e) => e.coachingFlag).length
+          : _number(s['flagged_for_coaching']).round(),
+      headline: s['headline']?.toString() ?? '',
+      actions: _actionsFromJson(s['actions']),
     );
   }
 
   double get totalAchievedSales =>
       items.fold(0.0, (sum, e) => sum + e.achievedSales);
-  double get avgAchievementPercentage => items.isEmpty
-      ? 0
-      : items.map((e) => e.achievementPercentage).reduce((a, b) => a + b) /
-            items.length;
-  int get coachingFlagCount => items.where((e) => e.coachingFlag).length;
 }
 
-// ===========================================================================
-// API
-// ===========================================================================
+class RegionalZoneItem {
+  final int zoneId;
+  final String zone;
+  final double salesValue;
+  final TrackedValue targetValue;
+  final TrackedValue achievementPercentage;
+  final double? changePercentage;
+  final List<TrendPoint> trend;
+  final String? achievementStatus;
+  final double nextMonthProjected;
+  final TrackedValue nextMonthTarget;
+  final TrackedValue marketPotential;
+  final TrackedValue opportunityGap;
+  final TrackedValue activeDealers;
+  final TrackedValue inactiveDealers;
+
+  const RegionalZoneItem({
+    required this.zoneId,
+    required this.zone,
+    required this.salesValue,
+    required this.targetValue,
+    required this.achievementPercentage,
+    required this.changePercentage,
+    required this.trend,
+    required this.achievementStatus,
+    required this.nextMonthProjected,
+    required this.nextMonthTarget,
+    required this.marketPotential,
+    required this.opportunityGap,
+    required this.activeDealers,
+    required this.inactiveDealers,
+  });
+
+  factory RegionalZoneItem.fromJson(Map<String, dynamic> json) =>
+      RegionalZoneItem(
+        zoneId: _number(json['zone_id']).round(),
+        zone: json['zone']?.toString() ?? '',
+        salesValue: _number(json['sales_value']),
+        targetValue: TrackedValue.fromJson(json['target_value']),
+        achievementPercentage: TrackedValue.fromJson(
+          json['achievement_percentage'],
+        ),
+        changePercentage: _nullableNumber(json['change_percentage']),
+        trend: _trendFrom(json['trend']),
+        achievementStatus: json['achievement_status']?.toString(),
+        nextMonthProjected: _number(json['next_month_projected']),
+        nextMonthTarget: TrackedValue.fromJson(json['next_month_target']),
+        marketPotential: TrackedValue.fromJson(json['market_potential']),
+        opportunityGap: TrackedValue.fromJson(json['opportunity_gap']),
+        activeDealers: TrackedValue.fromJson(json['active_dealers']),
+        inactiveDealers: TrackedValue.fromJson(json['inactive_dealers']),
+      );
+}
+
+class RegionalOpportunityReport {
+  final List<RegionalZoneItem> items;
+  final int zonesTracked;
+  final String? bestZoneName;
+  final double? bestZoneAchievement;
+  final TrackedValue largestOpportunityGap;
+  final TrackedValue activeDealers;
+  final TrackedValue inactiveDealers;
+  final String headline;
+  final List<ReportAction> actions;
+
+  const RegionalOpportunityReport({
+    required this.items,
+    required this.zonesTracked,
+    required this.bestZoneName,
+    required this.bestZoneAchievement,
+    required this.largestOpportunityGap,
+    required this.activeDealers,
+    required this.inactiveDealers,
+    required this.headline,
+    required this.actions,
+  });
+
+  factory RegionalOpportunityReport.fromJson(Map<String, dynamic> json) {
+    final rawItems = json['data'] is List ? json['data'] as List : const [];
+    final s = _asMap(json['summary']);
+    final best = _asMap(s['best_performing_zone']);
+    final items = rawItems
+        .whereType<Map>()
+        .map((e) => RegionalZoneItem.fromJson(_asMap(e)))
+        .toList();
+    return RegionalOpportunityReport(
+      items: items,
+      zonesTracked: s['zones_tracked'] == null
+          ? items.length
+          : _number(s['zones_tracked']).round(),
+      bestZoneName: best['zone']?.toString(),
+      bestZoneAchievement: _nullableNumber(best['achievement_percentage']),
+      largestOpportunityGap: TrackedValue.fromJson(
+        s['largest_opportunity_gap'],
+      ),
+      activeDealers: TrackedValue.fromJson(s['active_dealers']),
+      inactiveDealers: TrackedValue.fromJson(s['inactive_dealers']),
+      headline: s['headline']?.toString() ?? '',
+      actions: _actionsFromJson(s['actions']),
+    );
+  }
+}
+
 class AdminReportApi {
   AdminReportApi._();
-
-  /// Generic call shared by every report type — same endpoint, different
-  /// `report_type` (and optionally `period` / `horizon`). Returns the raw
-  /// decoded body; used directly only for report types without a typed
-  /// model yet (e.g. regional_opportunity).
   static Future<Map<String, dynamic>> generate({
     required String reportType,
     String period = 'month',
@@ -488,6 +837,16 @@ class AdminReportApi {
   }) async {
     final body = await generate(reportType: 'team_performance', period: period);
     return TeamPerformanceReport.fromJson(body);
+  }
+
+  static Future<RegionalOpportunityReport> generateRegionalOpportunity({
+    String period = 'month',
+  }) async {
+    final body = await generate(
+      reportType: 'regional_opportunity',
+      period: period,
+    );
+    return RegionalOpportunityReport.fromJson(body);
   }
 }
 
