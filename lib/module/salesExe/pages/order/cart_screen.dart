@@ -37,15 +37,11 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _placingOrder = true);
 
     try {
-      for (final item in widget.items) {
-        await OrderService.placeOrder(
-          orderType: widget.orderType,
-          entityId: widget.entityId,
-          items: widget.items,
-        );
-
-        print("items are $item");
-      }
+      await OrderService.placeOrder(
+        orderType: widget.orderType,
+        entityId: widget.entityId,
+        items: widget.items,
+      );
     } on ApiException catch (e) {
       if (!mounted) return;
       await showCheckInRequiredDialogall(
@@ -86,9 +82,6 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   @override
-  void initState() {
-    print("items are ${widget.items}");
-  }
 
   Widget build(BuildContext context) {
     // final subtotal = widget.product.price * widget.qty;
