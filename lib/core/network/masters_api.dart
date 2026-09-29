@@ -348,29 +348,59 @@ class OrderService {
     );
   }
 
+  // static Future<void> placeOrder({
+  //   required String orderType,
+  //   required String entityName,
+  //   required String entityId,
+  //   required Product product,
+  //   required int qty,
+  //   required String price,
+  //   String? filter,
+  //   String? warranty,
+  // }) async {
+  //   final position = await LocationService.getCurrentLocation();
+
+  //   final payload = {
+  //     'user_type': orderType,
+  //     'product_id': product.id,
+  //     'quantity': qty,
+  //     'price': price,
+  //     'filter_type': filter,
+  //     'warranty': warranty,
+  //     'lat': position.latitude.toString(),
+  //     'long': position.longitude.toString(),
+  //     'order_for': entityId,
+  //   };
+
+  //   await ApiService.instance.post('/api/v1/orders/place/', data: payload);
+  // }
+
+  // Add 29-9-2026
+
   static Future<void> placeOrder({
     required String orderType,
-    required String entityName,
     required String entityId,
-    required Product product,
-    required int qty,
-    required String price,
-    String? filter,
-    String? warranty,
+    required List<Map<String, dynamic>> items,
   }) async {
     final position = await LocationService.getCurrentLocation();
 
-    final payload = {
-      'user_type': orderType,
-      'product_id': product.id,
-      'quantity': qty,
-      'price': price,
-      'filter_type': filter,
-      'warranty': warranty,
-      'lat': position.latitude.toString(),
-      'long': position.longitude.toString(),
-      'order_for': entityId,
-    };
+    final payload = items.map((item) {
+      final Product p = item['product'];
+      final int qty = item['qty'];
+      return {
+        'user_type': orderType,
+        'product_id': p.id,
+        'quantity': qty,
+        'price': (p.price*qty).toStringAsFixed(2),
+        'filter_type': p.filterType,
+        'warranty': p.warranty,
+        'lat': position.latitude.toString(),
+        'long': position.longitude.toString(),
+        'order_for': entityId,
+      };
+    }).toList();
+
+    print(jsonEncode(payload)); 
 
     await ApiService.instance.post('/api/v1/orders/place/', data: payload);
   }

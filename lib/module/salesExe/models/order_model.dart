@@ -31,7 +31,7 @@ class OrderEntry {
 
   String get orderTypeLabel => userType == 'D' ? 'Distributor' : 'Retailer';
 
-  double get total => (price ?? 0) * quantity;
+  double get total => (price ?? 0) ;
 
   factory OrderEntry.fromJson(Map<String, dynamic> json) {
     double? toDouble(dynamic v) {

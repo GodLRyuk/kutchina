@@ -10,17 +10,19 @@ import 'package:kutchina/module/salesExe/models/product_model.dart';
 class CartScreen extends StatefulWidget {
   final String orderType;
   final String entityName;
-  final Product product;
-  final int qty;
+  // final Product product;
+  // final int qty;
   final String entityId;
+  final List<Map<String, dynamic>> items;
 
   const CartScreen({
     super.key,
     required this.orderType,
     required this.entityName,
-    required this.product,
-    required this.qty,
+    // required this.product,
+    // required this.qty,
     required this.entityId,
+    required this.items,
   });
 
   @override
@@ -35,16 +37,15 @@ class _CartScreenState extends State<CartScreen> {
     setState(() => _placingOrder = true);
 
     try {
-      await OrderService.placeOrder(
-        orderType: widget.orderType,
-        entityName: widget.entityName,
-        product: widget.product,
-        filter: '',
-        qty: widget.qty,
-        warranty: '',
-        price: widget.product.price.toString(),
-        entityId: widget.entityId,
-      );
+      for (final item in widget.items) {
+        await OrderService.placeOrder(
+          orderType: widget.orderType,
+          entityId: widget.entityId,
+          items: widget.items,
+        );
+
+        print("items are $item");
+      }
     } on ApiException catch (e) {
       if (!mounted) return;
       await showCheckInRequiredDialogall(
@@ -85,8 +86,19 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   @override
+  void initState() {
+    print("items are ${widget.items}");
+  }
+
   Widget build(BuildContext context) {
-    final subtotal = widget.product.price * widget.qty;
+    // final subtotal = widget.product.price * widget.qty;
+    // final total = subtotal;
+    double subtotal = 0;
+    for (final item in widget.items) {
+      final Product p = item['product'];
+      int qty = item['qty'];
+      subtotal += p.price * qty;
+    }
     final total = subtotal;
 
     return Scaffold(
@@ -109,42 +121,8 @@ class _CartScreenState extends State<CartScreen> {
                     value: widget.entityName,
                   ),
                   const SizedBox(height: 14),
-                  AppWidgets.buildCard(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              widget.product.name,
-                              style: const TextStyle(
-                                fontFamily: AppFonts.display,
-                                fontSize: 12.5,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            Text(
-                              '₹${widget.product.price.toStringAsFixed(0)} × ${widget.qty}',
-                              style: const TextStyle(
-                                fontFamily: AppFonts.mono,
-                                fontSize: 11,
-                                color: AppColors.steel,
-                              ),
-                            ),
-                          ],
-                        ),
-                        Text(
-                          '₹${subtotal.toStringAsFixed(0)}',
-                          style: const TextStyle(
-                            fontFamily: AppFonts.mono,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+
+                  ...widget.items.map(_itemCard),
                   const SizedBox(height: 4),
                   _totalRow('Subtotal', subtotal),
                   const Divider(height: 24, color: AppColors.line),
@@ -175,6 +153,51 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
+  Widget _itemCard(Map<String, dynamic> item) {
+    final Product p = item['product'];
+    final int qty = item['qty'];
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: AppWidgets.buildCard(
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  p.name,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                Text(
+                  '₹${p.price.toStringAsFixed(2)} × $qty',
+                  style: const TextStyle(
+                    fontFamily: AppFonts.mono,
+                    fontSize: 11,
+                    color: AppColors.steel,
+                  ),
+                ),
+              ],
+            ),
+            Text(
+              '₹${(p.price * qty).toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontFamily: AppFonts.mono,
+                fontSize: 12.5,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _totalRow(
     String label,
     double value, {
@@ -196,7 +219,7 @@ class _CartScreenState extends State<CartScreen> {
             ),
           ),
           Text(
-            '${value < 0 ? '−' : ''}₹${value.abs().toStringAsFixed(0)}',
+            '${value < 0 ? '−' : ''}₹${value.abs().toStringAsFixed(2)}',
             style: TextStyle(
               fontFamily: AppFonts.mono,
               fontSize: bold ? 13.5 : 11.5,
