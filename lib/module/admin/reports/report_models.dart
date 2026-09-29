@@ -42,10 +42,6 @@ class RankedItem {
 }
 
 class ReportConfig {
-  /// Matches the `report_type` value sent in the API payload — used both
-  /// as the identifier in this catalog and as the value passed to
-  /// POST /api/v1/reports/generate/, so there is only one place this can
-  /// drift out of sync.
   final String id;
   final String title;
   final String subtitle;
@@ -68,7 +64,6 @@ class ReportConfig {
   final String? insightsTitle;
   final List<String>? insights;
 
-  /// Only `sales_projection` currently supports the `horizon` param.
   final bool supportsHorizon;
 
   const ReportConfig({
@@ -91,7 +86,6 @@ class ReportConfig {
     this.supportsHorizon = false,
   });
 
-  /// `id` doubles as the `report_type` sent to the API.
   String get apiReportType => id;
 }
 
@@ -117,7 +111,6 @@ class ReportCatalog {
     ),
   ];
 
-  // 1. ---------------------------------------------------------------------
   static final salesProjection = ReportConfig(
     id: 'sales_projection',
     title: 'AI Sales Projection and Target Forecast Report',
@@ -135,11 +128,10 @@ class ReportCatalog {
     ],
   );
 
-  // 2. ---------------------------------------------------------------------
   static final productDemand = ReportConfig(
     id: 'product_demand',
     title: 'Product Performance and Demand Forecast Report',
-    subtitle: 'Best/worst sellers, demand trend and stockout risk by SKU',
+    subtitle: 'Best/worst sellers, demand trend and stockout risk by Product',
     icon: Icons.inventory_2_outlined,
     accent: AppColors.green,
     accentBg: AppColors.greenLight,
@@ -152,7 +144,6 @@ class ReportCatalog {
     ],
   );
 
-  // 3. ---------------------------------------------------------------------
   static final regionalOpportunity = ReportConfig(
     id: 'regional_opportunity',
     title: 'Regional Performance and Market Opportunity Report',
@@ -170,7 +161,6 @@ class ReportCatalog {
     regionStatsTitle: 'Target achievement by zone',
   );
 
-  // 4. ---------------------------------------------------------------------
   static final dealerPotential = ReportConfig(
     id: 'dealer_potential',
     title: 'Dealer Performance and Growth Potential Report',
