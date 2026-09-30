@@ -1,3 +1,4 @@
+import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/admin_dashboard_api.dart';
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
@@ -42,12 +43,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
   void initState() {
     super.initState();
 
+    SyncService.instance.addListener(_onSyncChanged);
+
     WidgetsBinding.instance.addPostFrameCallback(
       (_) => _checkAttendanceStatus(),
     );
     _loadTodayVisits();
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadTarget());
     loadOverview();
+  }
+
+  void _onSyncChanged() {
+    if (!mounted || SyncService.instance.isSyncing) return;
+
+    _loadTodayVisits();
+    _loadTarget();
+    loadOverview();
+  }
+
+  @override
+  void dispose() {
+    SyncService.instance.removeListener(_onSyncChanged);
+    super.dispose();
   }
 
   Future<void> loadOverview() async {
@@ -632,7 +649,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Color badgeColor,
   ) {
     return InkWell(
-      onTap: _openNewVisit,
+      // onTap: _openNewVisit,
       child: AppWidgets.buildCard(
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

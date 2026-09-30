@@ -24,6 +24,9 @@ dependencies:
   dio: ^5.11.0
   crypto: ^3.0.7
   flutter_secure_storage: ^9.0.0
+  connectivity_plus: ^6.1.0     # offline mode: detect network up/down
+  local_auth: ^2.3.0            # fingerprint login
+  path_provider: ^2.1.4         # offline mode: keep queued photos
   geocoding: ^5.0.0
   
 
