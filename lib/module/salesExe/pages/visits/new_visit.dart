@@ -1,12 +1,13 @@
 import 'dart:io';
 
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/offline/connectivity_service.dart';
+import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
@@ -359,49 +360,34 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       'address': _address!.trim(),
     };
 
-    final images = <MultipartFile>[];
-
-    if (_photoFile != null) {
-      images.add(
-        await MultipartFile.fromFile(
-          _photoFile!.path,
-          filename: _photoFile!.path.split('/').last,
-        ),
-      );
-    }
-
-    for (final file in _extraPhotos) {
-      images.add(
-        await MultipartFile.fromFile(
-          file.path,
-          filename: file.path.split('/').last,
-        ),
-      );
-    }
-
-    if (images.isNotEmpty) {
-      payload['image'] = images;
-      print("payload ${payload['image']}");
-    }
+    // Photos travel as file paths: if the phone is offline they are copied
+    // to app storage and uploaded later together with the visit.
+    final imagePaths = <String>[
+      if (_photoFile != null) _photoFile!.path,
+      ..._extraPhotos.map((f) => f.path),
+    ];
 
     debugPrint('===== CHECK-IN PAYLOAD =====');
-    payload.forEach((key, value) {
-      if (value is MultipartFile) {
-        debugPrint('$key: ${value.filename} (${value.length} bytes)');
-      } else {
-        debugPrint('$key: $value');
-      }
-    });
+    payload.forEach((key, value) => debugPrint('$key: $value'));
+    debugPrint('images: ${imagePaths.length}');
     debugPrint('============================');
 
     setState(() => _submitting = true);
     try {
       // final shouldSubmit = await _confirmPayload(context, payload);
       // if (!shouldSubmit) return;
-      await VisitService.checkIn(payload: payload);
+      final result = await VisitService.checkIn(
+        payload: payload,
+        imagePaths: imagePaths,
+      );
       // print("Showing popup $shouldSubmit");
       if (!mounted) return;
-      AppWidgets.toast(context, 'Checked in successfully');
+      AppWidgets.toast(
+        context,
+        result == SubmitResult.queued
+            ? 'Saved offline. Visit will sync when internet returns'
+            : 'Checked in successfully',
+      );
       if (Navigator.canPop(context)) {
         Navigator.pop(context, payload);
       }
@@ -504,6 +490,16 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   }
 
   Future<void> _resolveAddress(double lat, double long) async {
+    // Reverse geocoding needs internet. Offline, keep the raw coordinates
+    // instead of waiting on a lookup that cannot succeed.
+    if (!ConnectivityService.instance.isOnline) {
+      if (!mounted) return;
+      setState(() {
+        _address = '$lat, $long';
+        _loadingAddress = false;
+      });
+      return;
+    }
     setState(() => _loadingAddress = true);
     try {
       final geocoding = Geocoding();
@@ -552,6 +548,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   bool get _hasCapturedAddress {
     final address = _address?.trim();
     if (address == null || address.isEmpty) return false;
+    // Offline: coordinates are the best we can capture, accept them.
+    if (!ConnectivityService.instance.isOnline) return true;
     final coordinateFallback = '$_lat, $_long';
     return address != coordinateFallback;
   }

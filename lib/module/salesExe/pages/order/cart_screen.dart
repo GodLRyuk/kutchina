@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
@@ -36,8 +37,9 @@ class _CartScreenState extends State<CartScreen> {
     if (_placingOrder) return;
     setState(() => _placingOrder = true);
 
+    SubmitResult result;
     try {
-      await OrderService.placeOrder(
+      result = await OrderService.placeOrder(
         orderType: widget.orderType,
         entityId: widget.entityId,
         items: widget.items,
@@ -68,13 +70,15 @@ class _CartScreenState extends State<CartScreen> {
     }
 
     if (!mounted) return;
+    final queued = result == SubmitResult.queued;
     final ok = await showCheckInRequiredDialogall(
       context,
-      title: 'Order placed',
-      message:
-          'Your order for ${widget.entityName} has been created successfully. You can track it from My Orders.',
+      title: queued ? 'Saved offline' : 'Order placed',
+      message: queued
+          ? 'No internet right now. Your order for ${widget.entityName} is saved on this phone and will be sent automatically when the connection returns.'
+          : 'Your order for ${widget.entityName} has been created successfully. You can track it from My Orders.',
       buttonLabel: 'Done',
-      icon: Icons.check_circle_outline,
+      icon: queued ? Icons.cloud_upload_outlined : Icons.check_circle_outline,
     );
     if (ok && mounted) {
       Navigator.popUntil(context, (r) => r.isFirst);
@@ -82,7 +86,6 @@ class _CartScreenState extends State<CartScreen> {
   }
 
   @override
-
   Widget build(BuildContext context) {
     // final subtotal = widget.product.price * widget.qty;
     // final total = subtotal;

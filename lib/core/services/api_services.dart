@@ -6,20 +6,31 @@ import 'package:dio/dio.dart';
 import 'package:dio/io.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:kutchina/core/offline/connectivity_service.dart';
+import 'package:kutchina/core/offline/offline_store.dart';
 import 'package:kutchina/core/services/config.dart';
 
 class ApiException implements Exception {
   final String message;
   final int? statusCode;
   final dynamic data;
-  ApiException(this.message, {this.statusCode, this.data});
+
+  final bool isNetworkError;
+
+  final bool notDelivered;
+
+  ApiException(
+    this.message, {
+    this.statusCode,
+    this.data,
+    this.isNetworkError = false,
+    this.notDelivered = false,
+  });
 
   @override
   String toString() => 'ApiException($statusCode): $message';
 }
 
-/// Token storage — secure_storage backed, never SharedPreferences for
-/// tokens (SharedPreferences is plaintext on disk on most platforms).
 class TokenStore {
   TokenStore._();
   static final _storage = FlutterSecureStorage(
@@ -47,8 +58,6 @@ class TokenStore {
   }
 }
 
-/// Attaches bearer token to every request; on 401, tries one silent
-/// refresh + retry before giving up and clearing session.
 class AuthInterceptor extends Interceptor {
   final Dio _dio;
   final Future<void> Function()? onSessionExpired;
@@ -77,6 +86,7 @@ class AuthInterceptor extends Interceptor {
   ) async {
     final isUnauthorized = err.response?.statusCode == 401;
     final alreadyRetried = err.requestOptions.extra['retried'] == true;
+    final silent = err.requestOptions.extra['silent'] == true;
 
     if (!isUnauthorized || alreadyRetried) {
       handler.next(err);
@@ -84,8 +94,6 @@ class AuthInterceptor extends Interceptor {
     }
 
     if (_isRefreshing) {
-      // Another request already triggered a refresh — fail this one
-      // rather than stacking concurrent refresh calls.
       handler.next(err);
       return;
     }
@@ -96,12 +104,11 @@ class AuthInterceptor extends Interceptor {
       _isRefreshing = false;
       if (!refreshed) {
         await TokenStore.clear();
-        if (onSessionExpired != null) await onSessionExpired!();
+        if (onSessionExpired != null && !silent) await onSessionExpired!();
         handler.next(err);
         return;
       }
 
-      // Retry the original request once, with the new token.
       final opts = err.requestOptions;
       opts.extra['retried'] = true;
       final newToken = await TokenStore.getAccessToken();
@@ -112,7 +119,7 @@ class AuthInterceptor extends Interceptor {
     } catch (_) {
       _isRefreshing = false;
       await TokenStore.clear();
-      if (onSessionExpired != null) await onSessionExpired!();
+      if (onSessionExpired != null && !silent) await onSessionExpired!();
       handler.next(err);
     }
   }
@@ -122,8 +129,6 @@ class AuthInterceptor extends Interceptor {
     if (refreshToken == null) return false;
 
     try {
-      // Bare Dio instance — must NOT reuse _dio here, or the auth
-      // interceptor would attach the (expired) access token to this call.
       final refreshDio = Dio(BaseOptions(baseUrl: ApiConfig.baseUrl));
       final res = await refreshDio.post(
         '/auth/refresh',
@@ -142,8 +147,6 @@ class AuthInterceptor extends Interceptor {
   }
 }
 
-/// Debug-only request/response logging. Never logs Authorization headers
-/// or response bodies in release builds.
 class LoggingInterceptor extends Interceptor {
   @override
   // void onRequest(RequestOptions options, RequestInterceptorHandler handler) {
@@ -187,10 +190,6 @@ class LoggingInterceptor extends Interceptor {
   }
 }
 
-/// Retries idempotent GET requests on transient network failures
-/// (timeout, connection error) with exponential backoff. Never retries
-/// POST/PUT/PATCH/DELETE automatically — retrying a non-idempotent write
-/// after a timeout can double-submit an order.
 class RetryInterceptor extends Interceptor {
   final Dio _dio;
   final int maxRetries;
@@ -226,6 +225,30 @@ class RetryInterceptor extends Interceptor {
   }
 }
 
+class ConnectivityInterceptor extends Interceptor {
+  @override
+  void onResponse(Response response, ResponseInterceptorHandler handler) {
+    ConnectivityService.instance.reportRequestSuccess();
+    handler.next(response);
+  }
+
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) {
+    final network =
+        err.type == DioExceptionType.connectionError ||
+        err.type == DioExceptionType.connectionTimeout ||
+        err.type == DioExceptionType.sendTimeout ||
+        err.type == DioExceptionType.receiveTimeout;
+    if (network) {
+      ConnectivityService.instance.reportRequestFailure();
+    } else if (err.response != null) {
+      // Server answered (even with 4xx/5xx) so the network is fine.
+      ConnectivityService.instance.reportRequestSuccess();
+    }
+    handler.next(err);
+  }
+}
+
 class ApiService {
   ApiService._internal() {
     _dio = Dio(
@@ -242,6 +265,7 @@ class ApiService {
     _dio.interceptors.addAll([
       AuthInterceptor(_dio, onSessionExpired: onSessionExpired),
       RetryInterceptor(_dio),
+      ConnectivityInterceptor(),
       LoggingInterceptor(),
     ]);
   }
@@ -249,14 +273,7 @@ class ApiService {
   static final ApiService instance = ApiService._internal();
   late final Dio _dio;
 
-  /// Set by app startup (e.g. wire this to force-logout + navigate to
-  /// login) so ApiService doesn't need a BuildContext of its own.
   static Future<void> Function()? onSessionExpired;
-
-  /// Pins the connection to the configured cert fingerprints. Any TLS
-  /// handshake presenting a cert whose public key doesn't match one of
-  /// ApiConfig.pinnedCertSha256 is rejected — protects against MITM even
-  /// on a compromised/rogue CA or a proxied network.
   void _applySslPinning(Dio dio) {
     (dio.httpClientAdapter as IOHttpClientAdapter).createHttpClient = () {
       final client = HttpClient();
@@ -297,14 +314,68 @@ class ApiService {
     String path, {
     dynamic data,
     bool skipAuth = false,
+    bool silent = false,
+    Map<String, dynamic>? headers,
   }) {
     return _dio
         .post<T>(
           path,
           data: data,
-          options: Options(extra: {'skipAuth': skipAuth}),
+          options: Options(
+            extra: {'skipAuth': skipAuth, 'silent': silent},
+            headers: headers,
+          ),
         )
         .catchError(_handleError);
+  }
+
+  Future<Response<dynamic>> getCached(
+    String path, {
+    Map<String, dynamic>? queryParams,
+    dynamic data,
+    bool skipAuth = false,
+  }) async {
+    final key = OfflineStore.cacheKey(path, queryParams, data);
+
+    Future<Response<dynamic>?> fromCache() async {
+      final hit = await OfflineStore.instance.getCache(key);
+      if (hit == null) return null;
+      return Response<dynamic>(
+        requestOptions: RequestOptions(
+          path: path,
+          queryParameters: queryParams ?? const {},
+        ),
+        data: hit.body,
+        statusCode: 200,
+        extra: {'fromCache': true, 'cachedAt': hit.savedAt.toIso8601String()},
+      );
+    }
+
+    if (!ConnectivityService.instance.isOnline) {
+      final cached = await fromCache();
+      if (cached != null) return cached;
+      // Nothing cached: still try the network once, the offline flag may
+      // be stale and there is nothing else to show anyway.
+    }
+
+    try {
+      final res = await get<dynamic>(
+        path,
+        queryParams: queryParams,
+        data: data,
+        skipAuth: skipAuth,
+      );
+      final code = res.statusCode ?? 0;
+      if (code >= 200 && code < 300 && res.data != null) {
+        await OfflineStore.instance.putCache(key, res.data);
+      }
+      return res;
+    } on ApiException catch (e) {
+      if (!e.isNetworkError) rethrow;
+      final cached = await fromCache();
+      if (cached != null) return cached;
+      rethrow;
+    }
   }
 
   Future<Response<T>> put<T>(String path, {dynamic data}) {
@@ -323,14 +394,23 @@ class ApiService {
     if (error is DioException) {
       final status = error.response?.statusCode;
       String message;
+      var network = false;
+      var notDelivered = false;
       switch (error.type) {
         case DioExceptionType.connectionTimeout:
+          message = 'Network timed out. Please try again.';
+          network = true;
+          notDelivered = true;
+          break;
         case DioExceptionType.sendTimeout:
         case DioExceptionType.receiveTimeout:
           message = 'Network timed out. Please try again.';
+          network = true;
           break;
         case DioExceptionType.connectionError:
           message = 'No internet connection.';
+          network = true;
+          notDelivered = true;
           break;
         case DioExceptionType.badCertificate:
           message = 'Secure connection could not be verified.';
@@ -342,11 +422,18 @@ class ApiService {
           break;
         default:
           message = error.message ?? 'Unexpected error.';
+          if (error.error is SocketException) {
+            message = 'No internet connection.';
+            network = true;
+            notDelivered = true;
+          }
       }
       throw ApiException(
         message,
         statusCode: status,
         data: error.response?.data,
+        isNetworkError: network,
+        notDelivered: notDelivered,
       );
     }
     throw ApiException(error.toString());
