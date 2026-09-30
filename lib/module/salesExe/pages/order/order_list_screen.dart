@@ -26,6 +26,15 @@ class _OrderListScreenState extends State<OrderListScreen> {
   int _visibleCount = _pageSize;
   bool _loadingMore = false;
 
+  // Add for group by order number
+  List<List<OrderEntry>> get _groups {
+    final map = <String, List<OrderEntry>>{};
+    for (final o in _orders) {
+      map.putIfAbsent(o.orderNumber.trim(), () => []).add(o);
+    }
+    return map.values.toList();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -45,7 +54,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     final nearBottom =
         _scrollController.position.pixels >=
         _scrollController.position.maxScrollExtent - 200;
-    if (nearBottom && !_loadingMore && _visibleCount < _orders.length) {
+    if (nearBottom && !_loadingMore && _visibleCount < _groups.length) {
       _loadMore();
     }
   }
@@ -57,7 +66,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
     await Future.delayed(const Duration(milliseconds: 350));
     if (!mounted) return;
     setState(() {
-      _visibleCount = (_visibleCount + _pageSize).clamp(0, _orders.length);
+      // _visibleCount = (_visibleCount + _pageSize).clamp(0, _orders.length);
+      _visibleCount = (_visibleCount + _pageSize).clamp(0, _groups.length);
       _loadingMore = false;
     });
   }
@@ -72,7 +82,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
       if (!mounted) return;
       setState(() {
         _orders = orders;
-        _visibleCount = _pageSize.clamp(0, orders.length);
+        // _visibleCount = _pageSize.clamp(0, orders.length);
+        _visibleCount = _pageSize;
         _loading = false;
       });
     } on ApiException catch (e) {
@@ -152,8 +163,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
       );
     }
 
-    final visibleOrders = _orders.take(_visibleCount).toList();
-    final hasMore = _visibleCount < _orders.length;
+    final groups = _groups;
+    final visibleOrders = groups.take(_visibleCount).toList();
+    final hasMore = _visibleCount < groups.length;
+
+    // final visibleOrders = _orders.take(_visibleCount).toList();
+    // final hasMore = _visibleCount < _orders.length;
 
     return ListView.separated(
       controller: _scrollController,
@@ -182,119 +197,159 @@ class _OrderListScreenState extends State<OrderListScreen> {
     );
   }
 
-  Widget _orderCard(OrderEntry o) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(
-        AppRadius.md,
-      ), // match AppWidgets.buildCard's radius
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => OrderDetailScreen(order: o)),
-        );
-      },
-      child: AppWidgets.buildCard(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Top row: order number + status badge
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  o.orderNumber,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.mono,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.steel,
-                  ),
+  Widget _orderCard(List<OrderEntry> group) {
+    final o = group.first;
+    final total = group.fold<double>(0, (sum, x) => sum + (x.price ?? 0));
+    return AppWidgets.buildCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Top row: order number + status badge
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                o.orderNumber,
+                style: const TextStyle(
+                  fontFamily: AppFonts.mono,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.steel,
                 ),
-                _statusBadge(o.orderStatus),
-              ],
-            ),
-            const SizedBox(height: 8),
-
-            // Product name
-            Text(
-              o.productName,
-              style: const TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                color: AppColors.ink,
               ),
-            ),
-            const SizedBox(height: 4),
-
-            // Qty + date
-            Text(
-              'Qty ${_formatQty(o.quantity)}'
-              '${o.createdAt != null ? ' · ${_formatDate(o.createdAt!)}' : ''}',
-              style: const TextStyle(fontSize: 11, color: AppColors.steel),
-            ),
-
-            // Channel / filter / warranty chips
-            if (o.userType.isNotEmpty ||
-                o.filterType != null ||
-                o.warranty != null) ...[
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 6,
-                runSpacing: 6,
+              _statusBadge(o.orderStatus),
+            ],
+          ),
+          const SizedBox(height: 8),
+    
+          // Product name
+          for (final p in group)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: Row(
                 children: [
-                  if (o.userType.isNotEmpty)
-                    AppWidgets.buildBadge(
-                      o.orderTypeLabel,
-                      AppColors.aiBlueChipBg,
-                      AppColors.aiBlue,
+                  Expanded(
+                    child: Text(
+                      p.productName,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.ink,
+                      ),
                     ),
-                  if (o.filterType != null)
-                    AppWidgets.buildBadge(
-                      o.filterType!,
-                      AppColors.ash,
-                      AppColors.steel,
+                  ),
+                  Text(
+                    'Qty ${_formatQty(p.quantity)}',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.steel,
                     ),
-                  if (o.warranty != null)
-                    AppWidgets.buildBadge(
-                      '${o.warranty} warranty',
-                      AppColors.greenLight,
-                      AppColors.green,
-                    ),
+                  ),
                 ],
               ),
-            ],
-
-            const SizedBox(height: 10),
-            const Divider(height: 1, color: AppColors.line),
-            const SizedBox(height: 10),
-
-            // Price
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            ),
+    
+          // Channel / filter / warranty chips
+          if (o.userType.isNotEmpty) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
               children: [
-                const Text(
-                  'Total',
-                  style: TextStyle(fontSize: 11, color: AppColors.steel),
-                ),
-                Text(
-                  o.price != null
-
-                      ? '₹${o.total.toStringAsFixed(2)}'
-                      : 'Price pending',
-                  style: TextStyle(
-                    fontFamily: AppFonts.mono,
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: o.price != null
-                        ? AppColors.commandCentreText
-                        : AppColors.steel,
+                if (o.userType.isNotEmpty)
+                  AppWidgets.buildBadge(
+                    o.orderTypeLabel,
+                    AppColors.aiBlueChipBg,
+                    AppColors.aiBlue,
                   ),
-                ),
+                // if (o.filterType != null)
+                //   AppWidgets.buildBadge(
+                //     o.filterType!,
+                //     AppColors.ash,
+                //     AppColors.steel,
+                //   ),
+                // if (o.warranty != null)
+                //   AppWidgets.buildBadge(
+                //     '${o.warranty} warranty',
+                //     AppColors.greenLight,
+                //     AppColors.green,
+                //   ),
               ],
             ),
           ],
-        ),
+    
+          const SizedBox(height: 10),
+          const Divider(height: 1, color: AppColors.line),
+          const SizedBox(height: 10),
+    
+          // Price
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              InkWell(
+                borderRadius: BorderRadius.circular(6),
+                onTap: () {
+                 
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => 
+                      OrderDetailScreen(orders: group),
+                    ),
+                  );
+                },
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.receipt_long,
+                        size: 16,
+                        color: AppColors.commandCentreText,
+                      ),
+                      SizedBox(width: 4),
+                      Text(
+                        'View invoice',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.aiBlue,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+    
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  const Text(
+                    'Total',
+                    style: TextStyle(fontSize: 11, color: AppColors.steel),
+                  ),
+                  Text(
+                    total > 0
+                        ? '₹${total.toStringAsFixed(2)}'
+                        : 'Price pending',
+                    style: TextStyle(
+                      fontFamily: AppFonts.mono,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                      color: o.price != null
+                          ? AppColors.commandCentreText
+                          : AppColors.steel,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

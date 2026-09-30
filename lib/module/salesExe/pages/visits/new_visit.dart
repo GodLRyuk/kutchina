@@ -359,6 +359,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       'long': _long?.toString() ?? '',
       'address': _address!.trim(),
     };
+    print("payload $payload");
+
+
+
 
     // Photos travel as file paths: if the phone is offline they are copied
     // to app storage and uploaded later together with the visit.
@@ -370,7 +374,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     debugPrint('===== CHECK-IN PAYLOAD =====');
     payload.forEach((key, value) => debugPrint('$key: $value'));
     debugPrint('images: ${imagePaths.length}');
-    debugPrint('============================');
+    // debugPrint("others ${_otherController.text}");
+
 
     setState(() => _submitting = true);
     try {

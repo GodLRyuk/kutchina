@@ -4,8 +4,8 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 
 class OrderDetailScreen extends StatelessWidget {
-  final OrderEntry order;
-  const OrderDetailScreen({super.key, required this.order});
+  final List<OrderEntry> orders;
+  const OrderDetailScreen({super.key, required this.orders});
 
   static const List<String> _trackerSteps = [
     'Placed',
@@ -13,6 +13,9 @@ class OrderDetailScreen extends StatelessWidget {
     'Shipped',
     'Delivered',
   ];
+
+  OrderEntry get order => orders.first;
+  double get _total => orders.fold<double>(0, (sum, x) => sum + (x.price ?? 0));
 
   bool get _isCancelled =>
       order.orderStatus.toLowerCase() == 'cancelled' ||
@@ -60,83 +63,116 @@ class OrderDetailScreen extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // ---- Summary card ----
-            AppWidgets.buildCard(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text(
-                              'PRODUCT',
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: AppColors.steel,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: .4,
+            for (final item in orders) ...[
+              AppWidgets.buildCard(
+                padding: const EdgeInsets.all(18),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'PRODUCT',
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: AppColors.steel,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: .4,
+                                ),
                               ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              order.productName,
-                              style: const TextStyle(
-                                fontFamily: AppFonts.display,
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.ink,
+                              const SizedBox(height: 4),
+                              Text(
+                                item.productName,
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.display,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.ink,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
                         ),
-                      ),
-                      Container(
-                        width: 44,
-                        height: 44,
-                        decoration: BoxDecoration(
-                          color: _statusIconBg(order.orderStatus),
-                          borderRadius: BorderRadius.circular(12),
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: _statusIconBg(item.orderStatus),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _statusIcon(item.orderStatus),
+                            color: _statusIconFg(
+                              item.orderStatus,
+                            ), // fixed: was order
+                          ),
                         ),
-                        child: Icon(
-                          _statusIcon(order.orderStatus),
-                          color: _statusIconFg(order.orderStatus),
-                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+
+                    // Details box (same 3 fields, just styled)
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      AppWidgets.buildBadge(
-                        order.orderTypeLabel,
-                        AppColors.aiBlueChipBg,
-                        AppColors.aiBlue,
+                      decoration: BoxDecoration(
+                        color: AppColors.steel.withOpacity(.08),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      AppWidgets.buildBadge(
-                        order.orderStatus,
-                        _statusIconBg(order.orderStatus),
-                        _statusIconFg(order.orderStatus),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  if (order.createdAt != null)
-                    Text(
-                      'Placed on ${_formatDate(order.createdAt!)}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.steel,
+                      child: Column(
+                        children: [
+                          _detailRow('Quantity', _formatQty(item.quantity)),
+                          const SizedBox(height: 8),
+                         _detailRow('Filter Type', item.filterType ?? '—'),
+                          const SizedBox(height: 8),
+                          _detailRow('Warranty', item.warranty ?? '—'),
+                          const SizedBox(height: 8),
+                          _detailRow("Total Price", '${item.price}'),
+                         
+                        ],
                       ),
                     ),
-                ],
+                    const SizedBox(height: 14),
+
+                    Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        AppWidgets.buildBadge(
+                          order.orderTypeLabel,
+                          AppColors.aiBlueChipBg,
+                          AppColors.aiBlue,
+                        ),
+                        AppWidgets.buildBadge(
+                          item.orderStatus,
+                          _statusIconBg(item.orderStatus),
+                          _statusIconFg(item.orderStatus),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    if (item.createdAt != null) // fixed: was order.createdAt
+                      Text(
+                        'Placed on ${_formatDate(item.createdAt!)}',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          color: AppColors.steel,
+                        ),
+                      ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(height: 12),
+            ],
+
             const SizedBox(height: 14),
 
             // ---- Status tracker card ----
@@ -147,20 +183,30 @@ class OrderDetailScreen extends StatelessWidget {
             const SizedBox(height: 14),
 
             // ---- Item detail card ----
-            AppWidgets.buildCard(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _row('Order number', order.orderNumber),
-                  const Divider(height: 20, color: AppColors.line),
-                  _row('Quantity', _formatQty(order.quantity)),
-                  const Divider(height: 20, color: AppColors.line),
-                  _row('Filter type', order.filterType ?? '—'),
-                  const Divider(height: 20, color: AppColors.line),
-                  _row('Warranty', order.warranty ?? '—'),
-                ],
-              ),
-            ),
+            // for (final item in orders) ...[
+            //   AppWidgets.buildCard(
+            //     child: Column(
+            //       crossAxisAlignment: CrossAxisAlignment.start,
+            //       children: [
+            //         _row('Order number', item.orderNumber),
+            //         const Divider(height: 20, color: AppColors.line),
+            //         _row('Quantity', _formatQty(item.quantity)),
+            //         const Divider(height: 20, color: AppColors.line),
+            //         _row('Filter type', item.filterType ?? '—'),
+            //         const Divider(height: 20, color: AppColors.line),
+            //         _row('Warranty', item.warranty ?? '—'),
+
+            //         const Divider(height: 20, color: AppColors.line),
+            //         _row(
+            //           'Price',
+            //           item.price != null
+            //               ? '₹${item.price!.toStringAsFixed(0)}'
+            //               : 'Pending',
+            //         ),
+            //       ],
+            //     ),
+            //   ),
+            // ],
             const SizedBox(height: 14),
             // ---- Total ----
             AppWidgets.buildCard(
@@ -176,8 +222,11 @@ class OrderDetailScreen extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    order.price != null
-                        ? '₹${order.total.toStringAsFixed(0)}'
+                    // order.price != null
+                    //     ? '₹${order.total.toStringAsFixed(0)}'
+                    //     : 'Price pending',
+                    _total > 0
+                        ? '₹${_total.toStringAsFixed(2)}'
                         : 'Price pending',
                     style: TextStyle(
                       fontFamily: AppFonts.mono,
@@ -311,6 +360,31 @@ class OrderDetailScreen extends StatelessWidget {
                 style: TextStyle(fontSize: 11, color: AppColors.steel),
               ),
             ],
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 12, color: AppColors.steel),
+        ),
+        const SizedBox(width: 12),
+        Flexible(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: AppColors.ink,
+            ),
           ),
         ),
       ],
