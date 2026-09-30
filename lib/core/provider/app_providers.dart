@@ -1,3 +1,5 @@
+import 'package:kutchina/core/offline/connectivity_service.dart';
+import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/provider/category_provider.dart';
 import 'package:kutchina/core/provider/distributor_provider.dart';
@@ -7,6 +9,10 @@ import 'package:provider/single_child_widget.dart';
 
 List<SingleChildWidget> appProviders() {
   return [
+    ChangeNotifierProvider<ConnectivityService>.value(
+      value: ConnectivityService.instance,
+    ),
+    ChangeNotifierProvider<SyncService>.value(value: SyncService.instance),
     ChangeNotifierProvider<DistributorProvider>(
       create: (_) => DistributorProvider(),
     ),

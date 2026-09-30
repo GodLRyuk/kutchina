@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:kutchina/core/offline/pending_sync_screen.dart';
+import 'package:kutchina/core/offline/sync_service.dart';
+import 'package:kutchina/core/services/biometric_auth_service.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
@@ -20,9 +23,13 @@ class ProfileScreen extends StatelessWidget {
             fontSize: 16,
           ),
         ),
-        content: const Text(
-          'You will need to log in again to access your account.',
-          style: TextStyle(fontSize: 13, color: AppColors.steel),
+        content: Text(
+          SyncService.instance.totalCount > 0
+              ? 'You will need to log in again to access your account.\n\n'
+                    '${SyncService.instance.totalCount} item(s) saved offline are not synced yet. '
+                    'They stay on this phone and are sent when you are online again.'
+              : 'You will need to log in again to access your account.',
+          style: const TextStyle(fontSize: 13, color: AppColors.steel),
         ),
         actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
         actions: [
@@ -242,7 +249,33 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ]),
 
-                const SizedBox(height: 8),
+                const SizedBox(height: 20),
+                _sectionLabel('Offline & security'),
+                _sectionCard([
+                  const _FingerprintTile(),
+                  InkWell(
+                    onTap: () => Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const PendingSyncScreen(),
+                      ),
+                    ),
+                    child: ListenableBuilder(
+                      listenable: SyncService.instance,
+                      builder: (_, __) => _infoRow(
+                        Icons.cloud_sync_outlined,
+                        'Offline queue',
+                        SyncService.instance.totalCount == 0
+                            ? 'All synced'
+                            : '${SyncService.instance.totalCount} waiting',
+                        valueColor: SyncService.instance.totalCount == 0
+                            ? AppColors.green
+                            : AppColors.amberDark,
+                      ),
+                    ),
+                  ),
+                ]),
+                const SizedBox(height: 20),
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
@@ -380,6 +413,112 @@ class ProfileScreen extends StatelessWidget {
               fontWeight: FontWeight.w600,
               color: valueColor ?? AppColors.ink,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Switch for fingerprint login. Turning it on needs the password, so it is
+/// enabled from the login screen right after a password login; here the user
+/// can only turn it off (which also wipes the stored credentials).
+class _FingerprintTile extends StatefulWidget {
+  const _FingerprintTile();
+
+  @override
+  State<_FingerprintTile> createState() => _FingerprintTileState();
+}
+
+class _FingerprintTileState extends State<_FingerprintTile> {
+  bool _enabled = false;
+  bool _available = false;
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    final available = await BiometricAuthService.isAvailable();
+    final enabled = await BiometricAuthService.isEnabled();
+    if (!mounted) return;
+    setState(() {
+      _available = available;
+      _enabled = enabled;
+      _ready = true;
+    });
+  }
+
+  Future<void> _turnOff() async {
+    await BiometricAuthService.disable();
+    if (!mounted) return;
+    setState(() => _enabled = false);
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Fingerprint login turned off'),
+        duration: Duration(seconds: 1),
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final String subtitle;
+    if (!_ready) {
+      subtitle = '';
+    } else if (!_available) {
+      subtitle = 'Not available on this device';
+    } else if (_enabled) {
+      subtitle = 'Works without internet';
+    } else {
+      subtitle = 'Enable it at your next password login';
+    }
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+      child: Row(
+        children: [
+          Container(
+            width: 30,
+            height: 30,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.rupeeIconBg,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.fingerprint,
+              size: 17,
+              color: AppColors.commandCentreText,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Fingerprint login',
+                  style: TextStyle(fontSize: 12.5, color: AppColors.ink),
+                ),
+                if (subtitle.isNotEmpty)
+                  Text(
+                    subtitle,
+                    style: const TextStyle(
+                      fontSize: 10.5,
+                      color: AppColors.steel,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+          Switch(
+            value: _enabled,
+            // Only "off" is possible here, see class comment.
+            onChanged: (_ready && _enabled) ? (_) => _turnOff() : null,
           ),
         ],
       ),
