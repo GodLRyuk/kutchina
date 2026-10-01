@@ -187,10 +187,14 @@ class AdminDashboardApi {
   AdminDashboardApi._();
 
   static Future<AdminDashboardData> fetchOverview({
-    String period = 'month',
+    String? period,
   }) async {
+     final path = (period == null || period.isEmpty)
+      ? '/api/v1/reports/overview/'
+      : '/api/v1/reports/overview/?period=$period';
+      
     final response = await ApiService.instance.getCached(
-      '/api/v1/reports/overview/',
+      path,
     );
     final body = _map(response.data);
     if (body == null || body['success'] != true) {

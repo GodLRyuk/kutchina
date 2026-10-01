@@ -24,6 +24,16 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
+  static const _periodLabels = {
+    'today': 'Today',
+    'week': 'Last 7 days',
+    'month': 'This month',
+    'six_months': 'Last 6 months',
+    'year': 'Last 12 months',
+  };
+
+  String _selectedPeriod = 'month';
+
   AdminDashboardData? _dashboardData;
   bool _isLoading = true;
   String? _loadError;
@@ -39,12 +49,15 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _loadDashboard() async {
+    print('Loading dashboard data for period: $_selectedPeriod');
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
     try {
-      final data = await AdminDashboardApi.fetchOverview();
+      final data = await AdminDashboardApi.fetchOverview(
+        period: _selectedPeriod,
+      );
       if (!mounted) return;
       setState(() => _dashboardData = data);
     } on ApiException catch (error) {
@@ -169,20 +182,58 @@ class _AdminDashboardState extends State<AdminDashboard> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
+                children: [
                   Icon(
                     Icons.calendar_today_outlined,
                     size: 13,
                     color: AppColors.commandCentreText,
                   ),
                   SizedBox(width: 6),
-                  Text(
-                    'This Month',
-                    style: TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.commandCentreText,
+                  // Text(
+                  //   'This Month',
+                  //   style: TextStyle(
+                  //     fontFamily: AppFonts.display,
+                  //     fontSize: 11.5,
+                  //     fontWeight: FontWeight.w600,
+                  //     color: AppColors.commandCentreText,
+                  //   ),
+                  // ),
+                  PopupMenuButton<String>(
+                    //initialValue: _selectedPeriod,
+                    color: Colors.white,
+                    surfaceTintColor: Colors.transparent,
+                    onSelected: (value) {
+                      if (value == _selectedPeriod) return;
+                      setState(() {
+                        _selectedPeriod = value;
+                        _loadDashboard();
+                      });
+                    },
+                    itemBuilder: (context) {
+                      return _periodLabels.entries.map((entry) {
+                        return PopupMenuItem<String>(
+                          value: entry.key,
+                          child: Text(
+                            entry.value,
+                            style: TextStyle(
+                              fontFamily: AppFonts.display,
+                              fontSize: 12,
+                              fontWeight: entry.key == _selectedPeriod
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        );
+                      }).toList();
+                    },
+                    child: Text(
+                      _periodLabels[_selectedPeriod] ?? 'Select Period',
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.commandCentreText,
+                      ),
                     ),
                   ),
                   SizedBox(width: 4),
@@ -235,8 +286,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
 
   Widget _buildStatCards() {
     final data = _dashboardData;
+    final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
+    final cardHeight = 130 + (scale - 1.0) * 80 + 18;
     return SizedBox(
-      height: 130,
+      height: cardHeight,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
