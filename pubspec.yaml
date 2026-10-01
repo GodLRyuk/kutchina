@@ -28,6 +28,8 @@ dependencies:
   local_auth: ^2.3.0            # fingerprint login
   path_provider: ^2.1.4         # offline mode: keep queued photos
   geocoding: ^5.0.0
+  speech_to_text: ^7.0.0
+  google_mlkit_translation: ^0.13.0
   
 
 dev_dependencies:

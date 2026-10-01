@@ -7,7 +7,7 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
 
-const bool _kShowPlaceholders = true;
+const bool _kShowPlaceholders = false;
 
 class _C {
   static const bg = Color(0xFFF3F1EC);
@@ -634,7 +634,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             '${gapShort ? 'Shortfall' : 'Surplus'} **${_currency(it.projectedGap.abs())}**',
           ];
           return _TargetData(
-            title: title.isEmpty ? 'Test' : title,
+            title: title.isEmpty ? '--' : title,
             sub:
                 '${it.confidencePercentage.toStringAsFixed(0)}% confidence · ${it.daysToTarget} days to target',
             avatarText: _initials(title),
@@ -721,7 +721,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         color: _C.primary,
         label: 'TOP SKU (SALES VALUE)',
         value: sum == null ? '₹0' : _currency(sum.topSku.salesValue),
-        sub: topName.isEmpty ? 'Test' : topName,
+        sub: topName.isEmpty ? '--' : topName,
       ),
       _Kpi(
         color: _C.risk,
@@ -890,7 +890,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       _Kpi(
         color: _C.good,
         label: 'BEST PERFORMING ZONE',
-        value: bestName.isEmpty ? 'Test' : bestName,
+        value: bestName.isEmpty ? '--' : bestName,
         sub: bestAch == null
             ? 'no achievement data'
             : '${bestAch.round()}% of target',

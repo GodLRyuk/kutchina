@@ -10,6 +10,8 @@ import 'package:kutchina/core/offline/connectivity_service.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
+import 'package:kutchina/core/utils/note_sheet.dart';
+import 'package:kutchina/core/utils/voice_input_sheet.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 
 class NewVisitScreen extends StatefulWidget {
@@ -178,52 +180,14 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
-  // Done
-
   Future<void> _addNote() async {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (ctx) {
-        final controller = TextEditingController(text: _noteController.text);
-        return Padding(
-          padding: EdgeInsets.only(
-            left: 20,
-            right: 20,
-            top: 20,
-            bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const Text(
-                'Visit note',
-                style: TextStyle(
-                  fontFamily: 'Sora',
-                  fontWeight: FontWeight.bold,
-                  fontSize: 14,
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: controller,
-                maxLines: 3,
-                decoration: const InputDecoration(
-                  hintText: 'What happened at this visit?',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 12),
-              AppWidgets.buildButton(
-                'Save note',
-                onTap: () => Navigator.pop(ctx, controller.text),
-              ),
-            ],
-          ),
-        );
-      },
+      builder: (_) => NoteSheet(initialText: _noteController.text),
     );
+
+    if (!mounted) return;
     if (result != null && result.trim().isNotEmpty) {
       setState(() {
         _noteController.text = result.trim();
@@ -359,13 +323,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       'long': _long?.toString() ?? '',
       'address': _address!.trim(),
     };
-    print("payload $payload");
-
-
-
-
-    // Photos travel as file paths: if the phone is offline they are copied
-    // to app storage and uploaded later together with the visit.
     final imagePaths = <String>[
       if (_photoFile != null) _photoFile!.path,
       ..._extraPhotos.map((f) => f.path),
@@ -374,18 +331,12 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     debugPrint('===== CHECK-IN PAYLOAD =====');
     payload.forEach((key, value) => debugPrint('$key: $value'));
     debugPrint('images: ${imagePaths.length}');
-    // debugPrint("others ${_otherController.text}");
-
-
     setState(() => _submitting = true);
     try {
-      // final shouldSubmit = await _confirmPayload(context, payload);
-      // if (!shouldSubmit) return;
       final result = await VisitService.checkIn(
         payload: payload,
         imagePaths: imagePaths,
       );
-      // print("Showing popup $shouldSubmit");
       if (!mounted) return;
       AppWidgets.toast(
         context,
@@ -407,49 +358,17 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     }
   }
 
-  // Future<bool> _confirmPayload(
-  //   BuildContext context,
-  //   Map<String, dynamic> payload,
-  // ) async {
-  //   final buffer = StringBuffer();
-
-  //   for (final entry in payload.entries) {
-  //     final value = entry.value;
-
-  //     if (value is File) {
-  //       final size = await value.length();
-  //       buffer.writeln(
-  //         '${entry.key}: ${value.path.split('/').last} ($size bytes)',
-  //       );
-  //     } else if (value is List) {
-  //       buffer.writeln('${entry.key}: [${value.length} items]');
-  //     } else {
-  //       buffer.writeln('${entry.key}: $value');
-  //     }
-  //   }
-
-  //   if (!context.mounted) return false;
-
-  //   final confirmed = await showDialog<bool>(
-  //     context: context,
-  //     builder: (ctx) => AlertDialog(
-  //       title: const Text('Payload to submit'),
-  //       content: SingleChildScrollView(child: Text(buffer.toString())),
-  //       actions: [
-  //         TextButton(
-  //           onPressed: () => Navigator.pop(ctx, false),
-  //           child: const Text('Cancel'),
-  //         ),
-  //         FilledButton(
-  //           onPressed: () => Navigator.pop(ctx, true),
-  //           child: const Text('Submit'),
-  //         ),
-  //       ],
-  //     ),
-  //   );
-
-  //   return confirmed ?? false;
-  // }
+  Future<void> _voiceForPurpose() async {
+    final text = await showVoiceInputSheet(context);
+    if (text == null || text.isEmpty || !mounted) return;
+    setState(() {
+      final old = _purposeController.text.trim();
+      _purposeController.text = old.isEmpty ? text : '$old $text';
+      _purposeController.selection = TextSelection.collapsed(
+        offset: _purposeController.text.length,
+      );
+    });
+  }
 
   Future<void> _getCurrentLocation() async {
     setState(() => _loadingLocation = true);
@@ -879,9 +798,37 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   ],
                   const SizedBox(height: 12),
 
-                  AppWidgets.buildTextField(
-                    label: 'Purpose of visit',
-                    controller: _purposeController,
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Expanded(
+                        child: AppWidgets.buildTextField(
+                          label: 'Purpose of visit',
+                          controller: _purposeController,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: _voiceForPurpose,
+                        borderRadius: BorderRadius.circular(24),
+                        child: Container(
+                          width: 46,
+                          height: 46,
+                          decoration: BoxDecoration(
+                            color: AppColors.redLight,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: AppColors.red.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: const Icon(
+                            Icons.mic,
+                            color: AppColors.red,
+                            size: 22,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 12),
                   Row(
