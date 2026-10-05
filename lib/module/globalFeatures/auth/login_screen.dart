@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:kutchina/core/auth/app_roles.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/offline/connectivity_service.dart';
 import 'package:kutchina/core/offline/offline_prefetch.dart';
@@ -9,7 +10,6 @@ import 'package:kutchina/core/services/auth_api.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/utils/responsive.dart';
-import 'package:kutchina/module/admin/admin_dashboard.dart';
 import 'package:provider/provider.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -25,7 +25,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String _selectedRole = 'Sales Exec';
 
   bool _loading = false;
-  bool _fingerprintReady = false; // device supports it AND user enabled it
+  bool _bioAvailable = false; // device has an enrolled fingerprint/face
+  bool _bioEnabled = false; // user already turned fingerprint login on
+  bool _useFingerprintNext = true; // checkbox: enable after this login
+  bool get _fingerprintReady => _bioAvailable && _bioEnabled;
   final _mobileController = TextEditingController();
   final _passwordController = TextEditingController();
 
@@ -39,9 +42,13 @@ class _LoginScreenState extends State<LoginScreen> {
     final available = await BiometricAuthService.isAvailable();
     final enabled = await BiometricAuthService.isEnabled();
     if (!mounted) return;
-    setState(() => _fingerprintReady = available && enabled);
+    setState(() {
+      _bioAvailable = available;
+      _bioEnabled = enabled;
+    });
     if (_fingerprintReady) {
-      // Prompt straight away, the user can still cancel and type a password.
+      // Prompt straight away. Cancel it and the password form below is
+      // still there, nothing is locked.
       WidgetsBinding.instance.addPostFrameCallback(
         (_) => _loginWithFingerprint(),
       );
@@ -64,14 +71,8 @@ class _LoginScreenState extends State<LoginScreen> {
     OfflinePrefetch.run();
     SyncService.instance.syncNow();
 
-    if (user.role?.toLowerCase() == 'admin') {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => AdminDashboard()),
-      );
-    } else {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-    }
+    // Distributor / Sales Head / HOD / Admin / Sales Exec each get their own home.
+    AppRoles.openHome(context, user.role);
   }
 
   Future<void> _login() async {
@@ -92,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (!mounted) return;
       setState(() => _loading = false);
 
-      await _offerFingerprint(userId, password);
+      await _saveFingerprint(userId, password);
       if (!mounted) return;
 
       _enterApp(loginResult.user);
@@ -109,51 +110,27 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  /// After a successful password login: keep the stored fingerprint
-  /// credentials fresh, or ask once whether to turn fingerprint login on.
-  Future<void> _offerFingerprint(String userId, String password) async {
+  /// After a successful password login: refresh stored fingerprint data,
+  /// or turn fingerprint login on when the user ticked the checkbox.
+  Future<void> _saveFingerprint(String userId, String password) async {
     try {
-      if (!await BiometricAuthService.isAvailable()) return;
+      if (!_bioAvailable) return;
       final userJson = await UserStore.getUser();
       if (userJson == null) return;
 
-      if (await BiometricAuthService.isEnabled()) {
-        await BiometricAuthService.refreshIfEnabled(
-          userId: userId,
-          password: password,
-          userJson: userJson,
-        );
-        if (await BiometricAuthService.storedUserId() == userId) return;
+      if (_bioEnabled) {
+        // Same account: keep password/profile fresh. Other account: only
+        // switch when the box is ticked.
+        if (await BiometricAuthService.storedUserId() == userId) {
+          await BiometricAuthService.refreshIfEnabled(
+            userId: userId,
+            password: password,
+            userJson: userJson,
+          );
+          return;
+        }
       }
-      if (!mounted) return;
-
-      final replacing = await BiometricAuthService.isEnabled();
-      final yes = await showDialog<bool>(
-        context: context,
-        builder: (ctx) => AlertDialog(
-          title: Text(
-            replacing
-                ? 'Switch fingerprint login?'
-                : 'Enable fingerprint login?',
-          ),
-          content: Text(
-            replacing
-                ? 'Fingerprint login is set up for another account on this phone. Use it for this account instead?'
-                : 'Log in with your fingerprint next time, even when there is no internet. Your login is stored encrypted on this phone.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Not now'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(ctx, true),
-              child: const Text('Enable'),
-            ),
-          ],
-        ),
-      );
-      if (yes != true) return;
+      if (!_useFingerprintNext) return;
 
       final ok = await BiometricAuthService.enable(
         userId: userId,
@@ -165,7 +142,7 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
         ok ? 'Fingerprint login enabled' : 'Fingerprint not confirmed',
       );
-      if (ok) setState(() => _fingerprintReady = true);
+      if (ok) setState(() => _bioEnabled = true);
     } catch (_) {
       // Never block a successful login because of the optional fingerprint step.
     }
@@ -173,6 +150,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _loginWithFingerprint() async {
     if (_loading) return;
+
+    if (!_bioEnabled) {
+      // Nothing saved yet: guide the user through the one-time setup.
+      setState(() => _useFingerprintNext = true);
+      AppWidgets.toast(
+        context,
+        'Enter User Id and password once, then tap Log in to set up fingerprint',
+      );
+      return;
+    }
 
     final ok = await BiometricAuthService.authenticate(
       'Log in to Kutchina Sales Companion',
@@ -312,14 +299,68 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               const SizedBox(height: 16),
 
+              if (_bioAvailable && !_bioEnabled)
+                InkWell(
+                  onTap: _loading
+                      ? null
+                      : () => setState(
+                          () => _useFingerprintNext = !_useFingerprintNext,
+                        ),
+                  child: Padding(
+                    padding: const EdgeInsets.only(bottom: 10),
+                    child: Row(
+                      children: [
+                        SizedBox(
+                          width: 24,
+                          height: 24,
+                          child: Checkbox(
+                            value: _useFingerprintNext,
+                            onChanged: _loading
+                                ? null
+                                : (v) => setState(
+                                    () => _useFingerprintNext = v ?? false,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Expanded(
+                          child: Text(
+                            'Use fingerprint to log in next time',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: AppColors.steel,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
               AppWidgets.buildButton(
-                _loading ? 'Logging in…' : 'Log in',
+                _loading ? 'Logging in…' : 'Log in with password',
                 onTap: _loading ? null : _login,
               ),
-              if (_fingerprintReady) ...[
+              if (_bioAvailable) ...[
+                const SizedBox(height: 12),
+                Row(
+                  children: const [
+                    Expanded(child: Divider(color: AppColors.line)),
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 10),
+                      child: Text(
+                        'or',
+                        style: TextStyle(fontSize: 11, color: AppColors.steel),
+                      ),
+                    ),
+                    Expanded(child: Divider(color: AppColors.line)),
+                  ],
+                ),
                 const SizedBox(height: 12),
                 AppWidgets.buildButton(
-                  'Login with fingerprint',
+                  _bioEnabled
+                      ? 'Login with fingerprint'
+                      : 'Set up fingerprint login',
                   icon: Icons.fingerprint,
                   variant: AppButtonVariant.outline,
                   onTap: _loading ? null : _loginWithFingerprint,

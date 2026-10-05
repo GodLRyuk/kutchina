@@ -90,6 +90,9 @@ class KutchinaSalesApp extends StatelessWidget {
         '/otp': (context) => const OtpVerificationScreen(),
         '/dashboard': (context) => const DashboardScreen(),
         '/leads': (context) => const LeadsScreen(),
+        // '/distributor': (context) => const DistributorHome(),
+        // '/saleshead': (context) => const SalesHeadHome(),
+        // '/hod': (context) => const HodHome(),
       },
     );
   }
