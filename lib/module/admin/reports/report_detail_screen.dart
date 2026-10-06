@@ -640,6 +640,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             avatarText: _initials(title),
             badgeText: badge.$1,
             badgeTone: badge.$2,
+            growth: it.achievementProbabilityPercentage, // added to show growth
             stats: [
               _Stat('THIS PERIOD SALES', _currency(it.currentPeriodSales)),
               _Stat('TARGET', _currency(it.targetValue)),
@@ -1181,6 +1182,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         () {
           final s = recency(it.daysSinceLastVisit);
           final d = it.daysSinceLastVisit;
+          final ach = it.achievementPercentage.number; // for growth show
           final f = _footFromBackend(
             it.nextMonthTarget.hasValue ? it.nextMonthTarget : it.growthTarget,
             _plan(sales: 0, target: 0, projNext: 0),
@@ -1201,6 +1203,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 '${it.dealerCategory}${city == null ? '' : ' · $city'} · ${d == null ? 'never visited' : 'last visit ${d}d ago'}',
             avatarText: _initials(it.dealerName),
             trend: [for (final t in it.trend) t.value],
+            // growth: ach,
+            growth: it.changePercentage,
             badgeText: s.$1,
             badgeTone: s.$2,
             stats: [
@@ -1399,7 +1403,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
 
     final funnel = [
-      _FunnelStep('Submitted', pctAt(0), _C.primary),
+      _FunnelStep(
+        'Submitted',
+        pctAt(0),
+        const Color.fromARGB(255, 72, 84, 119),
+      ),
       _FunnelStep('Confirmed', pctAt(1), const Color(0xFF3A6BEB)),
       _FunnelStep('Dispatched', pctAt(2), _C.info),
       _FunnelStep('Delivered', pctAt(3), _C.good),
@@ -1424,6 +1432,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           final o = atRisk[i];
           final cancelled = _stage(o.orderStatus) == -1;
           final rl = o.riskLevel.toLowerCase();
+
           return _RiskRow(
             avatarIdx: i + 2,
             avatarText: o.orderNumber.length >= 2
@@ -1431,7 +1440,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 : o.orderNumber,
             title: o.orderNumber,
             sub: o.products,
-            insight: o.insight,
+            //insight: o.insight,
             value: _currency(o.revenueAtRiskValue),
             badgeText: cancelled
                 ? 'CANCELLED'
@@ -1440,22 +1449,23 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           );
         }(),
     ];
-    final riskSrc = riskRows.isNotEmpty
-        ? riskRows
-        : (_showPh
-              ? const [
-                  _RiskRow(
-                    avatarIdx: 2,
-                    avatarText: '00',
-                    title: 'Test',
-                    sub: 'Test — no at-risk orders',
-                    insight: '',
-                    value: '₹0',
-                    badgeText: 'NO DATA',
-                    badgeTone: _Tone.neutral,
-                  ),
-                ]
-              : <_RiskRow>[]);
+    // final riskSrc = riskRows.isNotEmpty
+    //     ? riskRows
+    //     : (_showPh
+    //           ? const [
+    //               _RiskRow(
+    //                 avatarIdx: 2,
+    //                 avatarText: '00',
+    //                 title: 'Test',
+    //                 sub: 'Test — no at-risk orders',
+    //                 value: '₹0',
+    //                 badgeText: 'NO DATA',
+    //                 badgeTone: _Tone.neutral,
+    //               ),
+    //             ]
+    //           : <_RiskRow>[]);
+
+    final riskSrc = riskRows;
 
     final kpis = [
       _Kpi(
@@ -1486,34 +1496,57 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       ),
     ];
 
-    const zonePlaceholder = _TargetData(
-      title: 'Test zone',
-      sub: 'Test — ₹0 revenue at risk this month',
-      avatarText: 'TE',
-      badgeText: 'NO DATA',
-      badgeTone: _Tone.neutral,
-      stats: [
-        _Stat('ON-TIME THIS MONTH', '00%'),
-        _Stat('ON-TIME TARGET', '00%'),
-        _Stat('vs TARGET', '00%'),
-        _Stat('NEXT MO. PROJECTED', '00%'),
-      ],
-      extra: 'Revenue at risk: **₹0** this month → **₹0** projected next month',
-      footLabel: 'NEXT MONTH ON-TIME TARGET FOR ZONE',
-      footValue: '00%',
-      footTag: 'PENDING',
-      footTone: _Tone.neutral,
-    );
+    
+    final cards = <_TargetData>[
+      for (final it in items)
+        () {
+          final cancelled = _stage(it.orderStatus) == -1;
+          final rl = it.riskLevel.toLowerCase();
+          final isHigh = cancelled || rl == 'high';
+          final tone = isHigh
+              ? _Tone.risk
+              : rl == 'medium'
+              ? _Tone.warn
+              : _Tone.neutral;
 
-    final actions = [
-      for (final o in atRisk.where((i) => i.insight.isNotEmpty).take(2))
-        _Action(
-          title: 'Review ${o.orderNumber}',
-          body: o.insight,
-          impact: '${_currency(o.revenueAtRiskValue)} at risk',
-          tone: _Tone.risk,
-        ),
+          return _TargetData(
+            title: it.products,
+            sub: it.orderNumber,
+            growth: it.orderGrowthPercentage,
+             
+            avatarText: _initials(it.products),
+            badgeText: cancelled
+                ? 'CANCELLED'
+                : it.isAtRisk
+                ? '${rl.toUpperCase()} RISK'
+                : 'ON TRACK',
+            badgeTone: tone,
+            stats: [
+              _Stat('ORDER VALUE', _currency(it.grossValue)),
+              _Stat('QUANTITY', it.orderedQuantity.toStringAsFixed(0)),
+              _Stat('STATUS', it.orderStatus),
+              _Stat('CHANNEL', it.channel),
+            ],
+            extra: '${it.dealer} · ${it.salesperson}',
+            footLabel: 'REVENUE AT RISK',
+            footValue: _currency(it.revenueAtRiskValue),
+            footTag: rl.toUpperCase(),
+            footTone: tone,
+          );
+        }(),
     ];
+
+    // final actions = [
+    //   for (final o in atRisk.where((i) => i.insight.isNotEmpty).take(2))
+    //     _Action(
+    //       title: 'Review ${o.orderNumber}',
+    //       body: o.insight,
+    //       impact: '${_currency(o.revenueAtRiskValue)} at risk',
+    //       tone: _Tone.risk,
+    //     ),
+    // ];
+
+    //******************************************************* */
 
     return _View(
       copy: loaded
@@ -1531,11 +1564,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ..._targetSection(
           'Monthly projection & next month\'s target',
           '· on-time delivery, per zone',
-          const [],
-          zonePlaceholder,
+          //const [],
+          cards,
+          _placeholderTarget(footLabel: 'RISK LEVEL'),
+          
         ),
       ],
-      actions: actions,
+      actions: const[],
     );
   }
 }
@@ -1632,7 +1667,7 @@ class _RiskRow {
     required this.avatarText,
     required this.title,
     required this.sub,
-    required this.insight,
+    this.insight = '',
     required this.value,
     required this.badgeText,
     required this.badgeTone,
@@ -2946,12 +2981,31 @@ String _initials(String s) {
 
 String _cur(double? v) => v == null ? '₹0' : _currency(v);
 
-String _currency(double value) {
+// String _currency(double value) {
+//   final sign = value < 0 ? '-' : '';
+//   final v = value.abs();
+//   if (v >= 10000000) return '$sign₹${(v / 10000000).toStringAsFixed(1)}Cr';
+//   if (v >= 100000) return '$sign₹${(v / 100000).toStringAsFixed(1)}L';
+//   if (v >= 1000) return '$sign₹${(v / 1000).toStringAsFixed(1)}K';
+//   return '$sign₹${v.toStringAsFixed(0)}';
+// }
+
+String _currency(double value, {int decimals = 2}) {
+  // added decimals parameter for flexibility and more accurate formatting
   final sign = value < 0 ? '-' : '';
   final v = value.abs();
-  if (v >= 10000000) return '$sign₹${(v / 10000000).toStringAsFixed(1)}Cr';
-  if (v >= 100000) return '$sign₹${(v / 100000).toStringAsFixed(1)}L';
-  if (v >= 1000) return '$sign₹${(v / 1000).toStringAsFixed(1)}K';
+
+  String fmt(double x) {
+    var s = x.toStringAsFixed(decimals);
+    if (s.contains('.')) {
+      s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    return s;
+  }
+
+  if (v >= 10000000) return '$sign₹${fmt(v / 10000000)}Cr';
+  if (v >= 100000) return '$sign₹${fmt(v / 100000)}L';
+  if (v >= 1000) return '$sign₹${fmt(v / 1000)}K';
   return '$sign₹${v.toStringAsFixed(0)}';
 }
 

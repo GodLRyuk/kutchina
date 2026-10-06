@@ -296,6 +296,7 @@ class DealerPotentialItem {
   final TrackedValue nextMonthTarget;
   final TrackedValue outstandingAmount;
   final TrackedValue city;
+  final double? changePercentage;
 
   const DealerPotentialItem({
     required this.dealerId,
@@ -316,6 +317,7 @@ class DealerPotentialItem {
     required this.nextMonthTarget,
     required this.outstandingAmount,
     required this.city,
+    required this.changePercentage,
   });
 
   factory DealerPotentialItem.fromJson(Map<String, dynamic> json) {
@@ -344,6 +346,7 @@ class DealerPotentialItem {
       nextMonthTarget: TrackedValue.fromJson(json['next_month_target']),
       outstandingAmount: TrackedValue.fromJson(json['outstanding_amount']),
       city: TrackedValue.fromJson(json['city']),
+      changePercentage: TrackedValue.fromJson(json['change_percentage']).number,
     );
   }
 }
@@ -415,6 +418,11 @@ class FulfilmentOrderItem {
   final String riskLevel; // low / medium / high
   final double revenueAtRiskValue;
   final String insight;
+  final String salesperson; 
+  final String dealer; 
+  final bool isAtRisk;
+  final double orderGrowthPercentage;
+  
 
   const FulfilmentOrderItem({
     required this.orderId,
@@ -428,6 +436,10 @@ class FulfilmentOrderItem {
     required this.riskLevel,
     required this.revenueAtRiskValue,
     required this.insight,
+    required this.salesperson,
+    required this.dealer,
+    required this.isAtRisk,
+    required this.orderGrowthPercentage,
   });
 
   factory FulfilmentOrderItem.fromJson(Map<String, dynamic> json) {
@@ -443,6 +455,10 @@ class FulfilmentOrderItem {
       riskLevel: json['risk_level']?.toString() ?? '',
       revenueAtRiskValue: _number(json['revenue_at_risk_value']),
       insight: json['insight']?.toString() ?? 'No Order Item',
+      salesperson: (json['salesperson'] ?? '').toString(),
+      dealer: (json['dealer'] ?? '').toString(),
+      isAtRisk: json['is_at_risk'] == true,
+      orderGrowthPercentage: _number(json['order_growth_percentage']),
     );
   }
 }
