@@ -73,3 +73,18 @@ class CategoryModel {
     categories = list.map((c) => c.name).toList();
   }
 }
+
+
+class SuggestionModel{
+  final String text;
+  final int usageCount; // Optional: Track how many times this suggestion has been used
+  SuggestionModel({required this.text, required this.usageCount});
+
+  factory SuggestionModel.fromJson(Map<String, dynamic> json) {
+    return SuggestionModel(
+      text: json['suggestion']?.toString().trim() ?? '',
+      usageCount: json['usage_count'] as int? ?? 0,
+    );
+  }
+
+}

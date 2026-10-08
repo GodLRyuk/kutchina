@@ -192,6 +192,7 @@ class AppWidgets {
     String? hint,
     bool obscure = false,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -216,6 +217,7 @@ class AppWidgets {
           ),
           child: TextField(
             controller: controller,
+            onChanged: onChanged,
             obscureText: obscure,
             keyboardType: keyboardType,
             style: const TextStyle(color: AppColors.ink, fontSize: 13),

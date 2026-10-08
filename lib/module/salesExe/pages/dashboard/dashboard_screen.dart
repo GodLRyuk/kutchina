@@ -375,6 +375,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                             height: 1.0,
                           ),
                         ),
+                        SizedBox(height: 20),
                         SizedBox(
                           height: 240,
                           child: TweenAnimationBuilder<double>(

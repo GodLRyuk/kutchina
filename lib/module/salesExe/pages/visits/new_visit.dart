@@ -13,6 +13,8 @@ import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/utils/note_sheet.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/suggestion_dropdown.dart';
+import 'package:kutchina/module/salesExe/models/product_model.dart';
 
 class NewVisitScreen extends StatefulWidget {
   const NewVisitScreen({super.key});
@@ -23,7 +25,7 @@ class NewVisitScreen extends StatefulWidget {
 
 class _NewVisitScreenState extends State<NewVisitScreen> {
   final _purposeController = TextEditingController(
-    text: 'Stock check & new display',
+    // text: 'Stock check & new display',
   );
   final _noteController = TextEditingController();
   final _otherController = TextEditingController();
@@ -40,6 +42,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   final ImagePicker _picker = ImagePicker();
   List<dynamic> _distributors = [];
   List<dynamic> _retailers = [];
+  List<SuggestionModel> _suggestions = [];
+  List<SuggestionModel> _filtered = [];
   bool _loadingEntities = false;
   String? _entityError;
   bool _submitting = false;
@@ -47,6 +51,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   bool _loadingLocation = true;
   bool _loadingAddress = false;
   final List<File> _extraPhotos = [];
+  bool _noMatch = false;
 
   /// Maps the UI label to the API code expected by the backend.
   String? get _visitTypeCode {
@@ -77,6 +82,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
+    _loadSuggestions();
   }
 
   @override
@@ -85,6 +91,37 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     _noteController.dispose();
     _otherController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadSuggestions() async {
+    try {
+      final data = await MastersApi.fetchSuggestions();
+
+      if (!mounted) return;
+      setState(() => _suggestions = data);
+    } catch (e) {
+      if (!mounted) return;
+      AppWidgets.toast(context, 'Failed to load suggestions');
+    }
+  }
+
+  void _onPurposeChanged(String value) {
+    final result = filterSuggestions(_suggestions, value);
+    setState(() {
+      _filtered = result;
+      _noMatch = hasNoMatch(_suggestions, result, value);
+    });
+  }
+
+  void _selectSuggestion(SuggestionModel s) {
+    _purposeController.text = s.text;
+    _purposeController.selection = TextSelection.fromPosition(
+      TextPosition(offset: s.text.length),
+    );
+    setState(() {
+      _filtered = [];
+      _noMatch = false;
+    });
   }
 
   Future<void> _loadEntities() async {
@@ -184,7 +221,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     final result = await showModalBottomSheet<String>(
       context: context,
       isScrollControlled: true,
-      builder: (_) => NoteSheet(initialText: _noteController.text),
+      builder: (_) => NoteSheet(
+        initialText: _noteController.text,
+        suggestions: _suggestions,
+      ),
     );
 
     if (!mounted) return;
@@ -368,6 +408,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         offset: _purposeController.text.length,
       );
     });
+    _onPurposeChanged(_purposeController.text);
   }
 
   Future<void> _getCurrentLocation() async {
@@ -798,39 +839,56 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   ],
                   const SizedBox(height: 12),
 
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: AppWidgets.buildTextField(
-                          label: 'Purpose of visit',
-                          controller: _purposeController,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      InkWell(
-                        onTap: _voiceForPurpose,
-                        borderRadius: BorderRadius.circular(24),
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: AppColors.redLight,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.red.withValues(alpha: 0.4),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: AppWidgets.buildTextField(
+                              label: 'Purpose of visit',
+                              controller: _purposeController,
+                              onChanged: _onPurposeChanged,
                             ),
                           ),
-                          child: const Icon(
-                            Icons.mic,
-                            color: AppColors.red,
-                            size: 22,
+                          const SizedBox(width: 8),
+                          InkWell(
+                            onTap: _voiceForPurpose,
+                            borderRadius: BorderRadius.circular(24),
+                            child: Container(
+                              width: 46,
+                              height: 46,
+                              decoration: BoxDecoration(
+                                color: AppColors.redLight,
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.red.withValues(alpha: 0.4),
+                                ),
+                              ),
+                              child: const Icon(
+                                Icons.mic,
+                                color: AppColors.red,
+                                size: 22,
+                              ),
+                            ),
                           ),
+                        ],
+                      ),
+
+                      Padding(
+                        padding: const EdgeInsets.only(right: 54),
+                        child: SuggestionDropdown(
+                          items: _filtered,
+                          noMatch: _noMatch,
+                          onSelect: _selectSuggestion,
+                          onDismiss: () => setState(() => _noMatch = false),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+
+                  const SizedBox(height: 12), 
                   Row(
                     children: [
                       Expanded(

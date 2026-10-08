@@ -381,6 +381,23 @@ class MastersApi {
         .map(Product.fromJson)
         .toList();
   }
+
+
+
+  static Future<List<SuggestionModel>> fetchSuggestions() async {
+    final res = await ApiService.instance.getCached(
+      '/api/v1/orders/visits/purpose-suggestions/',
+    );
+    final raw = res.data;
+    final list = raw is List
+        ? raw
+        : (raw is Map ? raw['data'] as List? ?? [] : []);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(SuggestionModel.fromJson)
+        .toList();
+  }
 }
 
 class OrderService {

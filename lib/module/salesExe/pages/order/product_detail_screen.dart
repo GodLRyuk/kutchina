@@ -26,18 +26,24 @@ class ProductDetailScreen extends StatefulWidget {
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
   //int _qty = 1;
-  final Map<int, int> _qtys = {};
-  int _qtyOf(int i) => _qtys[i] ?? 1;
+  // final Map<int, int> _qtys = {};
+  // int _qtyOf(int i) => _qtys[i] ?? 1;
+  late List<Product> _products = List.from(widget.products);
+  final Map<Product, int> _qtys = {};
+  int _qtyOf(Product p) => _qtys[p] ?? 1;
 
   void _goToCart() {
     final selected = <Map<String, dynamic>>[];
-    for (int i = 0; i < widget.products.length; i++) {
-      if (widget.products[i].isActive) {
-        selected.add({
-          'product': widget.products[i],
-          'qty': _qtyOf(i),
-        }); // add product into the selected list
-      }
+    // for (int i = 0; i < widget.products.length; i++) {
+    //   if (widget.products[i].isActive) {
+    //     selected.add({
+    //       'product': widget.products[i],
+    //       'qty': _qtyOf(i),
+    //     }); // add product into the selected list
+    //   }
+    // }
+    for (final p in _products) {
+      if (p.isActive) selected.add({'product': p, 'qty': _qtyOf(p)});
     }
 
     Navigator.push(
@@ -55,7 +61,8 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final products = widget.products;
+    //final products = widget.products;
+    final products = _products;
 
     return Scaffold(
       backgroundColor: AppColors.ash,
@@ -253,8 +260,27 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                           );
                         }
                         final i = index - 1;
-                        return _productCard(products[i], i);
+                        //return _productCard(products[i], i);
                         // print(_productCard(products[i], i));
+                        final p = products[i];
+                        return Dismissible(
+                          key: ObjectKey(p),
+                          direction: DismissDirection.endToStart,
+                          onDismissed: (_) => setState(() {
+                            _products.removeAt(i);
+                            _qtys.remove(p);
+                          }),
+                          background: Container(
+                            alignment: Alignment.centerRight,
+                            padding: const EdgeInsets.only(right: 24),
+                            color: AppColors.red,
+                            child: const Icon(
+                              Icons.delete_outline,
+                              color: Colors.white,
+                            ),
+                          ),
+                          child: _productCard(p),
+                        );
                       },
                     ),
             ),
@@ -291,8 +317,10 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   // add 28-9-2026 *********************
 
-  Widget _productCard(Product p, int i) {
-    final qty = _qtyOf(i);
+  // Widget _productCard(Product p, int i) 
+  Widget _productCard(Product p) 
+  {
+    final qty = _qtyOf(p);
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -398,7 +426,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               AppWidgets.buildIconButton(
                 Icons.remove,
                 size: 26,
-                onTap: () => setState(() => _qtys[i] = qty > 1 ? qty - 1 : 1),
+                onTap: () => setState(() => _qtys[p] = qty > 1 ? qty - 1 : 1),
               ),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -413,7 +441,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
               AppWidgets.buildIconButton(
                 Icons.add,
                 size: 26,
-                onTap: () => setState(() => _qtys[i] = qty + 1),
+                onTap: () => setState(() => _qtys[p] = qty + 1),
               ),
             ],
           ),
