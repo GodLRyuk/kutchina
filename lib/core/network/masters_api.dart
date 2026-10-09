@@ -382,11 +382,9 @@ class MastersApi {
         .toList();
   }
 
-
-
-  static Future<List<SuggestionModel>> fetchSuggestions() async {
+  static Future<List<SuggestionModel>> fetchSuggestions(String search) async {
     final res = await ApiService.instance.getCached(
-      '/api/v1/orders/visits/purpose-suggestions/',
+      '/api/v1/orders/visits/purpose-suggestions/?text=$search',
     );
     final raw = res.data;
     final list = raw is List
@@ -490,12 +488,18 @@ class OrderService {
     final res = await ApiService.instance.getCached('/api/v1/orders/place/');
 
     final raw = res.data;
+
+    // final serverList = raw is List
+    //     ? raw
+    //     : (raw is Map
+    //           ? raw['data'] as List? ?? raw['results'] as List? ?? []
+    //           : []);
+
     final serverList = raw is List
         ? raw
         : (raw is Map
-              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              ? (raw['orders'] ?? raw['data'] ?? raw['results']) as List? ?? []
               : []);
-
     final orders = <OrderEntry>[];
 
     for (final value in serverList) {
@@ -565,6 +569,99 @@ class OrderService {
       return bDate.compareTo(aDate);
     });
 
+    return orders;
+  }
+
+  //  static Future<List<OrderEntry>> searchOrders(String search) async {
+  //   final query = search.trim();
+  //   if (query.isEmpty) return [];
+
+  //   final res =
+  //       await ApiService.instance.getCached('/api/v1/orders/place/$query');
+  //   final raw = res.data;
+  //   final list = raw is Map ? (raw['orders'] as List? ?? []) : [];
+
+  //   // product_id -> name (the search endpoint doesn't send names)
+  //   final names = <String, String>{};
+  //   try {
+  //     final products = await MastersApi.fetchProducts();
+  //     for (final p in products) {
+  //       names[p.id.toString()] = p.name;
+  //     }
+  //   } catch (_) {}
+
+  //   final orders = <OrderEntry>[];
+  //   for (final value in list) {
+  //     if (value is! Map) continue;
+  //     try {
+  //       final row = Map<String, dynamic>.from(value);
+  //       final pid = row['product_id']?.toString() ?? '';
+
+  //       if ((row['product_name']?.toString() ?? '').isEmpty) {
+  //         row['product_name'] = names[pid] ?? 'Product #$pid';
+  //       }
+
+  //       orders.add(OrderEntry.fromJson(row));
+  //     } catch (e) {
+  //       print('Failed to parse order row: $e\nrow: $value');
+  //     }
+  //   }
+  //   return orders;
+  // }
+
+  static Future<List<OrderEntry>> searchOrders(
+    String search, {
+    String? entityId,
+    String? entityType, // 'R' or 'D'
+  }) async {
+    final query = search.trim();
+    print("searchOrders: query=$query, entityId=$entityId, entityType=$entityType");
+    if (query.isEmpty && entityId == null) return [];
+
+    final res = entityId == null
+        ? await ApiService.instance.getCached('/api/v1/orders/place/$query/')
+        : await ApiService.instance.getCached(
+            '/api/v1/orders/place/',
+            queryParams: {
+              if (entityType != null) 'user_type': entityType,
+              'order_for': entityId,
+              if (query.isNotEmpty) 'order_number': query,
+            },
+          );
+          print("searchOrders: res.data=${res.data}");
+
+    final raw = res.data;
+    final list = raw is List
+        ? raw
+        : (raw is Map
+              ? (raw['orders'] ?? raw['data'] ?? raw['results']) as List? ?? []
+              : []);
+
+    // product_id -> name (the search endpoint doesn't send names)
+    final names = <String, String>{};
+    try {
+      final products = await MastersApi.fetchProducts();
+      for (final p in products) {
+        names[p.id.toString()] = p.name;
+      }
+    } catch (_) {}
+
+    final orders = <OrderEntry>[];
+    for (final value in list) {
+      if (value is! Map) continue;
+      try {
+        final row = Map<String, dynamic>.from(value);
+        final pid = row['product_id']?.toString() ?? '';
+
+        if ((row['product_name']?.toString() ?? '').isEmpty) {
+          row['product_name'] = names[pid] ?? 'Product #$pid';
+        }
+
+        orders.add(OrderEntry.fromJson(row));
+      } catch (e) {
+        print('Failed to parse order row: $e\nrow: $value');
+      }
+    }
     return orders;
   }
 }

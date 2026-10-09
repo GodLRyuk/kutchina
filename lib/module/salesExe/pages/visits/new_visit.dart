@@ -1,5 +1,4 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -51,7 +50,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   bool _loadingLocation = true;
   bool _loadingAddress = false;
   final List<File> _extraPhotos = [];
-  bool _noMatch = false;
+  String _lastQuery = '';
 
   /// Maps the UI label to the API code expected by the backend.
   String? get _visitTypeCode {
@@ -82,7 +81,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   void initState() {
     super.initState();
     _getCurrentLocation();
-    _loadSuggestions();
   }
 
   @override
@@ -93,35 +91,59 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     super.dispose();
   }
 
-  Future<void> _loadSuggestions() async {
+  Future<void> _loadSuggestions(String query) async {
     try {
-      final data = await MastersApi.fetchSuggestions();
-
+      final data = await MastersApi.fetchSuggestions(query);
       if (!mounted) return;
-      setState(() => _suggestions = data);
+      if (query != _lastQuery) return; // ignore stale responses
+
+      setState(() {
+        _suggestions = data;
+        _filtered = data;
+       
+      });
     } catch (e) {
       if (!mounted) return;
       AppWidgets.toast(context, 'Failed to load suggestions');
     }
   }
 
+  void _fetchNow(String value) {
+    final query = value.trim();
+    if (query.isEmpty || query == _lastQuery) return;
+    _lastQuery = query;
+    _loadSuggestions(query);
+  }
+
   void _onPurposeChanged(String value) {
-    final result = filterSuggestions(_suggestions, value);
-    setState(() {
-      _filtered = result;
-      _noMatch = hasNoMatch(_suggestions, result, value);
-    });
+    if (value.endsWith(' ') && value.trim().isNotEmpty) {
+      _fetchNow(value);
+      return;
+    }
+    _lastQuery = '';
+    if (_filtered.isNotEmpty || _suggestions.isNotEmpty) {
+      setState(() {
+        _suggestions = [];
+        _filtered = [];
+        
+      });
+    }
   }
 
   void _selectSuggestion(SuggestionModel s) {
-    _purposeController.text = s.text;
-    _purposeController.selection = TextSelection.fromPosition(
-      TextPosition(offset: s.text.length),
+    final newText = '${_purposeController.text.trimRight()} ${s.text} ';
+
+    _purposeController.text = newText;
+    _purposeController.selection = TextSelection.collapsed(
+      offset: newText.length,
     );
+
     setState(() {
       _filtered = [];
-      _noMatch = false;
+      
     });
+
+    _fetchNow(newText); // next suggestions for the full text
   }
 
   Future<void> _loadEntities() async {
@@ -880,21 +902,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                         padding: const EdgeInsets.only(right: 54),
                         child: SuggestionDropdown(
                           items: _filtered,
-                          noMatch: _noMatch,
                           onSelect: _selectSuggestion,
-                          onDismiss: () => setState(() => _noMatch = false),
                         ),
                       ),
                     ],
                   ),
 
-                  const SizedBox(height: 12), 
+                  const SizedBox(height: 12),
                   Row(
                     children: [
                       Expanded(
                         child: _actionTile(
                           Icons.photo_camera_outlined,
-                          _photoAdded ? 'Photo added' : 'Add photo',
+                          _photoAdded ? 'Selfie captured' : 'Capture selfie',
                           _photoAdded,
                           _addPhoto,
                         ),
@@ -911,39 +931,78 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                     ],
                   ),
 
+                  
                   if (_photoFile != null) ...[
-                    const SizedBox(height: 10),
-                    Stack(
-                      children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.file(
-                            _photoFile!,
-                            height: 140,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                        Positioned(
-                          top: 6,
-                          right: 6,
-                          child: GestureDetector(
-                            onTap: _removePhoto,
-                            child: Container(
-                              padding: const EdgeInsets.all(4),
-                              decoration: const BoxDecoration(
-                                color: Colors.black54,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(
-                                Icons.close,
-                                size: 16,
-                                color: Colors.white,
+                    const SizedBox(height: 20),
+                    Center(
+                      child: SizedBox(
+                        width: 170,
+                        height: 170,
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            GestureDetector(
+                              onTap: () => _viewPhoto(_photoFile!),
+                              child: Container(
+                                width: 170,
+                                height: 170,
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: AppColors.white,
+                                  border: Border.all(
+                                    color: AppColors.green,
+                                    width: 2.5,
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: AppColors.green.withOpacity(.20),
+                                      blurRadius: 14,
+                                      offset: const Offset(0, 4),
+                                    ),
+                                  ],
+                                ),
+                                child: ClipOval(
+                                  child: Image.file(
+                                    _photoFile!,
+                                    width: 162,
+                                    height: 162,
+                                    fit: BoxFit.cover,
+                                    alignment: Alignment
+                                        .topCenter, // keeps the face in frame
+                                    cacheWidth: 500,
+                                  ),
+                                ),
                               ),
                             ),
-                          ),
+
+                            // Retake badge (bottom-right of the circle)
+                            Positioned(
+                              bottom: 6,
+                              right: 6,
+                              child: GestureDetector(
+                                onTap: _addPhoto,
+                                child: Container(
+                                  padding: const EdgeInsets.all(8),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.green,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: Colors.white,
+                                      width: 2,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.photo_camera,
+                                    size: 16,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      ],
+                      ),
                     ),
                   ],
 
@@ -985,27 +1044,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header: title on the left, button on the right
         Row(
           children: [
-            Icon(
-              Icons.photo_library_outlined,
-              size: 18,
-              color: AppColors.redDark,
-            ),
-            const SizedBox(width: 6),
-            const Text(
-              'PHOTOS',
-              style: TextStyle(
-                fontSize: 11,
-                color: AppColors.steel,
-                fontWeight: FontWeight.w700,
-                letterSpacing: .5,
-              ),
-            ),
-            const Spacer(),
             InkWell(
-              onTap: _pickPhoto, // opens camera, adds photo to the grid
+              onTap: _pickPhoto,
               borderRadius: BorderRadius.circular(20),
               child: Container(
                 padding: const EdgeInsets.symmetric(
@@ -1013,9 +1055,12 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: AppColors.redLight.withOpacity(.25),
+                  // color: AppColors.redLight.withOpacity(.25),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.redDark.withOpacity(.35)),
+                  color: _extraPhotos.isEmpty
+                      ? AppColors.white
+                      : AppColors.green,
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -1025,17 +1070,17 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                           ? Icons.photo_camera_outlined
                           : Icons.add_a_photo_outlined,
                       size: 16,
-                      color: AppColors.redDark,
+                      //color: AppColors.redDark,
                     ),
                     const SizedBox(width: 6),
                     Text(
                       _extraPhotos.isEmpty
-                          ? 'Capture Photos'
+                          ? 'Capture display Photos'
                           : 'Add more photos',
                       style: TextStyle(
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
-                        color: AppColors.redDark,
+                        //color: AppColors.redDark,
                       ),
                     ),
                   ],

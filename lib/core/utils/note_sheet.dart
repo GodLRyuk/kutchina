@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/core/widgets/suggestion_dropdown.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 
 class NoteSheet extends StatefulWidget {
@@ -16,8 +15,6 @@ class NoteSheet extends StatefulWidget {
 
 class NoteSheetState extends State<NoteSheet> {
   late final TextEditingController _controller;
-  List<SuggestionModel> _filtered = [];
-  bool _noMatch = false;
 
   @override
   void initState() {
@@ -31,23 +28,6 @@ class NoteSheetState extends State<NoteSheet> {
     super.dispose();
   }
 
-   void _onNoteChanged(String value) {
-  final result = filterSuggestions(widget.suggestions, value);
-  setState(() {
-    _filtered = result;
-    _noMatch = hasNoMatch(widget.suggestions, result, value);
-  });
-}
-
- void _selectSuggestion(SuggestionModel s) {
-    _controller.text = s.text;
-    _controller.selection = TextSelection.collapsed(offset: s.text.length);
-    setState(() {
-      _filtered = [];
-      _noMatch = false;
-    });
-  }
-
   Future<void> _voice() async {
     FocusScope.of(context).unfocus(); // hide keyboard
     final text = await showVoiceInputSheet(context);
@@ -57,7 +37,6 @@ class NoteSheetState extends State<NoteSheet> {
     _controller.selection = TextSelection.collapsed(
       offset: _controller.text.length,
     );
-     _onNoteChanged(_controller.text);
   }
 
   @override
@@ -87,7 +66,6 @@ class NoteSheetState extends State<NoteSheet> {
             children: [
               Expanded(
                 child: TextField(
-                  onChanged: _onNoteChanged,
                   controller: _controller,
                   maxLines: 3,
                   decoration: const InputDecoration(
@@ -115,12 +93,7 @@ class NoteSheetState extends State<NoteSheet> {
               ),
             ],
           ),
-           SuggestionDropdown(
-            items: _filtered,
-            noMatch: _noMatch,
-            onSelect: _selectSuggestion,
-            onDismiss: () => setState(() => _noMatch = false),
-          ),
+
           const SizedBox(height: 12),
           AppWidgets.buildButton(
             'Save note',
