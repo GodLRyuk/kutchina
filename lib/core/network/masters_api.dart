@@ -406,17 +406,53 @@ class OrderService {
   }) async {
     final res = await ApiService.instance.getCached(
       '/api/v1/orders/target/',
-      data: {'user_id': int.tryParse(userId) ?? userId},
+      queryParams: {'user_id': int.tryParse(userId) ?? userId},
     );
-    final data = res.data is Map ? res.data['data'] : null;
-    if (data is! Map) {
+    final raw = res.data;
+    final responseData = raw is Map ? raw['data'] ?? raw : raw;
+    final targetRows = responseData is List
+        ? responseData
+        : responseData is Map
+        ? responseData['results'] as List? ??
+              responseData['targets'] as List? ??
+              [responseData]
+        : <dynamic>[];
+    final targets = targetRows.whereType<Map>().map(
+      (target) => Map<String, dynamic>.from(target),
+    );
+    final now = DateTime.now();
+    Map<String, dynamic>? currentTarget;
+    for (final target in targets) {
+      final month = DateTime.tryParse(
+        (target['month'] ?? target['target_month'])?.toString() ?? '',
+      );
+      if (month != null && month.year == now.year && month.month == now.month) {
+        currentTarget = target;
+        break;
+      }
+    }
+
+    if (currentTarget == null) {
       throw ApiException('Monthly target was not found');
     }
 
     return MonthlyTarget(
-      amount: double.tryParse(data['target']?.toString() ?? '') ?? 0,
-      month: DateTime.tryParse(data['month']?.toString() ?? ''),
-      targetDate: DateTime.tryParse(data['target_date']?.toString() ?? ''),
+      amount:
+          double.tryParse(
+            (currentTarget['target_value'] ?? currentTarget['target'])
+                    ?.toString() ??
+                '',
+          ) ??
+          0,
+      month: DateTime.tryParse(
+        (currentTarget['month'] ?? currentTarget['target_month'])?.toString() ??
+            '',
+      ),
+      targetDate: DateTime.tryParse(
+        (currentTarget['target_date'] ?? currentTarget['end_date'])
+                ?.toString() ??
+            '',
+      ),
     );
   }
 
@@ -506,13 +542,10 @@ class OrderService {
       if (value is Map) {
         try {
           orders.add(OrderEntry.fromJson(Map<String, dynamic>.from(value)));
-        } catch (_) {
-          // Ignore malformed server rows.
-        }
+        } catch (_) {}
       }
     }
 
-    // Add offline orders which have not synchronized yet.
     final queued = await SyncService.instance.listAll();
 
     for (final request in queued.where(
@@ -615,7 +648,9 @@ class OrderService {
     String? entityType, // 'R' or 'D'
   }) async {
     final query = search.trim();
-    print("searchOrders: query=$query, entityId=$entityId, entityType=$entityType");
+    print(
+      "searchOrders: query=$query, entityId=$entityId, entityType=$entityType",
+    );
     if (query.isEmpty && entityId == null) return [];
 
     final res = entityId == null
@@ -628,7 +663,7 @@ class OrderService {
               if (query.isNotEmpty) 'order_number': query,
             },
           );
-          print("searchOrders: res.data=${res.data}");
+    print("searchOrders: res.data=${res.data}");
 
     final raw = res.data;
     final list = raw is List
@@ -700,8 +735,85 @@ class VisitService {
   static Future<List<VisitEntry>> fetchTodayVisits({
     required String date,
   }) async {
+    final res = await ApiService.instance.getCached('/api/v1/orders/visits/');
+
+    final raw = res.data;
+    final serverList = raw is List
+        ? raw
+        : (raw is Map
+              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              : []);
+
+    final visits = <VisitEntry>[];
+
+    for (final value in serverList) {
+      if (value is Map) {
+        visits.add(VisitEntry.fromJson(Map<String, dynamic>.from(value)));
+      }
+    }
+
+    final queued = await SyncService.instance.listAll();
+
+    for (final request in queued.where(
+      (r) =>
+          r.kind == 'visit' && (r.status == 'pending' || r.status == 'failed'),
+    )) {
+      final body = request.body;
+
+      if (body is! Map) continue;
+
+      final created = request.createdAt;
+      final localDate =
+          '${created.year.toString().padLeft(4, '0')}-'
+          '${created.month.toString().padLeft(2, '0')}-'
+          '${created.day.toString().padLeft(2, '0')}';
+
+      if (localDate != date) continue;
+
+      final item = Map<String, dynamic>.from(body);
+
+      final lat = item['lat']?.toString() ?? '';
+      final long = item['long']?.toString() ?? '';
+
+      final address = item['address']?.toString().trim() ?? '';
+
+      visits.add(
+        VisitEntry(
+          id: 'offline-${request.id}',
+          visitorName: item['visitor_name']?.toString() ?? 'Offline visit',
+          address: address.isNotEmpty
+              ? address
+              : (lat.isNotEmpty && long.isNotEmpty
+                    ? '$lat, $long'
+                    : 'Address unavailable'),
+          purpose: item['visit_purpose']?.toString() ?? '',
+          visitType: item['visit_type']?.toString() ?? '',
+          note: item['note']?.toString(),
+          createdAt: created,
+          isPendingSync: request.status == 'pending',
+          syncFailed: request.status == 'failed',
+        ),
+      );
+    }
+
+    visits.sort((a, b) {
+      final aDate = a.createdAt;
+      final bDate = b.createdAt;
+
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+
+      return bDate.compareTo(aDate);
+    });
+
+    return visits;
+  }
+
+  static Future<List<VisitEntry>> fetchAllVisits({required String date}) async {
     final res = await ApiService.instance.getCached(
-      '/api/v1/orders/visits/?created_at=$date',
+      '/api/v1/orders/visits/',
+      queryParams: {'created_at': date},
     );
 
     final raw = res.data;

@@ -31,7 +31,7 @@ class OrderEntry {
 
   String get orderTypeLabel => userType == 'D' ? 'Distributor' : 'Retailer';
 
-  double get total => (price ?? 0) ;
+  double get total => (price ?? 0);
 
   factory OrderEntry.fromJson(Map<String, dynamic> json) {
     double? toDouble(dynamic v) {
@@ -45,18 +45,29 @@ class OrderEntry {
       return (s == null || s.isEmpty) ? null : s;
     }
 
+    final product = json['product'] is Map
+        ? Map<String, dynamic>.from(json['product'] as Map)
+        : const <String, dynamic>{};
+
     return OrderEntry(
-      id: json['id'] as int,
+      id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       orderNumber: json['order_number']?.toString() ?? '',
-      productId: json['product_id'] as int,
-      productName: json['product_name']?.toString() ?? '',
+      productId:
+          int.tryParse(
+            (json['product_id'] ?? product['id'])?.toString() ?? '',
+          ) ??
+          0,
+      productName:
+          json['product_name']?.toString() ?? product['name']?.toString() ?? '',
       quantity: toDouble(json['quantity']) ?? 0,
       lat: toDouble(json['lat']),
       long: toDouble(json['long']),
       userType: json['user_type']?.toString() ?? '',
       filterType: nonEmpty(json['filter_type']),
       warranty: nonEmpty(json['warranty']),
-      price: toDouble(json['price']),
+      price: toDouble(
+        json['total_price'] ?? json['total_amount'] ?? json['price'],
+      ),
       orderStatus: json['order_status_display']?.toString() ?? '',
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())

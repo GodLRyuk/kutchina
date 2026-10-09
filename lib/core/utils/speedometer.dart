@@ -1,5 +1,4 @@
-// lib/core/widgets/speedo_painter.dart
-import 'dart:math' as math; // ← add this, needed for needle angle math
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 
@@ -9,96 +8,113 @@ class SpeedoPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height);
-    final radius = size.width / 2 - 30;
-    const startAngle = 3.14159; // 180deg
-    const sweepAngle = 3.14159; // 180deg total
-    const strokeW = 38.0;
-    const borderW = strokeW + 4;
-
-    // track border
-    final trackBorderPaint = Paint()
-      ..color = AppColors.ink.withValues(alpha: 0.15)
-      ..strokeWidth = borderW
-      ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      trackBorderPaint,
-    );
-
+    final center = Offset(size.width / 2, size.height - 10);
+    final radius = math.min(size.width / 2 - 36, center.dy - 26);
+    const strokeWidth = 28.0;
+    final arcRect = Rect.fromCircle(center: center, radius: radius);
     final trackPaint = Paint()
-      ..color = AppColors.productWaterPurifiers
-      ..strokeWidth = strokeW
-      ..strokeCap = StrokeCap.round
+      ..color = AppColors.line
+      ..strokeWidth = strokeWidth
       ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle,
-      false,
-      trackPaint,
-    );
 
-    // progress border
-    final progBorderPaint = Paint()
-      ..color = AppColors.green.withValues(alpha: 0.25)
-      ..strokeWidth = borderW
-      ..strokeCap = StrokeCap.round
+    canvas.drawArc(arcRect, math.pi, math.pi, false, trackPaint);
+
+    const arcColors = [
+      Color(0xFFFF2938),
+      Color(0xFFFF7800),
+      Color(0xFFFFC400),
+      Color(0xFF8CD500),
+      Color(0xFF00B58D),
+    ];
+    final gradientPaint = Paint()
+      ..shader = const SweepGradient(
+        startAngle: math.pi,
+        endAngle: math.pi * 2,
+        colors: arcColors,
+        stops: [0, 0.25, 0.5, 0.75, 1],
+      ).createShader(arcRect)
+      ..strokeWidth = strokeWidth
+      ..strokeCap = StrokeCap.butt
       ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle * percent.clamp(0.0, 1.0),
-      false,
-      progBorderPaint,
-    );
+    canvas.drawArc(arcRect, math.pi, math.pi, false, gradientPaint);
 
-    final progPaint = Paint()
-      ..color = AppColors.greenLight
-      ..strokeWidth = strokeW
+    final tickPaint = Paint()
+      ..color = AppColors.steelLight
       ..strokeCap = StrokeCap.round
-      ..style = PaintingStyle.stroke;
-    canvas.drawArc(
-      Rect.fromCircle(center: center, radius: radius),
-      startAngle,
-      sweepAngle * percent.clamp(0.0, 1.0),
-      false,
-      progPaint,
+      ..strokeWidth = 1.5;
+    for (var index = 0; index <= 20; index++) {
+      final angle = math.pi + math.pi * index / 20;
+      final isMajorTick = index % 5 == 0;
+      final outer = Offset(
+        center.dx + math.cos(angle) * (radius - 21),
+        center.dy + math.sin(angle) * (radius - 21),
+      );
+      final inner = Offset(
+        center.dx + math.cos(angle) * (radius - (isMajorTick ? 36 : 29)),
+        center.dy + math.sin(angle) * (radius - (isMajorTick ? 36 : 29)),
+      );
+      canvas.drawLine(outer, inner, tickPaint);
+    }
+
+    for (final fraction in [0.0, 0.25, 0.5, 0.75, 1.0]) {
+      final angle = math.pi + math.pi * fraction;
+      final labelPosition = Offset(
+        center.dx + math.cos(angle) * (radius + 24),
+        center.dy + math.sin(angle) * (radius + 24),
+      );
+      final labelPainter = TextPainter(
+        text: TextSpan(
+          text: '${(fraction * 100).round()}%',
+          style: const TextStyle(
+            fontSize: 11,
+            color: AppColors.steel,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      labelPainter.paint(
+        canvas,
+        Offset(
+          labelPosition.dx - labelPainter.width / 2,
+          labelPosition.dy - labelPainter.height / 2,
+        ),
+      );
+    }
+
+    final progress = percent.clamp(0.0, 1.0).toDouble();
+    final needleAngle = math.pi + math.pi * progress;
+    final direction = Offset(math.cos(needleAngle), math.sin(needleAngle));
+    // Increase 0.30 to move the pivot up; decrease it to move the pivot down.
+    final needleCenter = center + Offset(0, -radius * 0.30);
+    // Keep the tip on the same 0–100 scale as the dial's major ticks.
+    final needleTip = center + direction * (radius - 36);
+    final needleVector = needleTip - needleCenter;
+    final needleLength = needleVector.distance;
+    final normal = Offset(
+      -needleVector.dy / needleLength,
+      needleVector.dx / needleLength,
     );
-
-    // ---- needle (clock-hand style, tracks same percent) ----
-    final needleAngle = startAngle + sweepAngle * percent.clamp(0.0, 1.0);
-    final needleLen = radius - (strokeW / 2) - 6; // stop short of arc band
-    final needleEnd = Offset(
-      center.dx + needleLen * math.cos(needleAngle),
-      center.dy + needleLen * math.sin(needleAngle),
-    );
-
-    final needleShadowPaint = Paint()
-      ..color = AppColors.ink.withValues(alpha: 0.15)
-      ..strokeWidth = 6
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(center, needleEnd, needleShadowPaint);
-
-    final needlePaint = Paint()
-      ..color = AppColors.ink
-      ..strokeWidth = 4
-      ..strokeCap = StrokeCap.round;
-    canvas.drawLine(center, needleEnd, needlePaint);
-
-    // hub
-    canvas.drawCircle(center, 8, Paint()..color = AppColors.ink);
+    final needlePath = Path()
+      ..moveTo(
+        needleCenter.dx + normal.dx * 2.2,
+        needleCenter.dy + normal.dy * 2.2,
+      )
+      ..lineTo(needleTip.dx, needleTip.dy)
+      ..lineTo(
+        needleCenter.dx - normal.dx * 2.2,
+        needleCenter.dy - normal.dy * 2.2,
+      )
+      ..close();
+    canvas.drawPath(needlePath, Paint()..color = AppColors.ink);
+    canvas.drawCircle(needleCenter, 7, Paint()..color = AppColors.ink);
     canvas.drawCircle(
-      center,
-      8,
+      needleCenter,
+      1,
       Paint()
         ..color = AppColors.white
         ..style = PaintingStyle.stroke
-        ..strokeWidth = 2,
+        ..strokeWidth = 1.5,
     );
   }
 

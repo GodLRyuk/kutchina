@@ -12,8 +12,11 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
 import 'package:kutchina/module/salesExe/pages/visits/new_visit.dart';
+import 'package:kutchina/module/salesExe/pages/visits/today_visits_screen.dart';
 import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
+import 'package:kutchina/module/salesExe/pages/dashboard/top_categories_screen.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
@@ -29,6 +32,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   List<VisitEntry> _todayVisits = [];
   bool _visitsLoading = true;
   double? _monthlyTarget;
+  DateTime? _monthlyTargetMonth;
   double _monthlyOrderTotal = 0;
   double _targetProgress = 0;
   bool _targetLoading = true;
@@ -91,44 +95,66 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) setState(() => _targetLoading = false);
       return;
     }
-    try {
-      final results = await Future.wait([
-        OrderService.fetchCurrentTarget(userId: user.id),
-        OrderService.fetchOrders(),
-      ]);
-      final monthlyTarget = results[0] as MonthlyTarget;
-      final orders = results[1] as List<OrderEntry>;
-      final orderTotal = _calculateOrderTotal(
-        orders,
-        month: monthlyTarget.month,
-        targetDate: monthlyTarget.targetDate,
-      );
-      final progress = monthlyTarget.amount <= 0
-          ? 0.0
-          : (orderTotal / monthlyTarget.amount).clamp(0.0, 1.0);
-      if (!mounted) return;
-      setState(() {
-        _monthlyTarget = monthlyTarget.amount;
-        _monthlyOrderTotal = orderTotal;
-        _targetProgress = progress;
-        _targetLoading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => _targetLoading = false);
+    MonthlyTarget? monthlyTarget;
+    List<OrderEntry>? orders;
+    var targetLoadFailed = false;
+    var ordersLoadFailed = false;
+    await Future.wait([
+      () async {
+        try {
+          monthlyTarget = await OrderService.fetchCurrentTarget(
+            userId: user.id,
+          );
+        } catch (_) {
+          targetLoadFailed = true;
+        }
+      }(),
+      () async {
+        try {
+          orders = await OrderService.fetchOrders();
+        } catch (_) {
+          ordersLoadFailed = true;
+        }
+      }(),
+    ]);
+
+    final currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
+    final targetMonth = monthlyTarget?.month ?? currentMonth;
+    final orderTotal = _calculateOrderTotal(
+      orders ?? const [],
+      month: targetMonth,
+      targetDate: monthlyTarget?.targetDate,
+    );
+    final targetAmount = monthlyTarget?.amount ?? 0;
+    final progress = targetAmount <= 0
+        ? 0.0
+        : (orderTotal / targetAmount).clamp(0.0, 1.0);
+    if (!mounted) return;
+    setState(() {
+      _monthlyTarget = monthlyTarget?.amount;
+      _monthlyTargetMonth = targetMonth;
+      _monthlyOrderTotal = orderTotal;
+      _targetProgress = progress;
+      _targetLoading = false;
+    });
+    if (targetLoadFailed) {
       AppWidgets.toast(context, 'Could not load monthly target');
+    } else if (ordersLoadFailed) {
+      AppWidgets.toast(context, 'Could not load monthly orders');
     }
   }
 
   double _calculateOrderTotal(
     List<OrderEntry> orders, {
-    required DateTime? month,
+    required DateTime month,
     required DateTime? targetDate,
   }) {
-    if (month == null || targetDate == null) return 0;
-
     final start = DateTime(month.year, month.month, 1);
-    final end = DateTime(targetDate.year, targetDate.month, targetDate.day + 1);
+    final monthEnd = DateTime(month.year, month.month + 1, 1);
+    final targetEnd = targetDate == null
+        ? monthEnd
+        : DateTime(targetDate.year, targetDate.month, targetDate.day + 1);
+    final end = targetEnd.isBefore(monthEnd) ? targetEnd : monthEnd;
 
     return orders
         .where((order) {
@@ -201,10 +227,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     loadOverview();
   }
 
-  /// Opens the visit check-in screen and, if a check-in was actually
-  /// submitted (the screen pops with a non-null payload), refreshes
-  /// today's visit list — and the target/order progress, since a new
-  /// visit can follow an order.
   Future<void> _openNewVisit() async {
     final result = await Navigator.push(
       context,
@@ -217,6 +239,20 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
   }
 
+  void _openTodayVisits() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TodayVisitsScreen()),
+    );
+  }
+
+  void _openTopCategories() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TopCategoriesScreen()),
+    );
+  }
+
   String getGreeting() {
     final hour = DateTime.now().hour;
     if (hour < 12) return 'Good morning';
@@ -224,39 +260,166 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return 'Good evening';
   }
 
-  IconData _categoryIcon(String category) {
-    final c = category.toLowerCase();
-    if (c.contains('built')) return Icons.kitchen_outlined;
-    if (c.contains('chy') || c.contains('chimney')) {
-      return Icons.local_fire_department_outlined;
-    }
-    if (c.contains('dws') || c.contains('dish')) {
-      return Icons.water_drop_outlined;
-    }
-    if (c.contains('hob')) return Icons.whatshot_outlined;
-    if (c.contains('bbq')) return Icons.outdoor_grill_outlined;
-    if (c.contains('fry')) return Icons.brunch_dining_outlined;
-    return Icons.category_outlined;
-  }
-
   Color _categoryColor(int index) {
     const palette = [
-      AppColors.productChimney,
-      AppColors.productHobs,
-      AppColors.productWaterPurifiers,
+      AppColors.regionBlue,
       AppColors.regionCyan,
+      AppColors.regionPurple,
+      AppColors.regionOrange,
     ];
     return palette[index % palette.length];
   }
 
-  Color _categoryBadgeColor(int index) {
-    const palette = [
-      AppColors.amber,
-      AppColors.steelLight,
-      AppColors.amberDark,
-      AppColors.regionBlue,
-    ];
-    return palette[index % palette.length];
+  Widget _categorySalesRow(
+    int index,
+    DashboardCategory category,
+    double maxPercentage,
+    bool showDivider,
+  ) {
+    final color = _categoryColor(index);
+    final progress = maxPercentage <= 0
+        ? 0.0
+        : (category.percentage / maxPercentage).clamp(0.0, 1.0).toDouble();
+
+    return Column(
+      children: [
+        InkWell(
+          onTap: _openTopCategories,
+          borderRadius: BorderRadius.circular(6),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            child: Row(
+              children: [
+                SizedBox(
+                  width: 27,
+                  child: Text(
+                    '${index + 1}'.padLeft(2, '0'),
+                    style: TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 13,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ),
+                Container(
+                  width: 1,
+                  height: 22,
+                  margin: const EdgeInsets.only(right: 10),
+                  color: AppColors.line,
+                ),
+                SizedBox(
+                  width: 72,
+                  child: Text(
+                    category.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Container(
+                      height: 8,
+                      color: AppColors.coldBg,
+                      alignment: Alignment.centerLeft,
+                      child: FractionallySizedBox(
+                        widthFactor: progress,
+                        heightFactor: 1,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            color: color,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                SizedBox(
+                  width: 53,
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerRight,
+                    child: Text(
+                      _formatAmount(category.value),
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 13,
+                        fontWeight: FontWeight.bold,
+                        color: color,
+                      ),
+                    ),
+                  ),
+                ),
+                const Icon(
+                  Icons.chevron_right,
+                  size: 20,
+                  color: AppColors.steel,
+                ),
+              ],
+            ),
+          ),
+        ),
+        if (showDivider) const Divider(height: 1, color: AppColors.line),
+      ],
+    );
+  }
+
+  Widget _metricDivider() => Container(
+    width: 1,
+    height: 44,
+    margin: const EdgeInsets.symmetric(horizontal: 5),
+    color: AppColors.line,
+  );
+
+  Widget _performanceMetric({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String amount,
+  }) {
+    return Row(
+      children: [
+        Icon(icon, size: 26, color: color),
+        const SizedBox(width: 5),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(fontSize: 10.5, color: AppColors.steel),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  amount,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 17,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -297,7 +460,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                   const SizedBox(width: 8),
                   _quickAction(
-                    Icons.shopping_bag_outlined,
+                    Icons.file_copy_outlined,
                     'View Order',
                     () => Navigator.push(
                       context,
@@ -317,143 +480,144 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              // ---- Monthly Target Card (redesigned) ----
+              // ---- Monthly performance ----
               Builder(
                 builder: (context) {
                   final target = _monthlyTarget ?? 0;
-                  final targetLabel = _targetLoading
-                      ? 'Loading target...'
-                      : '${_formatAmount(target)} target';
-                  final milestone = target / 4;
-                  final progressLabel = _targetLoading
-                      ? 'Loading...'
-                      : '${_formatAmount(_monthlyOrderTotal)} Achieved';
+                  final achieved = _monthlyOrderTotal;
+                  final remaining = (target - achieved)
+                      .clamp(0.0, double.infinity)
+                      .toDouble();
+                  final month = DateFormat(
+                    'MMMM yyyy',
+                  ).format(_monthlyTargetMonth ?? DateTime.now());
 
                   return AppWidgets.buildCard(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Expanded(
                               child: Text(
-                                'Monthly target',
+                                'Monthly performance',
                                 style: TextStyle(
                                   fontFamily: AppFonts.display,
-                                  fontSize: 19,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.ink,
                                 ),
                               ),
                             ),
-                            Container(
-                              padding: const EdgeInsets.all(8),
-                              decoration: BoxDecoration(
-                                border: Border.all(color: AppColors.line),
-                                borderRadius: BorderRadius.circular(6),
-                                color: AppColors.regionBlue,
-                              ),
-                              child: const Icon(
-                                Icons.more_horiz,
-                                size: 20,
-                                color: AppColors.white,
-                              ),
+                            const Icon(
+                              Icons.more_horiz,
+                              size: 20,
+                              color: AppColors.steelLight,
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
                         Text(
-                          _targetLoading
-                              ? 'Fetching your monthly target...'
-                              : 'Your monthly target is $targetLabel.',
+                          month,
                           style: const TextStyle(
-                            fontSize: 12.5,
+                            fontSize: 13,
                             color: AppColors.steel,
-                            height: 1.0,
                           ),
                         ),
-                        SizedBox(height: 20),
+                        // SizedBox(height: 20),
                         SizedBox(
-                          height: 240,
+                          height: 208,
                           child: TweenAnimationBuilder<double>(
                             key: ValueKey(_refreshTick),
                             tween: Tween(begin: 0.0, end: _targetProgress),
-                            duration: const Duration(milliseconds: 2300),
+                            duration: const Duration(milliseconds: 1800),
                             curve: Curves.easeOutCubic,
-                            builder: (context, animatedPercent, _) {
+                            builder: (context, animatedProgress, _) {
                               return LayoutBuilder(
-                                builder: (context, constraints) {
-                                  final w = constraints.maxWidth;
-                                  final arcRadius = w / 2 - 30;
-                                  final arcCenter = Offset(w / 2, 228);
-                                  return Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      CustomPaint(
-                                        size: Size(w, 210),
-                                        painter: SpeedoPainter(
-                                          percent: animatedPercent,
-                                        ),
+                                builder: (context, constraints) => Stack(
+                                  children: [
+                                    CustomPaint(
+                                      size: Size(
+                                        constraints.maxWidth,
+                                        constraints.maxHeight,
                                       ),
-                                      AppWidgets.milestoneDot(
-                                        fraction: 0.0,
-                                        percent: animatedPercent,
-                                        arcRadius: arcRadius,
-                                        arcCenter: arcCenter,
-                                        label: '₹0',
+                                      painter: SpeedoPainter(
+                                        percent: animatedProgress,
                                       ),
-                                      AppWidgets.milestoneDot(
-                                        fraction: 0.25,
-                                        percent: animatedPercent,
-                                        arcRadius: arcRadius,
-                                        arcCenter: arcCenter,
-                                        label: _formatAmount(milestone),
-                                      ),
-                                      AppWidgets.milestoneDot(
-                                        fraction: 0.5,
-                                        percent: animatedPercent,
-                                        arcRadius: arcRadius,
-                                        arcCenter: arcCenter,
-                                        label: _formatAmount(milestone * 2),
-                                      ),
-                                      AppWidgets.milestoneDot(
-                                        fraction: 0.75,
-                                        percent: animatedPercent,
-                                        arcRadius: arcRadius,
-                                        arcCenter: arcCenter,
-                                        label: _formatAmount(milestone * 3),
-                                      ),
-                                      AppWidgets.milestoneDot(
-                                        fraction: 1.0,
-                                        percent: animatedPercent,
-                                        arcRadius: arcRadius,
-                                        arcCenter: arcCenter,
-                                        label: _formatAmount(target),
-                                      ),
-                                      Positioned(
-                                        left: 0,
-                                        right: 0,
-                                        top: 220,
-                                        child: Text(
-                                          progressLabel,
-                                          textAlign: TextAlign.center,
-                                          style: const TextStyle(
-                                            fontFamily: AppFonts.display,
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: AppColors.ink,
+                                    ),
+                                    Positioned(
+                                      top: 160,
+                                      left: 0,
+                                      right: 0,
+                                      child: Column(
+                                        children: [
+                                          Text(
+                                            _targetLoading
+                                                ? '--%'
+                                                : '${(animatedProgress * 100).round()}%',
+                                            style: const TextStyle(
+                                              fontFamily: AppFonts.display,
+                                              fontSize: 20,
+                                              height: 1,
+                                              fontWeight: FontWeight.bold,
+                                              color: AppColors.ink,
+                                            ),
                                           ),
-                                        ),
+                                          // const SizedBox(height: 3),
+                                          const Text(
+                                            'of monthly target',
+                                            style: TextStyle(
+                                              fontSize: 13,
+                                              color: AppColors.steel,
+                                            ),
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  );
-                                },
+                                    ),
+                                  ],
+                                ),
                               );
                             },
                           ),
+                        ),
+                        const Divider(height: 1, color: AppColors.line),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _performanceMetric(
+                                icon: Icons.payments_outlined,
+                                color: AppColors.regionBlue,
+                                label: 'Achieved',
+                                amount: _targetLoading
+                                    ? '--'
+                                    : _formatAmount(achieved),
+                              ),
+                            ),
+                            _metricDivider(),
+                            Expanded(
+                              child: _performanceMetric(
+                                icon: Icons.track_changes,
+                                color: AppColors.amber,
+                                label: 'Target',
+                                amount: _targetLoading
+                                    ? '--'
+                                    : _formatAmount(target),
+                              ),
+                            ),
+                            _metricDivider(),
+                            Expanded(
+                              child: _performanceMetric(
+                                icon: Icons.bar_chart_rounded,
+                                color: AppColors.red,
+                                label: 'Remaining',
+                                amount: _targetLoading
+                                    ? '--'
+                                    : _formatAmount(remaining),
+                              ),
+                            ),
+                          ],
                         ),
                       ],
                     ),
@@ -467,16 +631,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Text(
-                      'Top selling Product',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink,
-                      ),
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            'Top selling categories',
+                            style: TextStyle(
+                              fontFamily: AppFonts.display,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: _openTopCategories,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.regionCyan,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('View all'),
+                              Icon(Icons.chevron_right, size: 21),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 8),
                     if (_overviewLoading)
                       const Padding(
                         padding: EdgeInsets.symmetric(vertical: 8),
@@ -500,100 +686,148 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       )
                     else
-                      Row(
+                      Column(
                         children: [
-                          for (int i = 0; i < topThree.length; i++) ...[
-                            if (i > 0) const SizedBox(width: 10),
-                            Expanded(
-                              child: AppWidgets.topProductTile(
-                                rank: i + 1,
-                                icon: _categoryIcon(topThree[i].name),
-                                name: topThree[i].name,
-                                units:
-                                    '${topThree[i].percentage.toStringAsFixed(1)}%',
-                                color: _categoryColor(i),
-                                badgeColor: _categoryBadgeColor(i),
-                              ),
+                          for (var index = 0; index < topThree.length; index++)
+                            _categorySalesRow(
+                              index,
+                              topThree[index],
+                              topThree.first.percentage,
+                              index < topThree.length - 1,
                             ),
-                          ],
                         ],
                       ),
                   ],
                 ),
               ),
               const SizedBox(height: 16),
-
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      "Today's visits · ${_todayVisits.length}",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 3,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.aiBlueChipBg,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: const Text(
-                      '✦ Yours Visit',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 9.5,
-                        color: AppColors.aiBlue,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-
-              if (_visitsLoading)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 20),
-                  child: Center(child: CircularProgressIndicator()),
-                )
-              else if (_todayVisits.isEmpty)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Text('No visits scheduled for today.'),
-                )
-              else
-                SizedBox(
-                  height: 320,
-                  child: ListView.builder(
-                    padding: EdgeInsets.zero,
-                    itemCount: _todayVisits.length,
-                    itemBuilder: (context, index) {
-                      final visit = _todayVisits[index];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8),
-                        child: _visitCard(
-                          context,
-                          visit.visitorName,
-                          visit.address,
-                          visit.address,
-                          visit.timeLabel,
-                          AppColors.amberLight,
-                          AppColors.amberDark,
+              AppWidgets.buildCard(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Expanded(
+                          child: Text(
+                            "Today's activity",
+                            style: TextStyle(
+                              fontFamily: AppFonts.display,
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.ink,
+                            ),
+                          ),
                         ),
-                      );
-                    },
-                  ),
+                        TextButton(
+                          onPressed: _openTodayVisits,
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.regionCyan,
+                            padding: EdgeInsets.zero,
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text('View visits'),
+                              Icon(Icons.chevron_right, size: 21),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: AppColors.achievementIconBg.withValues(
+                              alpha: 0.12,
+                            ),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.calendar_month_outlined,
+                            color: AppColors.achievementIconBg,
+                            size: 29,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _visitsLoading
+                                    ? 'Loading visits...'
+                                    : _todayVisits.isEmpty
+                                    ? 'No visits scheduled'
+                                    : '${_todayVisits.length} ${_todayVisits.length == 1 ? 'visit' : 'visits'} Completed',
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.display,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              const Text(
+                                'Keep your dealer network active',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.steel,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: _openNewVisit,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        height: 52,
+                        padding: const EdgeInsets.symmetric(horizontal: 14),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: AppColors.regionCyan),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: const Row(
+                          children: [
+                            Icon(
+                              Icons.location_on_outlined,
+                              color: AppColors.regionCyan,
+                              size: 27,
+                            ),
+                            SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Plan a visit',
+                                style: TextStyle(
+                                  fontFamily: AppFonts.display,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.regionCyan,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right,
+                              color: AppColors.regionCyan,
+                              size: 24,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
+              ),
               const SizedBox(height: 8),
             ],
           ),
@@ -614,77 +848,38 @@ class _DashboardScreenState extends State<DashboardScreen> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(14),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 25),
+          padding: EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: bgColor,
+            color: AppColors.white,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.line),
-          ),
-          child: Column(
-            children: [
-              Icon(icon, size: 30, color: AppColors.white),
-              const SizedBox(height: 5),
-              Text(
-                label,
-                style: const TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 15.5,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.white,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _visitCard(
-    BuildContext context,
-    String name,
-    String location,
-    String address,
-    String time,
-    Color badgeBg,
-    Color badgeColor,
-  ) {
-    return InkWell(
-      // onTap: _openNewVisit,
-      child: AppWidgets.buildCard(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    location,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      fontSize: 10.5,
-                      color: AppColors.steel,
-                    ),
-                  ),
-                ],
-              ),
+            border: Border.all(
+              color: bgColor?.withOpacity(1) ?? AppColors.line,
             ),
-            const SizedBox(width: 8),
-            AppWidgets.buildBadge(time, badgeBg, badgeColor),
-          ],
+          ),
+          child: Align(
+            alignment: Alignment.centerLeft,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(left: 20.0),
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Icon(icon, size: 30, color: bgColor),
+                  ),
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 15.5,
+                    fontWeight: FontWeight.bold,
+                    color: bgColor,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

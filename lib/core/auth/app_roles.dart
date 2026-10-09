@@ -1,17 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/module/admin/admin_dashboard.dart';
 
-/// Every kind of login the app supports. The server sends the role name in
-/// the login response (`user.role.name`); [AppRoles.parse] maps it here.
 enum AppRole { salesExec, distributor, salesHead, hod, admin }
 
 class AppRoles {
   AppRoles._();
 
-  /// Tolerant matching: "Sales Head", "sales_head", "SALESHEAD" all work.
   static AppRole parse(String? raw) {
     final r = (raw ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
-    print('Parsing role: $raw -> $r');
     switch (r) {
       case 'admin':
       case 'superadmin':
@@ -25,7 +21,7 @@ class AppRoles {
       case 'dealer':
         return AppRole.distributor;
       default:
-        return AppRole.salesExec; // unknown / empty = original behaviour
+        return AppRole.salesExec;
     }
   }
 
