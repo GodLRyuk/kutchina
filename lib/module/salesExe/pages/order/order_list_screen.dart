@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/services/api_services.dart';
@@ -116,7 +117,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   // Search by order number OR the selected retailer/distributor id.
   Future<void> _searchOrders([String? _]) async {
-   
     final search = _searchController.text.trim();
 
     if (search.isEmpty && _selectedEntityId == null) {
@@ -314,18 +314,24 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
+       backgroundColor: Colors.transparent,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
       appBar: AppTopBar.simple(title: 'My Orders'),
-      body: Column(
-        children: [
-          _searchBar(),
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: _loadOrders,
-              child: _buildBody(),
-            ),
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _searchBar(),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _loadOrders,
+                  child: _buildBody(),
+                ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -549,7 +555,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
     if (_orders.isEmpty) {
       final hasSearch =
           _searchController.text.trim().isNotEmpty || _selectedEntityId != null;
-        
+
       return ListView(
         physics: const AlwaysScrollableScrollPhysics(),
         children: [

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/category_model.dart';
@@ -212,252 +213,257 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+       backgroundColor: Colors.transparent,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
       appBar: AppTopBar(
         title: 'New order',
         centerImage: const AssetImage('assets/images/logo.jpg'),
       ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Wrap(
-                      spacing: 6,
-                      runSpacing: 6,
-                      children: [
-                        AppWidgets.buildBadge(
-                          '${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} order',
-                          AppColors.rupeeIconBg,
-                          AppColors.commandCentreText,
-                        ),
-                        AppWidgets.buildBadge(
-                          widget.channel,
-                          AppColors.aiBlueChipBg,
-                          AppColors.aiBlue,
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-                    if (widget.orderType == 'D' && _loadingDistributors ||
-                        widget.orderType == 'R' && _loadingRetailers)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          border: Border.all(color: AppColors.line),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.commandCentreText,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Loading ${widget.orderType.toLowerCase()}s…',
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                color: AppColors.steel,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (widget.orderType == 'D' &&
-                            _distributorError != null ||
-                        widget.orderType == 'R' && _retailerError != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.redLight,
-                          border: Border.all(
-                            color: AppColors.red.withValues(alpha: 0.3),
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          AppWidgets.buildBadge(
+                            '${widget.orderType == 'D' ? 'Distributor' : 'Retailer'} order',
+                            AppColors.rupeeIconBg,
+                            AppColors.commandCentreText,
                           ),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 16,
-                              color: AppColors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _distributorError!,
+                          AppWidgets.buildBadge(
+                            widget.channel,
+                            AppColors.aiBlueChipBg,
+                            AppColors.aiBlue,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 24),
+                      if (widget.orderType == 'D' && _loadingDistributors ||
+                          widget.orderType == 'R' && _loadingRetailers)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.white,
+                            border: Border.all(color: AppColors.line),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            children: [
+                              const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: AppColors.commandCentreText,
+                                ),
+                              ),
+                              const SizedBox(width: 10),
+                              Text(
+                                'Loading ${widget.orderType.toLowerCase()}s…',
                                 style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.redDark,
+                                  fontSize: 12.5,
+                                  color: AppColors.steel,
                                 ),
                               ),
-                            ),
-                            GestureDetector(
-                              onTap: _loadDistributors,
-                              child: const Text(
-                                'Retry',
-                                style: TextStyle(
-                                  fontFamily: AppFonts.display,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.red,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      AppWidgets.buildStaticField(
-                        label: widget.orderType == 'D'
-                            ? 'Distributor'
-                            : 'Retailer',
-                        value:
-                            _entity ??
-                            'Select ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
-                        isPlaceholder: _entity == null,
-                        onTap: _pickEntity,
-                      ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'CATEGORY',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 10.5,
-                        color: AppColors.steel,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: .4,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 8,
-                      children: ['All', ...CategoryModel.categories].map((c) {
-                        final active = _category == c;
-                        return GestureDetector(
-                          onTap: () => setState(() {
-                            _category = c;
-                            // _selected = null;
-                            _selectedProducts = [];
-                          }),
-                          child: Container(
-                            width:
-                                (MediaQuery.of(context).size.width - 40 - 16) /
-                                3,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: active
-                                  ? AppColors.rupeeIconBg
-                                  : AppColors.white,
-                              borderRadius: BorderRadius.circular(AppRadius.md),
-                              border: Border.all(
-                                color: active
-                                    ? AppColors.commandCentreText
-                                    : AppColors.line,
-                                width: active ? 1.6 : 1,
-                              ),
-                            ),
-                            child: Text(
-                              c,
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontFamily: AppFonts.display,
-                                fontSize: 11.5,
-                                fontWeight: FontWeight.w600,
-                                color: active
-                                    ? AppColors.commandCentreText
-                                    : AppColors.steel,
-                              ),
-                            ),
+                            ],
                           ),
-                        );
-                      }).toList(),
-                    ),
-                    const SizedBox(height: 14),
-
-                    AppWidgets.buildStaticField(
-                      label: _category == 'All'
-                          ? 'Product'
-                          : 'Product ($_category)',
-                      value: _selectedProducts.isEmpty
-                          ? 'Select a product'
-                          : _selectedProducts.length == 1
-                          ? _selectedProducts.first.name
-                          : '${_selectedProducts.length} products selected',
-                      isPlaceholder: _selectedProducts.isEmpty,
-                      onTap: _pickProduct,
-                    ),
-                    for (final p in _selectedProducts) ...[
-                      const SizedBox(height: 12),
-                      AppWidgets.buildCard(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                              children: [
-                                Text(
-                                  p.name,
+                        )
+                      else if (widget.orderType == 'D' &&
+                              _distributorError != null ||
+                          widget.orderType == 'R' && _retailerError != null)
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            vertical: 14,
+                            horizontal: 14,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.redLight,
+                            border: Border.all(
+                              color: AppColors.red.withValues(alpha: 0.3),
+                            ),
+                            borderRadius: BorderRadius.circular(AppRadius.md),
+                          ),
+                          child: Row(
+                            children: [
+                              const Icon(
+                                Icons.error_outline,
+                                size: 16,
+                                color: AppColors.red,
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  _distributorError!,
                                   style: const TextStyle(
-                                    fontFamily: AppFonts.display,
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.bold,
+                                    fontSize: 12,
+                                    color: AppColors.redDark,
                                   ),
                                 ),
-                              ],
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              p.category.name,
-                              style: const TextStyle(
-                                fontSize: 11,
-                                color: AppColors.steel,
                               ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '₹${p.price.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontFamily: AppFonts.mono,
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.commandCentreText,
+                              GestureDetector(
+                                onTap: _loadDistributors,
+                                child: const Text(
+                                  'Retry',
+                                  style: TextStyle(
+                                    fontFamily: AppFonts.display,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.red,
+                                  ),
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
+                          ),
+                        )
+                      else
+                        AppWidgets.buildStaticField(
+                          label: widget.orderType == 'D'
+                              ? 'Distributor'
+                              : 'Retailer',
+                          value:
+                              _entity ??
+                              'Select ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
+                          isPlaceholder: _entity == null,
+                          onTap: _pickEntity,
+                        ),
+                      const SizedBox(height: 14),
+                      const Text(
+                        'CATEGORY',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 10.5,
+                          color: AppColors.steel,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: .4,
                         ),
                       ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: ['All', ...CategoryModel.categories].map((c) {
+                          final active = _category == c;
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              _category = c;
+                              // _selected = null;
+                              _selectedProducts = [];
+                            }),
+                            child: Container(
+                              width:
+                                  (MediaQuery.of(context).size.width - 40 - 16) /
+                                  3,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              alignment: Alignment.center,
+                              decoration: BoxDecoration(
+                                color: active
+                                    ? AppColors.rupeeIconBg
+                                    : AppColors.white,
+                                borderRadius: BorderRadius.circular(AppRadius.md),
+                                border: Border.all(
+                                  color: active
+                                      ? AppColors.commandCentreText
+                                      : AppColors.line,
+                                  width: active ? 1.6 : 1,
+                                ),
+                              ),
+                              child: Text(
+                                c,
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontFamily: AppFonts.display,
+                                  fontSize: 11.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: active
+                                      ? AppColors.commandCentreText
+                                      : AppColors.steel,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                      const SizedBox(height: 14),
+        
+                      AppWidgets.buildStaticField(
+                        label: _category == 'All'
+                            ? 'Product'
+                            : 'Product ($_category)',
+                        value: _selectedProducts.isEmpty
+                            ? 'Select a product'
+                            : _selectedProducts.length == 1
+                            ? _selectedProducts.first.name
+                            : '${_selectedProducts.length} products selected',
+                        isPlaceholder: _selectedProducts.isEmpty,
+                        onTap: _pickProduct,
+                      ),
+                      for (final p in _selectedProducts) ...[
+                        const SizedBox(height: 12),
+                        AppWidgets.buildCard(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    p.name,
+                                    style: const TextStyle(
+                                      fontFamily: AppFonts.display,
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                p.category.name,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.steel,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                '₹${p.price.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontFamily: AppFonts.mono,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.commandCentreText,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ],
-                  ],
+                  ),
                 ),
               ),
-            ),
-            Container(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-              decoration: const BoxDecoration(
-                color: AppColors.paper,
-                border: Border(top: BorderSide(color: AppColors.line)),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
+                decoration: const BoxDecoration(
+                  color: AppColors.paper,
+                  border: Border(top: BorderSide(color: AppColors.line)),
+                ),
+                child: AppWidgets.buildButton('Proceed', onTap: _proceed),
               ),
-              child: AppWidgets.buildButton('Proceed', onTap: _proceed),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
@@ -98,53 +99,61 @@ class _CartScreenState extends State<CartScreen> {
     final total = subtotal;
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+
       appBar: AppTopBar(
         title: 'Order Details',
         centerImage: const AssetImage('assets/images/logo.jpg'),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  AppWidgets.buildStaticField(
-                    label: widget.orderType == 'Distributor'
-                        ? 'Ordering for distributor'
-                        : 'Ordering for retailer',
-                    value: widget.entityName,
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppWidgets.buildStaticField(
+                        label: widget.orderType == 'Distributor'
+                            ? 'Ordering for distributor'
+                            : 'Ordering for retailer',
+                        value: widget.entityName,
+                      ),
+                      const SizedBox(height: 14),
+          
+                      ...widget.items.map(_itemCard),
+                      const SizedBox(height: 4),
+                      _totalRow('Subtotal', subtotal),
+                      const Divider(height: 24, color: AppColors.line),
+                      _totalRow(
+                        'Total',
+                        total,
+                        bold: true,
+                        color: AppColors.commandCentreText,
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 14),
-
-                  ...widget.items.map(_itemCard),
-                  const SizedBox(height: 4),
-                  _totalRow('Subtotal', subtotal),
-                  const Divider(height: 24, color: AppColors.line),
-                  _totalRow(
-                    'Total',
-                    total,
-                    bold: true,
-                    color: AppColors.commandCentreText,
-                  ),
-                ],
+                ),
               ),
-            ),
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 1, 20, 40),
+                decoration: const BoxDecoration(
+                  color: AppColors.paper,
+                  border: Border(top: BorderSide(color: AppColors.line)),
+                ),
+                child: AppWidgets.buildButton(
+                  _placingOrder ? 'Placing order...' : 'Place order',
+                  onTap: _placingOrder ? null : _placeOrder,
+                  loading: _placingOrder,
+                ),
+              ),
+            ],
           ),
-          Container(
-            padding: const EdgeInsets.fromLTRB(20, 1, 20, 40),
-            decoration: const BoxDecoration(
-              color: AppColors.paper,
-              border: Border(top: BorderSide(color: AppColors.line)),
-            ),
-            child: AppWidgets.buildButton(
-              _placingOrder ? 'Placing order...' : 'Place order',
-              onTap: _placingOrder ? null : _placeOrder,
-              loading: _placingOrder,
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }

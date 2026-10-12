@@ -11,6 +11,8 @@ import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/utils/note_sheet.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/suggestion_dropdown.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
@@ -60,7 +62,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   static const double _micSize = 40;
   static const double _mapHeight = 166;
 
- 
   SizedBox _vGap(double fraction) =>
       SizedBox(height: MediaQuery.sizeOf(context).height * fraction);
 
@@ -593,15 +594,20 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     final bottomInset = MediaQuery.of(context).padding.bottom;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      body: DecoratedBox(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [AppColors.aiBlueBg, Color(0xFFF7F3FF), AppColors.white],
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+
+      appBar: AppTopBar.brand(
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
           ),
-        ),
+        ],
+      ),
+      body: AppBackground(
         child: SafeArea(
           bottom: false,
           child: Column(
