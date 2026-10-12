@@ -4,15 +4,17 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
 import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
 
-/// Shared bottom nav bar. Manages its own selected index and shows a
-/// default "Coming soon" toast on tap. Pass [onTap] only if a specific
-/// page needs custom behavior (e.g. actual navigation) for some tab —
-/// returning true from it means "handled, don't run the default toast".
 class AppBottomNav extends StatefulWidget {
   final int initialIndex;
   final bool Function(int index)? onTap;
+  final Color? backgroundColor;
 
-  const AppBottomNav({super.key, this.initialIndex = 0, this.onTap});
+  const AppBottomNav({
+    super.key,
+    this.initialIndex = 0,
+    this.onTap,
+    this.backgroundColor,
+  });
 
   static const items = [
     BottomNavigationBarItem(
@@ -67,10 +69,13 @@ class _AppBottomNavState extends State<AppBottomNav> {
   @override
   Widget build(BuildContext context) {
     return BottomNavigationBar(
+      elevation: 0,
+      backgroundColor: Colors.transparent,
       currentIndex: _navIndex,
       onTap: _onNavTap,
       selectedItemColor: AppColors.navActive,
       unselectedItemColor: AppColors.navNormal,
+      // backgroundColor: widget.backgroundColor,
       selectedLabelStyle: const TextStyle(
         fontFamily: AppFonts.display,
         fontWeight: FontWeight.bold,

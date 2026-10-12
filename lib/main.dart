@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kutchina/core/offline/connectivity_service.dart';
 import 'package:kutchina/core/offline/offline_banner.dart';
 import 'package:kutchina/core/offline/pending_sync_screen.dart';
@@ -20,6 +21,7 @@ bool _sessionDialogVisible = false;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
   ApiService.onSessionExpired = _showSessionExpiredDialog;
   // Offline support: watch the network first, then let the queue start
   // (it replays saved orders/visits as soon as the server is reachable).

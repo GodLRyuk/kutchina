@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -9,6 +10,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final VoidCallback? onBack;
   final ImageProvider? centerImage;
+  final SystemUiOverlayStyle? systemOverlayStyle;
 
   const AppTopBar({
     super.key,
@@ -19,6 +21,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : assert(
          title != null || subtitle != null,
          'Provide either title or (greeting + subtitle)',
@@ -31,6 +34,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : greeting = null,
        subtitle = null;
 
@@ -42,12 +46,30 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : title = null;
+
+  const AppTopBar.brand({
+    super.key,
+    this.actions,
+    this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle = const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemStatusBarContrastEnforced: false,
+    ),
+  }) : title = null,
+       greeting = null,
+       subtitle = null,
+       showBackButton = false,
+       onBack = null;
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
+      backgroundColor: Colors.transparent,
+      systemOverlayStyle: systemOverlayStyle,
       leading: showBackButton
           ? IconButton(
               icon: const Icon(Icons.arrow_back_ios, size: 16),
@@ -55,7 +77,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : null,
       centerTitle: title != null,
-      flexibleSpace: title == null && centerImage != null
+      flexibleSpace: greeting != null && centerImage != null
           ? Padding(
               padding: const EdgeInsets.only(top: 25),
               child: Center(
@@ -91,7 +113,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ],
             )
-          : Row(
+          : greeting != null
+          ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Column(
@@ -117,7 +140,10 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ],
-            ),
+            )
+          : centerImage != null
+          ? Image(image: centerImage!, height: 32, fit: BoxFit.contain)
+          : null,
       actions: actions,
     );
   }

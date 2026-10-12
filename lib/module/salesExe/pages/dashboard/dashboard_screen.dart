@@ -1,11 +1,13 @@
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/admin_dashboard_api.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/utils/speedometer.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
@@ -439,414 +441,465 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final topThree = _topCategories.take(3).toList();
 
-    return Scaffold(
-      appBar: AppTopBar.greeting(
-        greeting: getGreeting(),
-        subtitle: user.fullName,
-        centerImage: const AssetImage('assets/images/logo.jpg'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
+    return AnnotatedRegion<SystemUiOverlayStyle>(
+      value: const SystemUiOverlayStyle(
+        statusBarColor: Colors.transparent,
+        statusBarIconBrightness: Brightness.dark,
+        systemNavigationBarColor: Colors.transparent,
+        systemNavigationBarDividerColor: Colors.transparent,
+        systemNavigationBarIconBrightness: Brightness.dark,
+        systemStatusBarContrastEnforced: false,
+        systemNavigationBarContrastEnforced: false,
       ),
-      body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  _quickAction(
-                    Icons.shopping_bag_outlined,
-                    'New Order',
-                    () => showNewOrderSheet(context),
-                    bgColor: AppColors.aiBlue,
-                  ),
-                  const SizedBox(width: 8),
-                  _quickAction(
-                    Icons.file_copy_outlined,
-                    'View Order',
-                    () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const OrderListScreen(),
-                      ),
-                    ),
-                    bgColor: AppColors.amber,
-                  ),
-                  const SizedBox(width: 8),
-                  _quickAction(
-                    Icons.location_on_outlined,
-                    'New Visit',
-                    _openNewVisit,
-                    bgColor: AppColors.regionCyan,
-                  ),
-                ],
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBody: true,
+        extendBodyBehindAppBar: true,
+        appBar: AppTopBar.brand(
+          centerImage: const AssetImage('assets/images/logo.jpg'),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () =>
+                  AppWidgets.toast(context, 'No new notifications'),
+            ),
+          ],
+        ),
+        body: AppBackground(
+          child: RefreshIndicator(
+            backgroundColor: Colors.transparent,
+            onRefresh: _onRefresh,
+            child: SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                16,
+                MediaQuery.paddingOf(context).top + kToolbarHeight + 16,
+                16,
+                16,
               ),
-              const SizedBox(height: 12),
-              // ---- Monthly performance ----
-              Builder(
-                builder: (context) {
-                  final target = _monthlyTarget ?? 0;
-                  final achieved = _monthlyOrderTotal;
-                  final remaining = (target - achieved)
-                      .clamp(0.0, double.infinity)
-                      .toDouble();
-                  final month = DateFormat(
-                    'MMMM yyyy',
-                  ).format(_monthlyTargetMonth ?? DateTime.now());
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    getGreeting(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.steel,
+                    ),
+                  ),
+                  Text(
+                    user.fullName,
+                    style: const TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      _quickAction(
+                        Icons.shopping_bag_outlined,
+                        'New Order',
+                        () => showNewOrderSheet(context),
+                        bgColor: AppColors.aiBlue,
+                      ),
+                      const SizedBox(width: 8),
+                      _quickAction(
+                        Icons.file_copy_outlined,
+                        'View Order',
+                        () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const OrderListScreen(),
+                          ),
+                        ),
+                        bgColor: AppColors.amber,
+                      ),
+                      const SizedBox(width: 8),
+                      _quickAction(
+                        Icons.location_on_outlined,
+                        'New Visit',
+                        _openNewVisit,
+                        bgColor: AppColors.regionCyan,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  // ---- Monthly performance ----
+                  Builder(
+                    builder: (context) {
+                      final target = _monthlyTarget ?? 0;
+                      final achieved = _monthlyOrderTotal;
+                      final remaining = (target - achieved)
+                          .clamp(0.0, double.infinity)
+                          .toDouble();
+                      final month = DateFormat(
+                        'MMMM yyyy',
+                      ).format(_monthlyTargetMonth ?? DateTime.now());
 
-                  return AppWidgets.buildCard(
-                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                      return AppWidgets.buildCard(
+                        padding: const EdgeInsets.fromLTRB(16, 16, 16, 14),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Expanded(
+                                  child: Text(
+                                    'Monthly performance',
+                                    style: TextStyle(
+                                      fontFamily: AppFonts.display,
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                ),
+
+                                // Icon(
+
+                                //   Icons.more_horiz,
+                                //   size: 20,
+                                //   color: AppColors.steelLight,
+                                // ),
+                                IconButton(
+                                  onPressed: _openTarget,
+                                  icon: Icon(
+                                    Icons.more_horiz,
+                                    size: 20,
+                                    color: AppColors.steelLight,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            Text(
+                              month,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: AppColors.steel,
+                              ),
+                            ),
+                            // SizedBox(height: 20),
+                            SizedBox(
+                              height: 208,
+                              child: TweenAnimationBuilder<double>(
+                                key: ValueKey(_refreshTick),
+                                tween: Tween(begin: 0.0, end: _targetProgress),
+                                duration: const Duration(milliseconds: 1800),
+                                curve: Curves.easeOutCubic,
+                                builder: (context, animatedProgress, _) {
+                                  return LayoutBuilder(
+                                    builder: (context, constraints) => Stack(
+                                      children: [
+                                        CustomPaint(
+                                          size: Size(
+                                            constraints.maxWidth,
+                                            constraints.maxHeight,
+                                          ),
+                                          painter: SpeedoPainter(
+                                            percent: animatedProgress,
+                                          ),
+                                        ),
+                                        Positioned(
+                                          top: 160,
+                                          left: 0,
+                                          right: 0,
+                                          child: Column(
+                                            children: [
+                                              Text(
+                                                _targetLoading
+                                                    ? '--%'
+                                                    : '${(animatedProgress * 100).round()}%',
+                                                style: const TextStyle(
+                                                  fontFamily: AppFonts.display,
+                                                  fontSize: 20,
+                                                  height: 1,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: AppColors.ink,
+                                                ),
+                                              ),
+                                              // const SizedBox(height: 3),
+                                              const Text(
+                                                'of monthly target',
+                                                style: TextStyle(
+                                                  fontSize: 13,
+                                                  color: AppColors.steel,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const Divider(height: 1, color: AppColors.line),
+
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: _performanceMetric(
+                                    icon: Icons.payments_outlined,
+                                    color: AppColors.regionBlue,
+                                    label: 'Achieved',
+                                    amount: _targetLoading
+                                        ? '--'
+                                        : _formatAmount(achieved),
+                                  ),
+                                ),
+                                _metricDivider(),
+                                Expanded(
+                                  child: _performanceMetric(
+                                    icon: Icons.track_changes,
+                                    color: AppColors.amber,
+                                    label: 'Target',
+                                    amount: _targetLoading
+                                        ? '--'
+                                        : _formatAmount(target),
+                                  ),
+                                ),
+                                _metricDivider(),
+                                Expanded(
+                                  child: _performanceMetric(
+                                    icon: Icons.bar_chart_rounded,
+                                    color: AppColors.red,
+                                    label: 'Remaining',
+                                    amount: _targetLoading
+                                        ? '--'
+                                        : _formatAmount(remaining),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+
+                  const SizedBox(height: 12),
+                  AppWidgets.buildCard(
+                    padding: const EdgeInsets.all(16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Expanded(
                               child: Text(
-                                'Monthly performance',
+                                'Top selling categories',
                                 style: TextStyle(
                                   fontFamily: AppFonts.display,
-                                  fontSize: 18,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.ink,
                                 ),
                               ),
                             ),
-                            // Icon(
-                              
-                            //   Icons.more_horiz,
-                            //   size: 20,
-                            //   color: AppColors.steelLight,
-                            // ),
-
-                            IconButton(
-                              onPressed: _openTarget, 
-                              icon: Icon(Icons.more_horiz, size: 20, color: AppColors.steelLight,)),
+                            TextButton(
+                              onPressed: _openTopCategories,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.regionCyan,
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                              ),
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('View all'),
+                                  Icon(Icons.chevron_right, size: 21),
+                                ],
+                              ),
+                            ),
                           ],
                         ),
-                        Text(
-                          month,
-                          style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.steel,
-                          ),
-                        ),
-                        // SizedBox(height: 20),
-                        SizedBox(
-                          height: 208,
-                          child: TweenAnimationBuilder<double>(
-                            key: ValueKey(_refreshTick),
-                            tween: Tween(begin: 0.0, end: _targetProgress),
-                            duration: const Duration(milliseconds: 1800),
-                            curve: Curves.easeOutCubic,
-                            builder: (context, animatedProgress, _) {
-                              return LayoutBuilder(
-                                builder: (context, constraints) => Stack(
-                                  children: [
-                                    CustomPaint(
-                                      size: Size(
-                                        constraints.maxWidth,
-                                        constraints.maxHeight,
-                                      ),
-                                      painter: SpeedoPainter(
-                                        percent: animatedProgress,
-                                      ),
-                                    ),
-                                    Positioned(
-                                      top: 160,
-                                      left: 0,
-                                      right: 0,
-                                      child: Column(
-                                        children: [
-                                          Text(
-                                            _targetLoading
-                                                ? '--%'
-                                                : '${(animatedProgress * 100).round()}%',
-                                            style: const TextStyle(
-                                              fontFamily: AppFonts.display,
-                                              fontSize: 20,
-                                              height: 1,
-                                              fontWeight: FontWeight.bold,
-                                              color: AppColors.ink,
-                                            ),
-                                          ),
-                                          // const SizedBox(height: 3),
-                                          const Text(
-                                            'of monthly target',
-                                            style: TextStyle(
-                                              fontSize: 13,
-                                              color: AppColors.steel,
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
+                        const SizedBox(height: 8),
+                        if (_overviewLoading)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Center(
+                              child: SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
                                 ),
-                              );
-                            },
+                              ),
+                            ),
+                          )
+                        else if (topThree.isEmpty)
+                          const Padding(
+                            padding: EdgeInsets.symmetric(vertical: 8),
+                            child: Text(
+                              'No category sales for this period yet.',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                color: AppColors.steel,
+                              ),
+                            ),
+                          )
+                        else
+                          Column(
+                            children: [
+                              for (
+                                var index = 0;
+                                index < topThree.length;
+                                index++
+                              )
+                                _categorySalesRow(
+                                  index,
+                                  topThree[index],
+                                  topThree.first.percentage,
+                                  index < topThree.length - 1,
+                                ),
+                            ],
                           ),
-                        ),
-                        const Divider(height: 1, color: AppColors.line),
-
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  AppWidgets.buildCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                         Row(
                           children: [
-                            Expanded(
-                              child: _performanceMetric(
-                                icon: Icons.payments_outlined,
-                                color: AppColors.regionBlue,
-                                label: 'Achieved',
-                                amount: _targetLoading
-                                    ? '--'
-                                    : _formatAmount(achieved),
-                              ),
-                            ),
-                            _metricDivider(),
-                            Expanded(
-                              child: _performanceMetric(
-                                icon: Icons.track_changes,
-                                color: AppColors.amber,
-                                label: 'Target',
-                                amount: _targetLoading
-                                    ? '--'
-                                    : _formatAmount(target),
-                              ),
-                            ),
-                            _metricDivider(),
-                            Expanded(
-                              child: _performanceMetric(
-                                icon: Icons.bar_chart_rounded,
-                                color: AppColors.red,
-                                label: 'Remaining',
-                                amount: _targetLoading
-                                    ? '--'
-                                    : _formatAmount(remaining),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-
-              const SizedBox(height: 12),
-              AppWidgets.buildCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Top selling categories',
-                            style: TextStyle(
-                              fontFamily: AppFonts.display,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _openTopCategories,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.regionCyan,
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('View all'),
-                              Icon(Icons.chevron_right, size: 21),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    if (_overviewLoading)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Center(
-                          child: SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          ),
-                        ),
-                      )
-                    else if (topThree.isEmpty)
-                      const Padding(
-                        padding: EdgeInsets.symmetric(vertical: 8),
-                        child: Text(
-                          'No category sales for this period yet.',
-                          style: TextStyle(
-                            fontSize: 11.5,
-                            color: AppColors.steel,
-                          ),
-                        ),
-                      )
-                    else
-                      Column(
-                        children: [
-                          for (var index = 0; index < topThree.length; index++)
-                            _categorySalesRow(
-                              index,
-                              topThree[index],
-                              topThree.first.percentage,
-                              index < topThree.length - 1,
-                            ),
-                        ],
-                      ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
-              AppWidgets.buildCard(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            "Today's activity",
-                            style: TextStyle(
-                              fontFamily: AppFonts.display,
-                              fontSize: 17,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        ),
-                        TextButton(
-                          onPressed: _openTodayVisits,
-                          style: TextButton.styleFrom(
-                            foregroundColor: AppColors.regionCyan,
-                            padding: EdgeInsets.zero,
-                            minimumSize: Size.zero,
-                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text('View visits'),
-                              Icon(Icons.chevron_right, size: 21),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: AppColors.achievementIconBg.withValues(
-                              alpha: 0.12,
-                            ),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.calendar_month_outlined,
-                            color: AppColors.achievementIconBg,
-                            size: 29,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _visitsLoading
-                                    ? 'Loading visits...'
-                                    : _todayVisits.isEmpty
-                                    ? 'No visits scheduled'
-                                    : '${_todayVisits.length} ${_todayVisits.length == 1 ? 'visit' : 'visits'} Completed',
-                                style: const TextStyle(
+                            const Expanded(
+                              child: Text(
+                                "Today's activity",
+                                style: TextStyle(
                                   fontFamily: AppFonts.display,
-                                  fontSize: 15,
+                                  fontSize: 17,
                                   fontWeight: FontWeight.bold,
                                   color: AppColors.ink,
                                 ),
                               ),
-                              const SizedBox(height: 2),
-                              const Text(
-                                'Keep your dealer network active',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.steel,
-                                ),
+                            ),
+                            TextButton(
+                              onPressed: _openTodayVisits,
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.regionCyan,
+                                padding: EdgeInsets.zero,
+                                minimumSize: Size.zero,
+                                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                               ),
-                            ],
+                              child: const Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Text('View visits'),
+                                  Icon(Icons.chevron_right, size: 21),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        Row(
+                          children: [
+                            Container(
+                              width: 52,
+                              height: 52,
+                              decoration: BoxDecoration(
+                                color: AppColors.achievementIconBg.withValues(
+                                  alpha: 0.12,
+                                ),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.calendar_month_outlined,
+                                color: AppColors.achievementIconBg,
+                                size: 29,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    _visitsLoading
+                                        ? 'Loading visits...'
+                                        : _todayVisits.isEmpty
+                                        ? 'No visits scheduled'
+                                        : '${_todayVisits.length} ${_todayVisits.length == 1 ? 'visit' : 'visits'} Completed',
+                                    style: const TextStyle(
+                                      fontFamily: AppFonts.display,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.ink,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  const Text(
+                                    'Keep your dealer network active',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: AppColors.steel,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        InkWell(
+                          onTap: _openNewVisit,
+                          borderRadius: BorderRadius.circular(8),
+                          child: Container(
+                            height: 52,
+                            padding: const EdgeInsets.symmetric(horizontal: 14),
+                            decoration: BoxDecoration(
+                              border: Border.all(color: AppColors.regionCyan),
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Row(
+                              children: [
+                                Icon(
+                                  Icons.location_on_outlined,
+                                  color: AppColors.regionCyan,
+                                  size: 27,
+                                ),
+                                SizedBox(width: 12),
+                                Expanded(
+                                  child: Text(
+                                    'Plan a visit',
+                                    style: TextStyle(
+                                      fontFamily: AppFonts.display,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.regionCyan,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.chevron_right,
+                                  color: AppColors.regionCyan,
+                                  size: 24,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 12),
-                    InkWell(
-                      onTap: _openNewVisit,
-                      borderRadius: BorderRadius.circular(8),
-                      child: Container(
-                        height: 52,
-                        padding: const EdgeInsets.symmetric(horizontal: 14),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: AppColors.regionCyan),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Row(
-                          children: [
-                            Icon(
-                              Icons.location_on_outlined,
-                              color: AppColors.regionCyan,
-                              size: 27,
-                            ),
-                            SizedBox(width: 12),
-                            Expanded(
-                              child: Text(
-                                'Plan a visit',
-                                style: TextStyle(
-                                  fontFamily: AppFonts.display,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.regionCyan,
-                                ),
-                              ),
-                            ),
-                            Icon(
-                              Icons.chevron_right,
-                              color: AppColors.regionCyan,
-                              size: 24,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
               ),
-              const SizedBox(height: 8),
-            ],
+            ),
           ),
         ),
+        bottomNavigationBar: const AppBottomNav(
+          backgroundColor: Colors.transparent,
+        ),
       ),
-      bottomNavigationBar: const AppBottomNav(),
     );
   }
 
