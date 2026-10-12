@@ -401,12 +401,12 @@ class MastersApi {
 class OrderService {
   OrderService._();
 
-  static Future<MonthlyTarget> fetchCurrentTarget({
-    required String userId,
-  }) async {
+  static Future<MonthlyTarget> fetchCurrentTarget(
+    // required String userId,
+  ) async {
     final res = await ApiService.instance.getCached(
       '/api/v1/orders/target/',
-      queryParams: {'user_id': int.tryParse(userId) ?? userId},
+      // queryParams: {'user_id': int.tryParse(userId) ?? userId},
     );
     final raw = res.data;
     final responseData = raw is Map ? raw['data'] ?? raw : raw;
@@ -456,6 +456,43 @@ class OrderService {
     );
   }
 
+  
+  static Future<List<MonthlyTarget>> fetchAllTargets() async {
+  final res = await ApiService.instance.getCached('/api/v1/orders/target/');
+  final raw = res.data;
+  final responseData = raw is Map ? raw['data'] ?? raw : raw;
+  final rows = responseData is List
+      ? responseData
+      : responseData is Map
+          ? responseData['results'] as List? ??
+              responseData['targets'] as List? ??
+              [responseData]
+          : <dynamic>[];
+
+  final list = rows.whereType<Map>().map((e) {
+    final t = Map<String, dynamic>.from(e);
+    // final assigned = t['assigned_by'];
+    return MonthlyTarget(
+      
+      amount: double.tryParse(
+            (t['target_value'] ?? t['target'])?.toString() ?? '',
+          ) ??
+          0,
+      month: DateTime.tryParse(
+        (t['month'] ?? t['target_month'])?.toString() ?? '',
+      ),
+      targetDate: DateTime.tryParse(
+        (t['target_date'] ?? t['end_date'])?.toString() ?? '',
+      ),
+    );
+  }).toList();
+  
+  return list;
+}
+  
+  
+  
+  
   // static Future<void> placeOrder({
   //   required String orderType,
   //   required String entityName,
@@ -712,6 +749,29 @@ class MonthlyTarget {
     required this.targetDate,
   });
 }
+
+// ************************************************
+// class allMonthlyTarget {
+//   final int? id;
+ 
+//   final double amount;
+//   final DateTime? month;
+//   final DateTime? targetDate;
+
+//   const allMonthlyTarget({
+//     this.id,
+    
+//     required this.amount,
+//     required this.month,
+//     required this.targetDate,
+//   });
+// }
+
+
+//*************************************************** 
+
+
+
 
 class VisitService {
   /// [payload] holds plain text fields only. Photos are passed as file

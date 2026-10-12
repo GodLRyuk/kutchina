@@ -11,6 +11,7 @@ import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
+import 'package:kutchina/module/salesExe/pages/dashboard/target_screen.dart';
 import 'package:kutchina/module/salesExe/pages/visits/new_visit.dart';
 import 'package:kutchina/module/salesExe/pages/visits/today_visits_screen.dart';
 import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
@@ -103,7 +104,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
       () async {
         try {
           monthlyTarget = await OrderService.fetchCurrentTarget(
-            userId: user.id,
+            // userId: user.id,
           );
         } catch (_) {
           targetLoadFailed = true;
@@ -243,6 +244,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
     Navigator.push(
       context,
       MaterialPageRoute(builder: (_) => const TodayVisitsScreen()),
+    );
+  }
+
+  void _openTarget() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const TargetScreen()),
     );
   }
 
@@ -511,11 +519,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                             ),
-                            const Icon(
-                              Icons.more_horiz,
-                              size: 20,
-                              color: AppColors.steelLight,
-                            ),
+                            // Icon(
+                              
+                            //   Icons.more_horiz,
+                            //   size: 20,
+                            //   color: AppColors.steelLight,
+                            // ),
+
+                            IconButton(
+                              onPressed: _openTarget, 
+                              icon: Icon(Icons.more_horiz, size: 20, color: AppColors.steelLight,)),
                           ],
                         ),
                         Text(
