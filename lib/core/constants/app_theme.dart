@@ -45,16 +45,33 @@ class AppColors {
   static const Color topSalespersonBg = Color(0xFFFFAB06);
 
   // Sales by product — progress bar colors
-  static const Color productChimney = Color(0xFF1569ED);
+  static const Color productChimney = Color(0xFF8C34EE); //Color(0xFF1569ED);
   static const Color productHobs = Color(0xFFFF447E);
   static const Color productWaterPurifiers = Color(0xFF0EACC5);
   static const Color productOvens = Color(0xFFFE8D31);
 
   // Sales by region chart
-  static const Color regionOrange = Color(0xFFFD8427);
-  static const Color regionBlue = Color(0xFF216CE9);
-  static const Color regionPurple = Color(0xFF7C48DB);
-  static const Color regionCyan = Color(0xFF00B1C5);
+  static const Color regionOrange = Color(0xFFE86924); // Color(0xFFFD8427);
+  static const Color regionBlue = Color(0xFF0D58D9); //Color(0xFF216CE9);
+  static const Color regionPurple = Color(0xFF9428CE); //Color(0xFF7C48DB);
+  static const Color regionCyan = Color(0xFF14D99B); //Color(0xFF00B1C5);
+
+  // added  12-10-2026
+  static const Color regionDarkRed = Color(0xFFBA0808);
+
+  // Button gradient
+  static const Color buttonGradientStart = Color(0xFF0055FD);
+  static const Color buttonGradientEnd = Color(0xFF01DFD1);
+  static const LinearGradient buttonGradient = LinearGradient(
+    colors: [buttonGradientStart, buttonGradientEnd],
+  );
+
+  // Distributor Order — Retailer Channel chip
+  static const Color retailerChannelText = Color(0xFF7708BB);
+  static const Color retailerChannelBorder = Color(0xFF950FCB);
+  static const Color retailerChannelBg = Color(0xFFF8E8FE);
+
+  // done
 
   // Sales team performance
   static const Color viewAllButton = Color(0xFF4175E2);

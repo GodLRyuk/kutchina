@@ -52,6 +52,21 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   final List<File> _extraPhotos = [];
   String _lastQuery = '';
 
+  static const double _sidePad = 14;
+  static const double _boxRadius = 14;
+  static const double _typeBoxHeight = 77;
+  static const double _fieldHeight = 57;
+  static const double _actionTileHeight = 57;
+  static const double _micSize = 40;
+  static const double _mapHeight = 166;
+
+ 
+  SizedBox _vGap(double fraction) =>
+      SizedBox(height: MediaQuery.sizeOf(context).height * fraction);
+
+  SizedBox _hGap(double fraction) =>
+      SizedBox(width: MediaQuery.sizeOf(context).width * fraction);
+
   /// Maps the UI label to the API code expected by the backend.
   String? get _visitTypeCode {
     switch (_visitType) {
@@ -100,7 +115,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       setState(() {
         _suggestions = data;
         _filtered = data;
-       
       });
     } catch (e) {
       if (!mounted) return;
@@ -125,7 +139,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       setState(() {
         _suggestions = [];
         _filtered = [];
-        
       });
     }
   }
@@ -140,7 +153,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
     setState(() {
       _filtered = [];
-      
     });
 
     _fetchNow(newText); // next suggestions for the full text
@@ -183,10 +195,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       if (!mounted) return;
       AppWidgets.toast(context, 'Could not open camera');
     }
-  }
-
-  void _removePhoto() {
-    setState(() => _photoFile = null);
   }
 
   // Add 29-9-2026
@@ -331,13 +339,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       );
       return;
     }
-    // if (_entity == null || _entityId == null) {
-    //   AppWidgets.toast(
-    //     context,
-    //     'Select a ${_visitType == 'D' ? 'Distributor' : 'Retailer'} to check in',
-    //   );
-    //   return;
-    // }
     if (_visitType != 'O' && (_entity == null || _entityId == null)) {
       AppWidgets.toast(
         context,
@@ -566,479 +567,586 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
+  /// Same state reset the three type boxes used to do inline.
+  void _selectType(String code) {
+    if (_visitType == code) return; // no-op if already selected
+    setState(() {
+      _visitType = code;
+      _entity = null;
+      _entityId = null;
+      _entityName = null;
+      _entityError = null;
+      if (code == 'O') _loadingEntities = false;
+      _purposeController.text = 'Stock check & new display';
+      _noteController.clear();
+      _noteAdded = false;
+      _photoFile = null;
+    });
+    if (code != 'O') _loadEntities();
+  }
+
+  // ===================================================================
+  //                              BUILD
+  // ===================================================================
   @override
   Widget build(BuildContext context) {
+    final bottomInset = MediaQuery.of(context).padding.bottom;
+
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios, size: 16),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: const Text(
-          'Visit check-in',
-          style: TextStyle(
-            fontFamily: 'Sora',
-            fontSize: 15.5,
-            fontWeight: FontWeight.bold,
+      backgroundColor: Colors.white,
+      body: DecoratedBox(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [AppColors.aiBlueBg, Color(0xFFF7F3FF), AppColors.white],
           ),
         ),
-      ),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 18),
-            child: Container(
-              height: 130,
-              margin: const EdgeInsets.only(top: 4),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                color: const Color(0xFFE3E1DB),
-              ),
-              child: Stack(
-                children: [
-                  CustomPaint(
-                    size: Size.infinite,
-                    painter: _MapPlaceholderPainter(),
-                    child: Center(
-                      child: _loadingLocation || _loadingAddress
-                          ? const CircularProgressIndicator(
-                              color: AppColors.red,
-                            )
-                          : const Icon(
-                              Icons.location_on,
-                              color: AppColors.red,
-                              size: 30,
-                            ),
-                    ),
-                  ),
-                  if (_loadingLocation || _loadingAddress)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 12,
-                      child: Text(
-                        _loadingLocation
-                            ? 'Getting your location…'
-                            : 'Resolving address…',
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          color: AppColors.ink,
-                        ),
+        child: SafeArea(
+          bottom: false,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // ---------------- Back arrow + big title ----------------
+              Padding(
+                padding: const EdgeInsets.fromLTRB(14, 8, 18, 14),
+                child: Row(
+                  children: [
+                    IconButton(
+                      tooltip: 'Back',
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        size: 18,
+                        color: AppColors.ink,
                       ),
-                    )
-                  else if (_address != null)
-                    Positioned(
-                      left: 10,
-                      right: 10,
-                      bottom: 10,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          _address!,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 10.5),
-                        ),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                    _hGap(0.02),
+                    const Text(
+                      'Visit check-in',
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.commandCentreText,
                       ),
                     ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(18),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const Text(
-                    'VISIT TYPE',
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: AppColors.steel,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: .4,
-                    ),
+              _mapCard(),
+              Expanded(
+                child: SingleChildScrollView(
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    _sidePad,
+                    18,
+                    _sidePad,
+                    24 + bottomInset,
                   ),
-                  const SizedBox(height: 8),
-                  Column(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      // ---------------- Visit type ----------------
+                      _sectionLabel('VISIT TYPE', AppColors.regionBlue),
+                      _vGap(0.01),
                       Row(
                         children: [
                           Expanded(
                             child: _typeBox(
                               title: 'Distributor',
                               icon: Icons.storefront_outlined,
+                              color: AppColors.regionBlue,
                               selected: _visitType == 'D',
-                              onTap: () {
-                                if (_visitType == 'D') {
-                                  return; // no-op if already selected
-                                }
-                                setState(() {
-                                  _visitType = 'D';
-                                  _entity = null;
-                                  _entityId = null;
-                                  _entityName = null;
-                                  _entityError = null;
-                                  _purposeController.text =
-                                      'Stock check & new display';
-                                  _noteController.clear();
-                                  _noteAdded = false;
-                                  _photoFile = null;
-                                });
-                                _loadEntities();
-                              },
+                              onTap: () => _selectType('D'),
                             ),
                           ),
-                          const SizedBox(width: 10),
+                          _hGap(0.025),
                           Expanded(
                             child: _typeBox(
                               title: 'Retailer',
                               icon: Icons.store_mall_directory_outlined,
+                              color: AppColors.regionOrange,
                               selected: _visitType == 'R',
-                              onTap: () {
-                                if (_visitType == 'R') {
-                                  return; // no-op if already selected
-                                }
-                                setState(() {
-                                  _visitType = 'R';
-                                  _entity = null;
-                                  _entityId = null;
-                                  _entityName = null;
-                                  _entityError = null;
-                                  _purposeController.text =
-                                      'Stock check & new display';
-                                  _noteController.clear();
-                                  _noteAdded = false;
-                                  _photoFile = null;
-                                });
-                                _loadEntities();
-                              },
+                              onTap: () => _selectType('R'),
                             ),
                           ),
-                        ],
-                      ),
-                      // Add others fields (28/9/2026)
-                      const SizedBox(height: 16),
-                      Row(
-                        children: [
-                          const Expanded(flex: 1, child: SizedBox()),
+                          _hGap(0.025),
                           Expanded(
-                            flex: 2,
                             child: _typeBox(
                               title: 'Others',
                               icon: Icons.more_horiz,
-                              selected: _visitType == "O",
-                              onTap: () {
-                                if (_visitType == "O") return;
-                                setState(() {
-                                  _visitType = "O";
-                                  _entity = null;
-                                  _entityId = null;
-                                  _entityName = null;
-                                  _entityError = null;
-                                  _loadingEntities = false;
-                                  _purposeController.text =
-                                      'Stock check & new display';
-                                  _noteController.clear();
-                                  _noteAdded = false;
-                                  _photoFile = null;
-                                });
-                              },
-                            ),
-                          ),
-                          const Expanded(flex: 1, child: SizedBox()),
-                        ],
-                      ),
-                      _visitType == "O"
-                          ? Padding(
-                              padding: const EdgeInsets.only(top: 14),
-                              child: AppWidgets.buildTextField(
-                                label: 'Specify visit type',
-                                controller: _otherController,
-                              ),
-                            )
-                          : const SizedBox.shrink(),
-                    ],
-                  ),
-                  if (_visitType == 'D' || _visitType == 'R') ...[
-                    const SizedBox(height: 12),
-                    if (_loadingEntities)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.white,
-                          border: Border.all(color: AppColors.line),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                        ),
-                        child: Row(
-                          children: [
-                            const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppColors.commandCentreText,
-                              ),
-                            ),
-                            const SizedBox(width: 10),
-                            Text(
-                              'Loading ${_visitType == 'D' ? 'Distributors' : 'Retailers'}',
-                              style: const TextStyle(
-                                fontSize: 12.5,
-                                color: AppColors.steel,
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else if (_entityError != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 14,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.redLight,
-                          border: Border.all(
-                            color: AppColors.red.withValues(alpha: 0.3),
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          children: [
-                            const Icon(
-                              Icons.error_outline,
-                              size: 16,
-                              color: AppColors.red,
-                            ),
-                            const SizedBox(width: 8),
-                            Expanded(
-                              child: Text(
-                                _entityError!,
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.redDark,
-                                ),
-                              ),
-                            ),
-                            GestureDetector(
-                              onTap: _loadEntities,
-                              child: const Text(
-                                'Retry',
-                                style: TextStyle(
-                                  fontFamily: 'Sora',
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.red,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    else
-                      AppWidgets.buildStaticField(
-                        label: _visitType == 'D' ? 'Distributor' : 'Retailer',
-                        value:
-                            _entity ??
-                            'Select ${_visitType == 'D' ? 'Distributor' : 'Retailer'}',
-                        isPlaceholder: _entity == null,
-                        onTap: _pickEntity,
-                      ),
-                  ],
-                  const SizedBox(height: 12),
-
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Expanded(
-                            child: AppWidgets.buildTextField(
-                              label: 'Purpose of visit',
-                              controller: _purposeController,
-                              onChanged: _onPurposeChanged,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          InkWell(
-                            onTap: _voiceForPurpose,
-                            borderRadius: BorderRadius.circular(24),
-                            child: Container(
-                              width: 46,
-                              height: 46,
-                              decoration: BoxDecoration(
-                                color: AppColors.redLight,
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.red.withValues(alpha: 0.4),
-                                ),
-                              ),
-                              child: const Icon(
-                                Icons.mic,
-                                color: AppColors.red,
-                                size: 22,
-                              ),
+                              color: AppColors.productChimney,
+                              selected: _visitType == 'O',
+                              onTap: () => _selectType('O'),
                             ),
                           ),
                         ],
                       ),
+                      if (_visitType == 'O') ...[
+                        _vGap(0.015),
+                        AppWidgets.buildTextField(
+                          label: 'Specify visit type',
+                          controller: _otherController,
+                        ),
+                      ],
+                      if (_visitType == 'D' || _visitType == 'R') ...[
+                        _vGap(0.015),
+                        _entitySection(),
+                      ],
 
+                      // ---------------- Purpose ----------------
+                      _vGap(0.025),
+                      _sectionLabel('PURPOSE OF VISIT', AppColors.dayEndIconBg),
+                      _vGap(0.01),
+                      _purposeField(),
                       Padding(
-                        padding: const EdgeInsets.only(right: 54),
+                        padding: const EdgeInsets.only(right: 60),
                         child: SuggestionDropdown(
                           items: _filtered,
                           onSelect: _selectSuggestion,
                         ),
                       ),
+
+                      // ---------------- Photo + note ----------------
+                      _vGap(0.032),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _actionTile(
+                              Icons.photo_camera_outlined,
+                              _photoAdded ? 'Photo added' : 'Add photo',
+                              _photoAdded,
+                              AppColors.regionBlue,
+                              _addPhoto,
+                            ),
+                          ),
+                          _hGap(0.03),
+                          Expanded(
+                            child: _actionTile(
+                              Icons.list_alt_outlined,
+                              _noteAdded ? 'Note added' : 'Add note',
+                              _noteAdded,
+                              AppColors.regionOrange,
+                              _addNote,
+                            ),
+                          ),
+                        ],
+                      ),
+                      if (_photoFile != null) ...[
+                        _vGap(0.022),
+                        _selfiePreview(),
+                      ],
+
+                      // ---------------- Extra photos ----------------
+                      _vGap(0.025),
+                      _photoSection(),
+
+                      // ---------------- Submit ----------------
+                      _vGap(0.0300),
+                      _submitButton(),
                     ],
                   ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _actionTile(
-                          Icons.photo_camera_outlined,
-                          _photoAdded ? 'Selfie captured' : 'Capture selfie',
-                          _photoAdded,
-                          _addPhoto,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: _actionTile(
-                          Icons.list_alt_outlined,
-                          _noteAdded ? 'Note added' : 'Add note',
-                          _noteAdded,
-                          _addNote,
-                        ),
-                      ),
-                    ],
+  // ===================================================================
+  //                           DESIGN PIECES
+  // ===================================================================
+  Widget _sectionLabel(String text, Color color) {
+    return Text(
+      text,
+      style: TextStyle(
+        fontFamily: AppFonts.display,
+        fontSize: 10.5,
+        color: color,
+        fontWeight: FontWeight.w800,
+        letterSpacing: .4,
+      ),
+    );
+  }
+
+  Widget _mapCard() {
+    final loading = _loadingLocation || _loadingAddress;
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: _sidePad),
+      child: Container(
+        height: _mapHeight,
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFDCE6F7)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(.06),
+              blurRadius: 14,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(12),
+          child: Container(
+            color: const Color(0xFFEFF3F8),
+            child: Stack(
+              children: [
+                Positioned.fill(
+                  child: CustomPaint(
+                    painter: _MapPlaceholderPainter(),
+                    child: Center(
+                      child: loading
+                          ? const SizedBox(
+                              width: 28,
+                              height: 28,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 3,
+                                color: AppColors.dayEndIconBg,
+                              ),
+                            )
+                          : const Padding(
+                              padding: EdgeInsets.only(bottom: 40),
+                              child: Icon(
+                                Icons.location_on,
+                                color: AppColors.dayEndIconBg,
+                                size: 38,
+                              ),
+                            ),
+                    ),
                   ),
-
-                  
-                  if (_photoFile != null) ...[
-                    const SizedBox(height: 20),
-                    Center(
-                      child: SizedBox(
-                        width: 170,
-                        height: 170,
-                        child: Stack(
-                          clipBehavior: Clip.none,
-                          children: [
-                            GestureDetector(
-                              onTap: () => _viewPhoto(_photoFile!),
-                              child: Container(
-                                width: 170,
-                                height: 170,
-                                padding: const EdgeInsets.all(4),
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.white,
-                                  border: Border.all(
-                                    color: AppColors.green,
-                                    width: 2.5,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.green.withOpacity(.20),
-                                      blurRadius: 14,
-                                      offset: const Offset(0, 4),
-                                    ),
-                                  ],
-                                ),
-                                child: ClipOval(
-                                  child: Image.file(
-                                    _photoFile!,
-                                    width: 162,
-                                    height: 162,
-                                    fit: BoxFit.cover,
-                                    alignment: Alignment
-                                        .topCenter, // keeps the face in frame
-                                    cacheWidth: 500,
-                                  ),
-                                ),
-                              ),
-                            ),
-
-                            // Retake badge (bottom-right of the circle)
-                            Positioned(
-                              bottom: 6,
-                              right: 6,
-                              child: GestureDetector(
-                                onTap: _addPhoto,
-                                child: Container(
-                                  padding: const EdgeInsets.all(8),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: Colors.white,
-                                      width: 2,
-                                    ),
-                                  ),
-                                  child: const Icon(
-                                    Icons.photo_camera,
-                                    size: 16,
-                                    color: Colors.white,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
+                ),
+                if (loading)
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 12,
+                    child: Text(
+                      _loadingLocation
+                          ? 'Getting your location…'
+                          : 'Resolving address…',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        color: AppColors.ink,
                       ),
                     ),
-                  ],
-
-                  SizedBox(height: MediaQuery.of(context).size.height * 0.03),
-                  _photoSection(),
-                  SizedBox(
-                    height: (_photoFile != null || _extraPhotos.isNotEmpty)
-                        ? 40
-                        : 24,
+                  )
+                else if (_address != null)
+                  Positioned(
+                    left: 8,
+                    right: 8,
+                    bottom: 8,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(.96),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 20,
+                            color: AppColors.regionBlue,
+                          ),
+                          _hGap(0.02),
+                          Expanded(
+                            child: Text(
+                              _address!,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                                color: AppColors.ink,
+                                height: 1.4,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-
-                  AppWidgets.buildButton(
-                    _submitting
-                        ? 'Submitting...'
-                        : (_loadingLocation || _loadingAddress
-                              ? 'Loading location...'
-                              : 'Submit'),
-                    icon: Icons.location_on_outlined,
-                    onTap: _submitting || _loadingLocation || _loadingAddress
-                        ? null
-                        : _checkIn,
-                    loading: _submitting,
-                  ),
-                ],
-              ),
+              ],
             ),
           ),
-        ],
+        ),
+      ),
+    );
+  }
+
+  Widget _entitySection() {
+    if (_loadingEntities) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          border: Border.all(color: AppColors.line, width: 1.3),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const SizedBox(
+              width: 16,
+              height: 16,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.commandCentreText,
+              ),
+            ),
+            _hGap(0.025),
+            Text(
+              'Loading ${_visitType == 'D' ? 'Distributors' : 'Retailers'}',
+              style: const TextStyle(fontSize: 12.5, color: AppColors.steel),
+            ),
+          ],
+        ),
+      );
+    }
+    if (_entityError != null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(vertical: 11, horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.redLight,
+          border: Border.all(color: AppColors.red.withValues(alpha: 0.3)),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.error_outline, size: 16, color: AppColors.red),
+            _hGap(0.02),
+            Expanded(
+              child: Text(
+                _entityError!,
+                style: const TextStyle(fontSize: 12, color: AppColors.redDark),
+              ),
+            ),
+            GestureDetector(
+              onTap: _loadEntities,
+              child: const Text(
+                'Retry',
+                style: TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.red,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return AppWidgets.buildStaticField(
+      label: _visitType == 'D' ? 'Distributor' : 'Retailer',
+      value:
+          _entity ?? 'Select ${_visitType == 'D' ? 'Distributor' : 'Retailer'}',
+      isPlaceholder: _entity == null,
+      onTap: _pickEntity,
+    );
+  }
+
+  /// Teal-outlined purpose field with the mic inside it.
+  Widget _purposeField() {
+    OutlineInputBorder border(double w) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(_boxRadius),
+      borderSide: BorderSide(
+        color: AppColors.dayEndIconBg.withOpacity(.7),
+        width: w,
+      ),
+    );
+
+    return TextField(
+      controller: _purposeController,
+      onChanged: _onPurposeChanged,
+      style: const TextStyle(fontSize: 15, color: AppColors.ink),
+      decoration: InputDecoration(
+        hintText: 'Enter purpose of visit',
+        hintStyle: const TextStyle(fontSize: 15, color: AppColors.steelLight),
+        filled: true,
+        fillColor: Colors.white,
+        constraints: const BoxConstraints.tightFor(height: _fieldHeight),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+        enabledBorder: border(1.3),
+        focusedBorder: border(1.6),
+        suffixIcon: Padding(
+          padding: const EdgeInsets.only(right: 9),
+          child: _micButton(),
+        ),
+        suffixIconConstraints: const BoxConstraints(minWidth: 0, minHeight: 0),
+      ),
+    );
+  }
+
+  Widget _micButton() {
+    return Semantics(
+      button: true,
+      label: 'Voice input for purpose',
+      child: Material(
+        color: AppColors.redLight,
+        shape: const CircleBorder(),
+        child: InkWell(
+          onTap: _voiceForPurpose,
+          customBorder: const CircleBorder(),
+          child: const SizedBox(
+            width: _micSize,
+            height: _micSize,
+            child: Icon(Icons.mic, color: AppColors.red, size: 22),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Blue → teal gradient submit button.
+  Widget _submitButton() {
+    final disabled = _submitting || _loadingLocation || _loadingAddress;
+    final label = _submitting
+        ? 'Submitting...'
+        : (_loadingLocation || _loadingAddress
+              ? 'Loading location...'
+              : 'Submit');
+
+    return Opacity(
+      opacity: disabled ? .75 : 1,
+      child: Container(
+        height: 48,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(_boxRadius),
+          gradient: AppColors.buttonGradient,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.regionBlue.withOpacity(.25),
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(_boxRadius),
+            onTap: disabled ? null : _checkIn,
+            child: Center(
+              child: _submitting
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    )
+                  : Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        _hGap(0.02),
+                        Text(
+                          label,
+                          style: const TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ],
+                    ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Circular selfie preview. Change [size] to resize everything together.
+  Widget _selfiePreview() {
+    const double size = 140; // was 110 — change this one value to resize
+    const double ring = 4; // white padding between border and image
+    const double border = 2;
+    const double imageSize = size - (ring * 2) - (border * 2);
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            GestureDetector(
+              onTap: () => _viewPhoto(_photoFile!),
+              child: Container(
+                width: size,
+                height: size,
+                padding: const EdgeInsets.all(ring),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.white,
+                  border: Border.all(color: AppColors.green, width: border),
+                ),
+                child: ClipOval(
+                  child: Image.file(
+                    _photoFile!,
+                    width: imageSize,
+                    height: imageSize,
+                    fit: BoxFit.cover,
+                    alignment: Alignment.topCenter,
+                    cacheWidth: 600,
+                  ),
+                ),
+              ),
+            ),
+            // Retake badge (bottom-right of the circle)
+            Positioned(
+              bottom: 4,
+              right: 4,
+              child: GestureDetector(
+                onTap: _addPhoto,
+                child: Container(
+                  padding: const EdgeInsets.all(7),
+                  decoration: BoxDecoration(
+                    color: AppColors.green,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.white, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.photo_camera,
+                    size: 16,
+                    color: AppColors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _photoSection() {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = MediaQuery.sizeOf(context).width;
     const perRow = 4;
-    final box = ((screenWidth - 36 - 10 * (perRow - 1)) / perRow)
+    final box = ((screenWidth - (_sidePad * 2) - 10 * (perRow - 1)) / perRow)
         .floorToDouble();
 
     return Column(
@@ -1046,54 +1154,72 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       children: [
         Row(
           children: [
-            InkWell(
-              onTap: _pickPhoto,
-              borderRadius: BorderRadius.circular(20),
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 6,
+            const Icon(
+              Icons.image_outlined,
+              size: 22,
+              color: AppColors.productChimney,
+            ),
+            _hGap(0.015),
+            const Text(
+              'PHOTOS',
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+                letterSpacing: .4,
+                color: AppColors.productChimney,
+              ),
+            ),
+            const Spacer(),
+            Material(
+              color: AppColors.productChimney.withOpacity(
+                _extraPhotos.isEmpty ? .07 : .12,
+              ),
+              shape: StadiumBorder(
+                side: BorderSide(
+                  color: AppColors.productChimney.withOpacity(.35),
                 ),
-                decoration: BoxDecoration(
-                  // color: AppColors.redLight.withOpacity(.25),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.redDark.withOpacity(.35)),
-                  color: _extraPhotos.isEmpty
-                      ? AppColors.white
-                      : AppColors.green,
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      _extraPhotos.isEmpty
-                          ? Icons.photo_camera_outlined
-                          : Icons.add_a_photo_outlined,
-                      size: 16,
-                      //color: AppColors.redDark,
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _extraPhotos.isEmpty
-                          ? 'Capture display Photos'
-                          : 'Add more photos',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        //color: AppColors.redDark,
+              ),
+              child: InkWell(
+                onTap: _pickPhoto,
+                customBorder: const StadiumBorder(),
+                child: Padding(
+                  // ~33dp high pill
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 6,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        _extraPhotos.isEmpty
+                            ? Icons.photo_camera_outlined
+                            : Icons.add_a_photo_outlined,
+                        size: 20,
+                        color: AppColors.productChimney,
                       ),
-                    ),
-                  ],
+                      _hGap(0.015),
+                      Text(
+                        _extraPhotos.isEmpty
+                            ? 'Capture Photos'
+                            : 'Add more photos',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.productChimney,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
           ],
         ),
-
-        const SizedBox(height: 15),
-
-        // Photos wrap onto the next line automatically
-        if (_extraPhotos.isNotEmpty)
+        if (_extraPhotos.isNotEmpty) ...[
+          _vGap(0.018),
+          // Photos wrap onto the next line automatically
           Wrap(
             spacing: 10,
             runSpacing: 12,
@@ -1102,6 +1228,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                 _thumb(_extraPhotos[i], () => _removeExtraPhoto(i), size: box),
             ],
           ),
+        ],
       ],
     );
   }
@@ -1126,17 +1253,10 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
               height: size,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.white, width: 2),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(.10),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
+                border: Border.all(color: AppColors.line),
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(13),
                 child: Image.file(file, fit: BoxFit.cover, cacheWidth: 300),
               ),
             ),
@@ -1150,14 +1270,14 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
               child: Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(.60),
+                  color: AppColors.black.withOpacity(.60),
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Text(
                   label,
                   style: const TextStyle(
                     fontSize: 8.5,
-                    color: Colors.white,
+                    color: AppColors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1166,22 +1286,22 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
           // Remove button
           Positioned(
-            top: -3,
-            right: -3,
+            top: -6,
+            right: -6,
             child: GestureDetector(
               onTap: onRemove,
               child: Container(
-                width: 20,
-                height: 20,
+                width: 22,
+                height: 22,
                 decoration: BoxDecoration(
-                  color: Colors.black.withOpacity(.72),
+                  color: AppColors.charcoal,
                   shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 1.2),
+                  border: Border.all(color: AppColors.white, width: 1.5),
                 ),
                 child: const Icon(
                   Icons.close_rounded,
-                  size: 12,
-                  color: Colors.white,
+                  size: 13,
+                  color: AppColors.white,
                 ),
               ),
             ),
@@ -1195,40 +1315,62 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   Widget _typeBox({
     required String title,
     required IconData icon,
+    required Color color,
     required bool selected,
     required VoidCallback onTap,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: title,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: selected ? AppColors.redLight : AppColors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: selected ? AppColors.red : AppColors.line,
-            width: selected ? 1.6 : 1,
-          ),
+          borderRadius: BorderRadius.circular(_boxRadius),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: color.withOpacity(.25),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: selected ? AppColors.redDark : AppColors.steel,
+        child: Material(
+          color: selected ? color.withOpacity(.10) : color.withOpacity(.03),
+          clipBehavior: Clip.antiAlias,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(_boxRadius),
+            side: BorderSide(
+              color: selected ? color : color.withOpacity(.55),
+              width: selected ? 1.8 : 1.2,
             ),
-            const SizedBox(height: 5),
-            Text(
-              title,
-              style: TextStyle(
-                fontFamily: 'Sora',
-                fontSize: 11.5,
-                fontWeight: FontWeight.w700,
-                color: selected ? AppColors.redDark : AppColors.steel,
+          ),
+          child: InkWell(
+            onTap: onTap,
+            child: SizedBox(
+              height: _typeBoxHeight,
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(icon, size: 26, color: color),
+                    // Tiny gap — kept fixed on purpose.
+                    const SizedBox(height: 6),
+                    Text(
+                      title,
+                      style: TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: color,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
+          ),
         ),
       ),
     );
@@ -1238,98 +1380,100 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     IconData icon,
     String label,
     bool active,
+    Color color,
     VoidCallback onTap,
   ) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(14),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        decoration: BoxDecoration(
-          color: active ? AppColors.greenLight : AppColors.white,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: active ? AppColors.green : AppColors.line),
+    final c = active ? AppColors.green : color;
+    return Semantics(
+      button: true,
+      label: label,
+      child: Material(
+        color: active ? AppColors.greenLight : c.withOpacity(.03),
+        clipBehavior: Clip.antiAlias,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(_boxRadius),
+          side: BorderSide(color: c.withOpacity(.55)),
         ),
-        child: Column(
-          children: [
-            Icon(
-              icon,
-              size: 20,
-              color: active ? AppColors.green : AppColors.steel,
+        child: InkWell(
+          onTap: onTap,
+          child: SizedBox(
+            height: _actionTileHeight,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  active ? Icons.check_circle_outline : icon,
+                  size: 24,
+                  color: c,
+                ),
+                _hGap(0.02),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      color: c,
+                    ),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: active ? AppColors.green : AppColors.steel,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
   }
 }
 
-/// Cheap diagonal-stripe placeholder standing in for a map tile background.
+/// Map-style placeholder (roads, parks, water) standing in for a map tile.
 class _MapPlaceholderPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = const Color(0xFFDBD9D2)
-      ..strokeWidth = 10;
-    canvas.save();
-    canvas.clipRRect(
-      RRect.fromRectAndRadius(
-        Rect.fromLTWH(0, 0, size.width, size.height),
-        const Radius.circular(14),
-      ),
+    final w = size.width, h = size.height;
+    canvas.drawRect(
+      Offset.zero & size,
+      Paint()..color = const Color(0xFFEDEFF2),
     );
-    const gap = 20.0;
-    for (double x = -size.height; x < size.width; x += gap) {
-      canvas.drawLine(
-        Offset(x, size.height),
-        Offset(x + size.height, 0),
-        paint,
+
+    final green = Paint()..color = const Color(0xFFCDEBB0);
+    final water = Paint()..color = const Color(0xFFA9DAFF);
+    for (final r in [
+      Rect.fromLTWH(0, 0, w * .12, h * .35),
+      Rect.fromLTWH(w * .30, h * .18, w * .10, h * .22),
+      Rect.fromLTWH(w * .58, h * .10, w * .14, h * .20),
+      Rect.fromLTWH(w * .88, 0, w * .12, h * .30),
+      Rect.fromLTWH(w * .05, h * .55, w * .14, h * .30),
+    ]) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(r, const Radius.circular(4)),
+        green,
       );
     }
-    canvas.restore();
+    canvas.drawOval(Rect.fromLTWH(w * .17, h * .05, w * .09, h * .2), water);
+    canvas.drawOval(Rect.fromLTWH(w * .88, h * .30, w * .16, h * .55), water);
+
+    final road = Paint()
+      ..color = Colors.white
+      ..strokeWidth = 7
+      ..strokeCap = StrokeCap.round;
+    for (double x = -h; x < w; x += 70) {
+      canvas.drawLine(Offset(x, h), Offset(x + h, 0), road);
+    }
+    for (double y = 10; y < h; y += 55) {
+      canvas.drawLine(Offset(0, y + 20), Offset(w, y - 20), road);
+    }
+    canvas.drawLine(
+      Offset(w * .78, 0),
+      Offset(w * .70, h),
+      Paint()
+        ..color = const Color(0xFFF7D154)
+        ..strokeWidth = 7
+        ..strokeCap = StrokeCap.round,
+    );
   }
 
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _DashedBorderPainter extends CustomPainter {
-  final Color color;
-  final double radius;
-  _DashedBorderPainter({required this.color, this.radius = 12});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.5;
-
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
-      );
-
-    const dash = 5.0;
-    const gap = 4.0;
-    for (final metric in path.computeMetrics()) {
-      double distance = 0;
-      while (distance < metric.length) {
-        canvas.drawPath(metric.extractPath(distance, distance + dash), paint);
-        distance += dash + gap;
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant _DashedBorderPainter old) =>
-      old.color != color || old.radius != radius;
 }

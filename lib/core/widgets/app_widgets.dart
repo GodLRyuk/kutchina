@@ -202,7 +202,7 @@ class AppWidgets {
           style: const TextStyle(
             fontFamily: AppFonts.display,
             fontSize: 10.5,
-            color: AppColors.steel,
+            color: AppColors.dayEndIconBg,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.4,
           ),
@@ -252,7 +252,7 @@ class AppWidgets {
           style: const TextStyle(
             fontFamily: AppFonts.display,
             fontSize: 10.5,
-            color: AppColors.steel,
+            color: AppColors.dayEndIconBg,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.4,
           ),
