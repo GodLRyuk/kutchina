@@ -620,8 +620,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   ),
                 ),
               ),
-              SizedBox(height: 8),
-              _mapCard(),
+              
+               
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
@@ -635,6 +635,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                       _mapCard(),
+                        const SizedBox(height: 18),
                       // ---------------- Visit type ----------------
                       _sectionLabel('VISIT TYPE', AppColors.regionBlue),
                       _vGap(0.01),
@@ -674,7 +676,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                       if (_visitType == 'O') ...[
                         _vGap(0.015),
                         AppWidgets.buildTextField(
-                          label: 'Specify visit type',
+                          label: 'Name',
                           controller: _otherController,
                         ),
                       ],
@@ -762,111 +764,108 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
 
   Widget _mapCard() {
     final loading = _loadingLocation || _loadingAddress;
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: _sidePad),
-      child: Container(
-        height: _mapHeight,
-        padding: const EdgeInsets.all(5),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: const Color(0xFFDCE6F7)),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(.06),
-              blurRadius: 14,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Container(
-            color: const Color(0xFFEFF3F8),
-            child: Stack(
-              children: [
-                Positioned.fill(
-                  child: CustomPaint(
-                    painter: _MapPlaceholderPainter(),
-                    child: Center(
-                      child: loading
-                          ? const SizedBox(
-                              width: 28,
-                              height: 28,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 3,
-                                color: AppColors.dayEndIconBg,
-                              ),
-                            )
-                          : const Padding(
-                              padding: EdgeInsets.only(bottom: 40),
-                              child: Icon(
-                                Icons.location_on,
-                                color: AppColors.dayEndIconBg,
-                                size: 38,
-                              ),
+    return Container(
+      height: _mapHeight,
+      padding: const EdgeInsets.all(5),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFDCE6F7)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(.06),
+            blurRadius: 14,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          color: const Color(0xFFEFF3F8),
+          child: Stack(
+            children: [
+              Positioned.fill(
+                child: CustomPaint(
+                  painter: _MapPlaceholderPainter(),
+                  child: Center(
+                    child: loading
+                        ? const SizedBox(
+                            width: 28,
+                            height: 28,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 3,
+                              color: AppColors.dayEndIconBg,
                             ),
+                          )
+                        : const Padding(
+                            padding: EdgeInsets.only(bottom: 40),
+                            child: Icon(
+                              Icons.location_on,
+                              color: AppColors.dayEndIconBg,
+                              size: 38,
+                            ),
+                          ),
+                  ),
+                ),
+              ),
+              if (loading)
+                Positioned(
+                  left: 0,
+                  right: 0,
+                  bottom: 12,
+                  child: Text(
+                    _loadingLocation
+                        ? 'Getting your location…'
+                        : 'Resolving address…',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.ink,
+                    ),
+                  ),
+                )
+              else if (_address != null)
+                Positioned(
+                  left: 8,
+                  right: 8,
+                  bottom: 8,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(.96),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_outlined,
+                          size: 20,
+                          color: AppColors.regionBlue,
+                        ),
+                        _hGap(0.02),
+                        Expanded(
+                          child: Text(
+                            _address!,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                              color: AppColors.ink,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                if (loading)
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 12,
-                    child: Text(
-                      _loadingLocation
-                          ? 'Getting your location…'
-                          : 'Resolving address…',
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                        color: AppColors.ink,
-                      ),
-                    ),
-                  )
-                else if (_address != null)
-                  Positioned(
-                    left: 8,
-                    right: 8,
-                    bottom: 8,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(.96),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 20,
-                            color: AppColors.regionBlue,
-                          ),
-                          _hGap(0.02),
-                          Expanded(
-                            child: Text(
-                              _address!,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: AppColors.ink,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-              ],
-            ),
+            ],
           ),
         ),
       ),

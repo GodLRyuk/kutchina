@@ -59,8 +59,8 @@ class SpeedoPainter extends CustomPainter {
     for (final fraction in [0.0, 0.25, 0.5, 0.75, 1.0]) {
       final angle = math.pi + math.pi * fraction;
       final labelPosition = Offset(
-        center.dx + math.cos(angle) * (radius + 24),
-        center.dy + math.sin(angle) * (radius + 24),
+        center.dx + math.cos(angle) * (radius + 30),
+        center.dy + math.sin(angle) * (radius + 30),
       );
       final labelPainter = TextPainter(
         text: TextSpan(

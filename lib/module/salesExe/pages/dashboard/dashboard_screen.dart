@@ -650,7 +650,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ).format(_monthlyTargetMonth ?? DateTime.now());
 
                         return AppWidgets.buildCard(
-                          padding: const EdgeInsets.fromLTRB(16, 10, 16, 14),
+                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
@@ -670,14 +670,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ),
 
-                                  // Icon(
-
-                                  //   Icons.more_horiz,
-                                  //   size: 20,
-                                  //   color: AppColors.steelLight,
-                                  // ),
+                                 
                                   IconButton(
                                     onPressed: _openTarget,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    visualDensity: VisualDensity.compact,
                                     icon: Icon(
                                       Icons.more_horiz,
                                       size: 20,
@@ -693,13 +691,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                   color: AppColors.steel,
                                 ),
                               ),
-                              // SizedBox(height: 20),
 
                               SizedBox(
-                                //height: 208,
-                                height:
-                                    MediaQuery.sizeOf(context).width * 0.58 +
-                                    20,
+                                height: MediaQuery.sizeOf(context).width * 0.50,
                                 child: TweenAnimationBuilder<double>(
                                   key: ValueKey(_refreshTick),
                                   tween: Tween(
