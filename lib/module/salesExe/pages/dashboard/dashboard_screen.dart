@@ -1,5 +1,6 @@
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/admin_dashboard_api.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
@@ -39,6 +40,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   double _monthlyOrderTotal = 0;
   double _targetProgress = 0;
   bool _targetLoading = true;
+  List<TargetMilestoneNotification> _targetNotifications = [];
 
   // Top-selling categories, straight from AdminDashboardData.salesByCategory
   // — already parsed into DashboardCategory objects by AdminDashboardApi,
@@ -132,6 +134,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final progress = targetAmount <= 0
         ? 0.0
         : (orderTotal / targetAmount).clamp(0.0, 1.0);
+    final userId = user.id;
+    final notificationUpdate = userId.isEmpty
+        ? const TargetMilestoneUpdate(notifications: [], newlyReached: [])
+        : await TargetMilestoneNotificationService.recordProgress(
+            userId: userId,
+            targetMonth: targetMonth,
+            progress: progress,
+          );
     if (!mounted) return;
     setState(() {
       _monthlyTarget = monthlyTarget?.amount;
@@ -139,12 +149,88 @@ class _DashboardScreenState extends State<DashboardScreen> {
       _monthlyOrderTotal = orderTotal;
       _targetProgress = progress;
       _targetLoading = false;
+      _targetNotifications = notificationUpdate.notifications;
     });
     if (targetLoadFailed) {
       AppWidgets.toast(context, 'Could not load monthly target');
     } else if (ordersLoadFailed) {
       AppWidgets.toast(context, 'Could not load monthly orders');
     }
+    if (userId.isNotEmpty) {
+      for (final notification in notificationUpdate.newlyReached) {
+        AppWidgets.toast(context, notification.message);
+      }
+    }
+  }
+
+  Future<void> _openTargetNotifications() async {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.white,
+      isScrollControlled: true,
+      builder: (context) => SafeArea(
+        child: SizedBox(
+          height: MediaQuery.sizeOf(context).height * 0.55,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                child: Text(
+                  'Notifications',
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.ink,
+                  ),
+                ),
+              ),
+              const Divider(height: 1),
+              Expanded(
+                child: notifications.isEmpty
+                    ? const Center(
+                        child: Text(
+                          'No notifications yet',
+                          style: TextStyle(color: AppColors.steel),
+                        ),
+                      )
+                    : ListView.separated(
+                        itemCount: notifications.length,
+                        separatorBuilder: (_, __) =>
+                            const Divider(height: 1, indent: 64),
+                        itemBuilder: (context, index) {
+                          final notification = notifications[index];
+                          return ListTile(
+                            leading: const CircleAvatar(
+                              backgroundColor: AppColors.greenLight,
+                              child: Icon(
+                                Icons.flag_outlined,
+                                color: AppColors.green,
+                              ),
+                            ),
+                            title: Text(notification.message),
+                            subtitle: Text(
+                              DateFormat(
+                                'dd MMM yyyy, hh:mm a',
+                              ).format(notification.createdAt.toLocal()),
+                            ),
+                          );
+                        },
+                      ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   double _calculateOrderTotal(
@@ -459,9 +545,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
           centerImage: const AssetImage('assets/images/logo.jpg'),
           actions: [
             IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () =>
-                  AppWidgets.toast(context, 'No new notifications'),
+              onPressed: _openTargetNotifications,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (_targetNotifications.any(
+                    (notification) => !notification.isRead,
+                  ))
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
