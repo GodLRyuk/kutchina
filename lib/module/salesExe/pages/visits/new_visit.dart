@@ -25,9 +25,7 @@ class NewVisitScreen extends StatefulWidget {
 }
 
 class _NewVisitScreenState extends State<NewVisitScreen> {
-  final _purposeController = TextEditingController(
-    // text: 'Stock check & new display',
-  );
+  final _purposeController = TextEditingController();
   final _noteController = TextEditingController();
   final _otherController = TextEditingController();
   bool _noteAdded = false;
@@ -586,9 +584,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     if (code != 'O') _loadEntities();
   }
 
-  // ===================================================================
-  //                              BUILD
-  // ===================================================================
   @override
   Widget build(BuildContext context) {
     final bottomInset = MediaQuery.of(context).padding.bottom;
@@ -597,8 +592,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       backgroundColor: Colors.transparent,
       extendBody: true,
       extendBodyBehindAppBar: true,
-
       appBar: AppTopBar.brand(
+        showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
@@ -613,33 +608,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              // ---------------- Back arrow + big title ----------------
               Padding(
-                padding: const EdgeInsets.fromLTRB(14, 8, 18, 14),
-                child: Row(
-                  children: [
-                    IconButton(
-                      tooltip: 'Back',
-                      icon: const Icon(
-                        Icons.arrow_back_ios_new,
-                        size: 18,
-                        color: AppColors.ink,
-                      ),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                    _hGap(0.02),
-                    const Text(
-                      'Visit check-in',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.commandCentreText,
-                      ),
-                    ),
-                  ],
+                padding: const EdgeInsets.only(left: 22, top: 8),
+                child: Text(
+                  'Visit check-in',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
                 ),
               ),
+              SizedBox(height: 8),
               _mapCard(),
               Expanded(
                 child: SingleChildScrollView(
@@ -1018,68 +999,22 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
-  /// Blue → teal gradient submit button.
   Widget _submitButton() {
     final disabled = _submitting || _loadingLocation || _loadingAddress;
     final label = _submitting
         ? 'Submitting...'
         : (_loadingLocation || _loadingAddress
               ? 'Loading location...'
-              : 'Submit');
+              : 'Submit →');
 
     return Opacity(
       opacity: disabled ? .75 : 1,
-      child: Container(
-        height: 48,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(_boxRadius),
-          gradient: AppColors.buttonGradient,
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.regionBlue.withOpacity(.25),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
-            ),
-          ],
-        ),
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            borderRadius: BorderRadius.circular(_boxRadius),
-            onTap: disabled ? null : _checkIn,
-            child: Center(
-              child: _submitting
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.5,
-                        color: Colors.white,
-                      ),
-                    )
-                  : Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.location_on_outlined,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                        _hGap(0.02),
-                        Text(
-                          label,
-                          style: const TextStyle(
-                            fontFamily: AppFonts.display,
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-          ),
-        ),
+      child: AppWidgets.buildButton(
+        label,
+        onTap: disabled ? null : _checkIn,
+        variant: AppButtonVariant.gradient,
+        // icon: Icons.location_on_outlined,
+        loading: _submitting,
       ),
     );
   }

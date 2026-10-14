@@ -317,11 +317,34 @@ class _OrderListScreenState extends State<OrderListScreen> {
        backgroundColor: Colors.transparent,
         extendBody: true,
         extendBodyBehindAppBar: true,
-      appBar: AppTopBar.simple(title: 'My Orders'),
+      appBar: AppTopBar.brand(
+        showBackButton: true,
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+          ),
+        ],
+      ),
       body: AppBackground(
         child: SafeArea(
           child: Column(
+             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              Padding(
+                padding: const EdgeInsets.only(left: 22, top: 8),
+                child: Text(
+                  'Your Orders',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              //SizedBox(height: 8,),
               _searchBar(),
               Expanded(
                 child: RefreshIndicator(

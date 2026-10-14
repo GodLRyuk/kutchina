@@ -136,6 +136,7 @@ Future<bool> showCheckInRequiredDialogall(
                 const SizedBox(height: 18),
                 AppWidgets.buildButton(
                   buttonLabel,
+                  variant: AppButtonVariant.gradient,
                   icon: icon,
                   onTap: () {
                     confirmed = true;

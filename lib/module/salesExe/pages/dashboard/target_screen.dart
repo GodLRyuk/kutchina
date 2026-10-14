@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/app_widgets.dart';
 
 class TargetScreen extends StatefulWidget {
   const TargetScreen({super.key});
@@ -48,12 +50,42 @@ class _TargetScreenState extends State<TargetScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
-      appBar: AppTopBar(
-        title: 'Your Targets',
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: AppTopBar.brand(
+        showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+          ),
+        ],
       ),
-      body: _displayTargetDesign(),
+
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+               Padding(
+                padding: const EdgeInsets.only(left: 22, top: 8),
+                child: Text(
+                  'Your Targets',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              Expanded(child: _displayTargetDesign()),
+            ],
+          ),
+        ),
+      ),
     );
   }
 

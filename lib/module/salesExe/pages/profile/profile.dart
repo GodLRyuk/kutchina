@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/offline/pending_sync_screen.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
@@ -83,231 +85,259 @@ class ProfileScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.ash,
-      appBar: AppTopBar(
-        title: 'My Profile',
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: AppTopBar.brand(
+        showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+          ),
+        ],
       ),
-      body: CustomScrollView(
-        slivers: [
-          SliverToBoxAdapter(
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(10, 5, 20, 10),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.bottomCenter,
-                  end: Alignment.topCenter,
-                  colors: [AppColors.commandCentreText, AppColors.regionBlue],
-                ),
-              ),
-              child: Column(
-                children: [
-                  Container(
-                    width: 84,
-                    height: 84,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.white.withValues(alpha: 0.4),
-                        width: 2,
-                      ),
-                    ),
-                    child: Text(
-                      user.fullName.isNotEmpty
-                          ? user.fullName[0].toUpperCase()
-                          : '?',
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    user.fullName.isNotEmpty ? user.fullName : user.userId,
-                    style: const TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 19,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.white,
-                    ),
-                  ),
-                  const SizedBox(height: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.white.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          Icons.badge_outlined,
-                          size: 12,
-                          color: AppColors.white.withValues(alpha: 0.9),
-                        ),
-                        const SizedBox(width: 5),
-                        Text(
-                          user.userId,
-                          style: TextStyle(
-                            fontFamily: AppFonts.mono,
-                            fontSize: 11,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.white.withValues(alpha: 0.9),
-                          ),
-                        ),
+      body: AppBackground(
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.fromLTRB(10, 5, 20, 10),
+                  decoration: const BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [
+                        AppColors.commandCentreText,
+                        AppColors.regionBlue,
                       ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
                     children: [
-                      _statusChip(
-                        icon: user.isActive
+                      Container(
+                        width: 84,
+                        height: 84,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: AppColors.white.withValues(alpha: 0.4),
+                            width: 2,
+                          ),
+                        ),
+                        child: Text(
+                          user.fullName.isNotEmpty
+                              ? user.fullName[0].toUpperCase()
+                              : '?',
+                          style: const TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 34,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.white,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+                      Text(
+                        user.fullName.isNotEmpty ? user.fullName : user.userId,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 19,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.white.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              Icons.badge_outlined,
+                              size: 12,
+                              color: AppColors.white.withValues(alpha: 0.9),
+                            ),
+                            const SizedBox(width: 5),
+                            Text(
+                              user.userId,
+                              style: TextStyle(
+                                fontFamily: AppFonts.mono,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.white.withValues(alpha: 0.9),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _statusChip(
+                            icon: user.isActive
+                                ? Icons.check_circle_outline
+                                : Icons.pause_circle_outline,
+                            label: user.isActive ? 'Active' : 'Inactive',
+                            color: user.isActive
+                                ? AppColors.green
+                                : AppColors.steel,
+                          ),
+                          const SizedBox(width: 8),
+                          if (user.zone != null)
+                            _statusChip(
+                              icon: Icons.map_outlined,
+                              label: user.zone!.name,
+                            ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              // ---- Info sections ----
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    _sectionLabel('Contact'),
+                    _sectionCard([
+                      _infoRow(
+                        Icons.mail_outline,
+                        'Email',
+                        user.email.isNotEmpty ? user.email : '—',
+                      ),
+                      _infoRow(
+                        Icons.call_outlined,
+                        'Phone',
+                        user.phone.isNotEmpty ? user.phone : '—',
+                      ),
+                      _infoRow(
+                        Icons.home_outlined,
+                        'Address',
+                        user.address.isNotEmpty ? user.address : '—',
+                      ),
+                    ]),
+
+                    const SizedBox(height: 8),
+                    _sectionLabel('Territory'),
+                    _sectionCard([
+                      _infoRow(
+                        Icons.location_on_outlined,
+                        'Location',
+                        user.location?.name ?? '—',
+                      ),
+                      _infoRow(
+                        Icons.map_outlined,
+                        'Zone',
+                        user.zone?.name ?? '—',
+                      ),
+                    ]),
+
+                    const SizedBox(height: 8),
+                    _sectionLabel('Account'),
+                    _sectionCard([
+                      _infoRow(Icons.badge_outlined, 'User ID', user.userId),
+                      _infoRow(
+                        Icons.verified_user_outlined,
+                        'Role',
+                        user.role ?? '—',
+                      ),
+                      _infoRow(
+                        user.isActive
                             ? Icons.check_circle_outline
                             : Icons.pause_circle_outline,
-                        label: user.isActive ? 'Active' : 'Inactive',
-                        color: user.isActive
+                        'Status',
+                        user.isActive ? 'Active' : 'Inactive',
+                        valueColor: user.isActive
                             ? AppColors.green
                             : AppColors.steel,
                       ),
-                      const SizedBox(width: 8),
-                      if (user.zone != null)
-                        _statusChip(
-                          icon: Icons.map_outlined,
-                          label: user.zone!.name,
+                    ]),
+
+                    const SizedBox(height: 20),
+                    _sectionLabel('Offline & security'),
+                    _sectionCard([
+                      const _FingerprintTile(),
+                      InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const PendingSyncScreen(),
+                          ),
                         ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-          ),
-          // ---- Info sections ----
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 20, 16, 24),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _sectionLabel('Contact'),
-                _sectionCard([
-                  _infoRow(
-                    Icons.mail_outline,
-                    'Email',
-                    user.email.isNotEmpty ? user.email : '—',
-                  ),
-                  _infoRow(
-                    Icons.call_outlined,
-                    'Phone',
-                    user.phone.isNotEmpty ? user.phone : '—',
-                  ),
-                  _infoRow(
-                    Icons.home_outlined,
-                    'Address',
-                    user.address.isNotEmpty ? user.address : '—',
-                  ),
-                ]),
-
-                const SizedBox(height: 8),
-                _sectionLabel('Territory'),
-                _sectionCard([
-                  _infoRow(
-                    Icons.location_on_outlined,
-                    'Location',
-                    user.location?.name ?? '—',
-                  ),
-                  _infoRow(Icons.map_outlined, 'Zone', user.zone?.name ?? '—'),
-                ]),
-
-                const SizedBox(height: 8),
-                _sectionLabel('Account'),
-                _sectionCard([
-                  _infoRow(Icons.badge_outlined, 'User ID', user.userId),
-                  _infoRow(
-                    Icons.verified_user_outlined,
-                    'Role',
-                    user.role ?? '—',
-                  ),
-                  _infoRow(
-                    user.isActive
-                        ? Icons.check_circle_outline
-                        : Icons.pause_circle_outline,
-                    'Status',
-                    user.isActive ? 'Active' : 'Inactive',
-                    valueColor: user.isActive
-                        ? AppColors.green
-                        : AppColors.steel,
-                  ),
-                ]),
-
-                const SizedBox(height: 20),
-                _sectionLabel('Offline & security'),
-                _sectionCard([
-                  const _FingerprintTile(),
-                  InkWell(
-                    onTap: () => Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PendingSyncScreen(),
+                        child: ListenableBuilder(
+                          listenable: SyncService.instance,
+                          builder: (_, __) => _infoRow(
+                            Icons.cloud_sync_outlined,
+                            'Offline queue',
+                            SyncService.instance.totalCount == 0
+                                ? 'All synced'
+                                : '${SyncService.instance.totalCount} waiting',
+                            valueColor: SyncService.instance.totalCount == 0
+                                ? AppColors.green
+                                : AppColors.amberDark,
+                          ),
+                        ),
                       ),
+                    ]),
+                    const SizedBox(height: 20),
+                    AppWidgets.buildButton(
+                      'Log out →',
+                      onTap: () => _confirmLogout(context),
+                      variant: AppButtonVariant.gradient,
+                      icon: Icons.logout,
                     ),
-                    child: ListenableBuilder(
-                      listenable: SyncService.instance,
-                      builder: (_, __) => _infoRow(
-                        Icons.cloud_sync_outlined,
-                        'Offline queue',
-                        SyncService.instance.totalCount == 0
-                            ? 'All synced'
-                            : '${SyncService.instance.totalCount} waiting',
-                        valueColor: SyncService.instance.totalCount == 0
-                            ? AppColors.green
-                            : AppColors.amberDark,
-                      ),
-                    ),
-                  ),
-                ]),
-                const SizedBox(height: 20),
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () => _confirmLogout(context),
-                    icon: const Icon(
-                      Icons.logout,
-                      size: 18,
-                      color: AppColors.red,
-                    ),
-                    label: const Text(
-                      'Log out',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 13.5,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.red,
-                      ),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      side: const BorderSide(color: AppColors.red, width: 1.3),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      backgroundColor: AppColors.redLight,
-                    ),
-                  ),
+                    // SizedBox(
+                    //   width: double.infinity,
+                    //   child: OutlinedButton.icon(
+                    //     onPressed: () => _confirmLogout(context),
+                    //     icon: const Icon(
+                    //       Icons.logout,
+                    //       size: 18,
+                    //       color: AppColors.red,
+                    //     ),
+                    //     label: const Text(
+                    //       'Log out',
+                    //       style: TextStyle(
+                    //         fontFamily: AppFonts.display,
+                    //         fontSize: 13.5,
+                    //         fontWeight: FontWeight.bold,
+                    //         color: AppColors.red,
+                    //       ),
+                    //     ),
+                    //     style: OutlinedButton.styleFrom(
+                    //       padding: const EdgeInsets.symmetric(vertical: 14),
+                    //       side: const BorderSide(
+                    //         color: AppColors.red,
+                    //         width: 1.3,
+                    //       ),
+                    //       shape: RoundedRectangleBorder(
+                    //         borderRadius: BorderRadius.circular(AppRadius.md),
+                    //       ),
+                    //       backgroundColor: AppColors.redLight,
+                    //     ),
+                    //   ),
+                    // ),
+                  ]),
                 ),
-              ]),
-            ),
+              ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

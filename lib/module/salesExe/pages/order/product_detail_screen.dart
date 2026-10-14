@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 import 'package:kutchina/module/salesExe/pages/order/cart_screen.dart';
@@ -26,23 +27,20 @@ class ProductDetailScreen extends StatefulWidget {
 }
 
 class _ProductDetailScreenState extends State<ProductDetailScreen> {
-  //int _qty = 1;
-  // final Map<int, int> _qtys = {};
-  // int _qtyOf(int i) => _qtys[i] ?? 1;
-  late List<Product> _products = List.from(widget.products);
+  late final List<Product> _products = List.from(widget.products);
   final Map<Product, int> _qtys = {};
   int _qtyOf(Product p) => _qtys[p] ?? 1;
 
+  // Card accent colours: blue, green, purple, cyan (repeats).
+  static const List<Color> _cardColors = [
+    AppColors.regionBlue,
+    AppColors.green,
+    AppColors.regionPurple,
+    AppColors.regionCyan,
+  ];
+
   void _goToCart() {
     final selected = <Map<String, dynamic>>[];
-    // for (int i = 0; i < widget.products.length; i++) {
-    //   if (widget.products[i].isActive) {
-    //     selected.add({
-    //       'product': widget.products[i],
-    //       'qty': _qtyOf(i),
-    //     }); // add product into the selected list
-    //   }
-    // }
     for (final p in _products) {
       if (p.isActive) selected.add({'product': p, 'qty': _qtyOf(p)});
     }
@@ -62,307 +60,189 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
 
   @override
   Widget build(BuildContext context) {
-    //final products = widget.products;
     final products = _products;
 
+    final topBar = AppTopBar.brand(
+      showBackButton: true,
+      centerImage: const AssetImage('assets/images/logo.jpg'),
+      actions: [
+        IconButton(
+          icon: const Icon(Icons.notifications_outlined),
+          onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+        ),
+      ],
+    );
+
     return Scaffold(
-      // backgroundColor: AppColors.ash,
-       backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
+      appBar: topBar,
       body: AppBackground(
-        child: SafeArea(
-          child: Column(
-            children: [
-              Stack(
-                children: [
-                  Container(
-                    height: 190,
-                    width: double.infinity,
-                    color: AppColors.charcoal,
-                    child: const Icon(
-                      Icons.deck_outlined,
-                      color: Color(0xFF8D8F96),
-                      size: 60,
-                    ),
-                  ),
-                  Positioned(
-                    top: 16,
-                    left: 16,
-                    child: AppWidgets.buildIconButton(
-                      Icons.arrow_back,
-                      ghost: true,
-                      darkBg: true,
-                      onTap: () => Navigator.pop(context),
-                    ),
-                  ),
-                ],
-              ),
-              // Expanded(
-              //   child: SingleChildScrollView(
-              //     padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
-              //     child: Column(
-              //       crossAxisAlignment: CrossAxisAlignment.start,
-              //       children: [
-              //         AppWidgets.buildBadge(
-              //           'Ordering for ${widget.entityName} · ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
-              //           AppColors.aiBlueChipBg,
-              //           AppColors.aiBlue,
-              //         ),
-              //         const SizedBox(height: 10),
-              //         Text(
-              //           p.category.name.toUpperCase(),
-              //           style: const TextStyle(
-              //             fontFamily: AppFonts.mono,
-              //             fontSize: 10,
-              //             color: AppColors.steel,
-              //           ),
-              //         ),
-              //         Text(
-              //           p.name,
-              //           style: const TextStyle(
-              //             fontFamily: AppFonts.display,
-              //             fontSize: 15,
-              //             fontWeight: FontWeight.bold,
-              //           ),
-              //         ),
-              //         const SizedBox(height: 8),
-              //         Row(
-              //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              //           children: [
-              //             Text(
-              //               '₹${p.price.toStringAsFixed(0)}',
-              //               style: const TextStyle(
-              //                 fontFamily: AppFonts.mono,
-              //                 fontSize: 18,
-              //                 fontWeight: FontWeight.bold,
-              //                 color: AppColors.red,
-              //               ),
-              //             ),
-              //             if (!p.isActive)
-              //               Container(
-              //                 padding: const EdgeInsets.symmetric(
-              //                   horizontal: 8,
-              //                   vertical: 3,
-              //                 ),
-              //                 decoration: BoxDecoration(
-              //                   color: AppColors.redLight,
-              //                   borderRadius: BorderRadius.circular(20),
-              //                 ),
-              //                 child: const Text(
-              //                   'Unavailable',
-              //                   style: TextStyle(
-              //                     fontFamily: AppFonts.display,
-              //                     fontSize: 9.5,
-              //                     fontWeight: FontWeight.bold,
-              //                     color: AppColors.red,
-              //                   ),
-              //                 ),
-              //               ),
-              //           ],
-              //         ),
-              //         const Divider(height: 24, color: AppColors.line),
-              //         _spec(
-              //           'Filter type',
-              //           p.filterType.isNotEmpty ? p.filterType : '—',
-              //         ),
-              //         _spec('Warranty', p.warranty.isNotEmpty ? p.warranty : '—'),
-              //         const SizedBox(height: 12),
-              //         if (p.color != null) ...[
-              //           const Text(
-              //             'COLOUR / VARIANT',
-              //             style: TextStyle(
-              //               fontFamily: AppFonts.display,
-              //               fontSize: 10.5,
-              //               color: AppColors.steel,
-              //               fontWeight: FontWeight.bold,
-              //             ),
-              //           ),
-              //           const SizedBox(height: 8),
-              //         ],
-              //         Row(
-              //           children: [
-              //             if (p.color != null)
-              //               Container(
-              //                 width: 24,
-              //                 height: 24,
-              //                 decoration: BoxDecoration(
-              //                   color: _resolveColor(p.color!.name),
-              //                   shape: BoxShape.circle,
-              //                   border: Border.all(
-              //                     color: AppColors.line,
-              //                     width: 1.5,
-              //                   ),
-              //                 ),
-              //               ),
-              //             if (p.color != null) const SizedBox(width: 8),
-              //             if (p.color != null)
-              //               Text(
-              //                 p.color!.name,
-              //                 style: const TextStyle(
-              //                   fontFamily: AppFonts.display,
-              //                   fontSize: 12.5,
-              //                   fontWeight: FontWeight.w600,
-              //                   color: AppColors.ink,
-              //                 ),
-              //               ),
-              //             const Spacer(),
-              //             AppWidgets.buildIconButton(
-              //               Icons.remove,
-              //               size: 26,
-              //               onTap: () =>
-              //                   setState(() => _qty = _qty > 1 ? _qty - 1 : 1),
-              //             ),
-              //             Padding(
-              //               padding: const EdgeInsets.symmetric(horizontal: 10),
-              //               child: Text(
-              //                 '$_qty',
-              //                 style: const TextStyle(
-              //                   fontSize: 13,
-              //                   fontWeight: FontWeight.bold,
-              //                 ),
-              //               ),
-              //             ),
-              //             AppWidgets.buildIconButton(
-              //               Icons.add,
-              //               size: 26,
-              //               onTap: () => setState(() => _qty++),
-              //             ),
-              //           ],
-              //         ),
-              //         const SizedBox(height: 8),
-              //         Text(
-              //           'Subtotal: ₹${(p.price * _qty).toStringAsFixed(0)}',
-              //           style: const TextStyle(
-              //             fontFamily: AppFonts.mono,
-              //             fontSize: 13,
-              //             fontWeight: FontWeight.bold,
-              //             color: AppColors.ink,
-              //           ),
-              //         ),
-              //         const SizedBox(height: 20),
-              //       ],
-              //     ),
-              //   ),
-              // ),
-        
-              Expanded(
-                child: products.isEmpty
-                    ? const Center(child: Text('No products found'))
-                    : ListView.separated(
-                        padding: const EdgeInsets.fromLTRB(18, 14, 18, 24),
-                        itemCount: products.length + 1, // +1 for the badge
-                        separatorBuilder: (_, __) => const SizedBox(height: 12),
-                        itemBuilder: (context, index) {
-                          if (index == 0) {
-                            return Align(
-                              alignment: Alignment.centerLeft,
-                              child: AppWidgets.buildBadge(
-                                'Ordering for ${widget.entityName} · ${widget.orderType == 'D' ? 'Distributor' : 'Retailer'}',
-                                AppColors.aiBlueChipBg,
-                                AppColors.aiBlue,
+        child: Padding(
+          padding: EdgeInsets.only(
+            top:
+                MediaQuery.of(context).padding.top +
+                topBar.preferredSize.height,
+          ),
+          child: SafeArea(
+            top: false,
+            child: Column(
+              children: [
+                _banner(),
+                Expanded(
+                  child: products.isEmpty
+                      ? const Center(child: Text('No products found'))
+                      : ListView.builder(
+                          padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                          itemCount: products.length + 1, // +1 for the pill
+                          itemBuilder: (context, index) {
+                            if (index == 0) {
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 18),
+                                child: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: _orderingForPill(),
+                                ),
+                              );
+                            }
+                            final i = index - 1;
+                            final p = products[i];
+                            final color = _cardColors[i % _cardColors.length];
+
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 16),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(24),
+                                child: Dismissible(
+                                  key: ObjectKey(p),
+                                  direction: DismissDirection.endToStart,
+                                  onDismissed: (_) => setState(() {
+                                    _products.remove(p);
+                                    _qtys.remove(p);
+                                  }),
+                                  background: Container(
+                                    alignment: Alignment.centerRight,
+                                    padding: const EdgeInsets.only(right: 24),
+                                    color: AppColors.red,
+                                    child: const Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  child: _productCard(p, color),
+                                ),
                               ),
                             );
-                          }
-                          final i = index - 1;
-                          //return _productCard(products[i], i);
-                          // print(_productCard(products[i], i));
-                          final p = products[i];
-                          return Dismissible(
-                            key: ObjectKey(p),
-                            direction: DismissDirection.endToStart,
-                            onDismissed: (_) => setState(() {
-                              _products.removeAt(i);
-                              _qtys.remove(p);
-                            }),
-                            background: Container(
-                              alignment: Alignment.centerRight,
-                              padding: const EdgeInsets.only(right: 24),
-                              color: AppColors.red,
-                              child: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.white,
-                              ),
-                            ),
-                            child: _productCard(p),
-                          );
-                        },
-                      ),
-              ),
-              Container(
-                padding: const EdgeInsets.fromLTRB(20, 12, 20, 16),
-                decoration: const BoxDecoration(
-                  color: AppColors.paper,
-                  border: Border(top: BorderSide(color: AppColors.line)),
+                          },
+                        ),
                 ),
-                child: AppWidgets.buildButton(
-                  'Add to order',
-                  onTap: _goToCart,
-                  // p.isActive
-                  //     ? () => Navigator.push(
-                  //         context,
-                  //         MaterialPageRoute(
-                  //           builder: (_) => CartScreen(
-                  //             orderType: widget.orderType,
-                  //             entityName: widget.entityName,
-                  //             entityId: widget.entityId,
-                  //             product: p,
-                  //             qty: _qty,
-                  //           ),
-                  //         ),
-                  //       )
-                  //     : null,
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+                  child: AppWidgets.buildButton(
+                    'Add to order  →',
+                    onTap: _goToCart,
+                    variant: AppButtonVariant.gradient,
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
     );
   }
 
-  // add 28-9-2026 *********************
+  // ---------------- Banner (dark strip with store icon) ----------------
+  Widget _banner() {
+    return Container(
+      height: 170,
+      width: double.infinity,
+      color: AppColors.charcoal.withValues(alpha: 0.85),
+      alignment: Alignment.center,
+      child: const Icon(
+        Icons.storefront_outlined,
+        color: Colors.white,
+        size: 64,
+      ),
+    );
+  }
 
-  // Widget _productCard(Product p, int i) 
-  Widget _productCard(Product p) 
-  {
+  // ---------------- "Ordering for ABCD - Distributor" pill ----------------
+  Widget _orderingForPill() {
+    final typeLabel = widget.orderType == 'D' ? 'Distributor' : 'Retailer';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.regionPurple.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(30),
+        border: Border.all(color: AppColors.regionPurple, width: 1.4),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.storefront_outlined,
+            size: 20,
+            color: AppColors.regionPurple,
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: Text.rich(
+              TextSpan(
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.regionPurple,
+                ),
+                children: [
+                  const TextSpan(text: 'Ordering for '),
+                  TextSpan(
+                    text: widget.entityName,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: ' - $typeLabel'),
+                ],
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------- Product card ----------------
+  Widget _productCard(Product p, Color color) {
     final qty = _qtyOf(p);
 
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
       decoration: BoxDecoration(
-        color: AppColors.paper,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.line),
+        color: AppColors.white.withValues(alpha: 0.85),
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: color, width: 1.4),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            p.category.name.toUpperCase(),
-            style: const TextStyle(
-              fontFamily: AppFonts.mono,
-              fontSize: 10,
-              color: AppColors.steel,
-            ),
-          ),
-          Text(
-            p.name,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 15,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: 8),
+          // Name (+ unavailable tag)
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
-                '₹${p.price.toStringAsFixed(2)}',
-                style: const TextStyle(
-                  fontFamily: AppFonts.mono,
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.red,
+              Icon(Icons.storefront_outlined, size: 18, color: color),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  p.name,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: color,
+                  ),
                 ),
               ),
               if (!p.isActive)
@@ -387,49 +267,95 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 ),
             ],
           ),
-          const Divider(height: 24, color: AppColors.line),
-          _spec('Filter type', p.filterType.isNotEmpty ? p.filterType : '—'),
-          _spec('Warranty', p.warranty.isNotEmpty ? p.warranty : '—'),
-          const SizedBox(height: 12),
-          if (p.color != null) ...[
-            const Text(
-              'COLOUR / VARIANT',
-              style: TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 10.5,
-                color: AppColors.steel,
-                fontWeight: FontWeight.bold,
-              ),
+          const SizedBox(height: 6),
+
+          // Price
+          Text(
+            '₹ ${p.price.toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontFamily: AppFonts.mono,
+              fontSize: 15,
+              color: AppColors.steel,
             ),
-            const SizedBox(height: 8),
-          ],
+          ),
+          const Divider(height: 22, color: AppColors.line),
+
+          // Filter Type | Warranty | Color / Variant
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: _column(
+                  'Filter Type',
+                  Text(
+                    p.filterType.isNotEmpty ? p.filterType : '----',
+                    style: _valueStyle,
+                  ),
+                  CrossAxisAlignment.start,
+                ),
+              ),
+              Expanded(
+                child: _column(
+                  'Warranty',
+                  Text(
+                    p.warranty.isNotEmpty ? p.warranty : '----',
+                    style: _valueStyle,
+                  ),
+                  CrossAxisAlignment.center,
+                ),
+              ),
+              Expanded(
+                child: _column(
+                  'Color / Variant',
+                  p.color != null
+                      ? Container(
+                          width: 28,
+                          height: 24,
+                          decoration: BoxDecoration(
+                            color: _resolveColor(p.color!.name),
+                            borderRadius: BorderRadius.circular(6),
+                            border: Border.all(
+                              color: AppColors.line,
+                              width: 1.2,
+                            ),
+                          ),
+                        )
+                      : const Text('----', style: _valueStyle),
+                  CrossAxisAlignment.end,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Subtotal + stepper
           Row(
             children: [
-              if (p.color != null) ...[
-                Container(
-                  width: 24,
-                  height: 24,
-                  decoration: BoxDecoration(
-                    color: _resolveColor(p.color!.name),
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.line, width: 1.5),
-                  ),
+              const Text(
+                'Subtotal  ',
+                style: TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.ink,
                 ),
-                const SizedBox(width: 8),
-                Text(
-                  p.color!.name,
+              ),
+              Expanded(
+                child: Text(
+                  '₹${(p.price * qty).toStringAsFixed(2)}',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.ink,
+                    fontFamily: AppFonts.mono,
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.red,
                   ),
                 ),
-              ],
-              const Spacer(),
+              ),
               AppWidgets.buildIconButton(
                 Icons.remove,
-                size: 26,
+                size: 28,
                 onTap: () => setState(() => _qtys[p] = qty > 1 ? qty - 1 : 1),
               ),
               Padding(
@@ -437,48 +363,46 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
                 child: Text(
                   '$qty',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
               AppWidgets.buildIconButton(
                 Icons.add,
-                size: 26,
+                size: 28,
                 onTap: () => setState(() => _qtys[p] = qty + 1),
               ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            'Subtotal: ₹${(p.price * qty).toStringAsFixed(2)}',
-            style: const TextStyle(
-              fontFamily: AppFonts.mono,
-              fontSize: 13,
-              fontWeight: FontWeight.bold,
-              color: AppColors.ink,
-            ),
-          ),
-          //const SizedBox(height: 12),
-          // AppWidgets.buildButton(
-          //   'Add to order',
-          //   onTap: p.isActive
-          //       ? () => Navigator.push(
-          //           context,
-          //           MaterialPageRoute(
-          //             builder: (_) => CartScreen(
-          //               orderType: widget.orderType,
-          //               entityName: widget.entityName,
-          //               entityId: widget.entityId,
-          //               product: p,
-          //               qty: qty,
-          //             ),
-          //           ),
-          //         )
-          //       : null,
-          // ),
         ],
       ),
+    );
+  }
+
+  static const TextStyle _valueStyle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontSize: 14,
+    fontWeight: FontWeight.w600,
+    color: AppColors.steel,
+  );
+
+  Widget _column(String label, Widget value, CrossAxisAlignment align) {
+    return Column(
+      crossAxisAlignment: align,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: AppFonts.display,
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
+        ),
+        const SizedBox(height: 10),
+        value,
+      ],
     );
   }
 
@@ -490,27 +414,13 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
         return AppColors.white;
       case 'red':
         return AppColors.red;
+      case 'blue':
+        return AppColors.regionBlue;
       case 'grey':
       case 'gray':
         return AppColors.steelLight;
       default:
         return AppColors.steel;
     }
-  }
-
-  Widget _spec(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11.5, color: AppColors.steel),
-          ),
-          Text(value, style: const TextStyle(fontSize: 11.5)),
-        ],
-      ),
-    );
   }
 }

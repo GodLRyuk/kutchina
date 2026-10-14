@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
+import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 
 class NoteSheet extends StatefulWidget {
@@ -38,49 +39,7 @@ class NoteSheetState extends State<NoteSheet> {
     );
   }
 
-  /// Blue → teal gradient button, same style as the Submit button.
-  Widget _saveButton() {
-    return Container(
-      height: 48,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        gradient: AppColors.buttonGradient,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.regionBlue.withOpacity(.25),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.pop(context, _controller.text),
-          child: const Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text(
-                  'Save note',
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w600,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
+  
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -152,7 +111,13 @@ class NoteSheetState extends State<NoteSheet> {
           ),
 
           const SizedBox(height: 12),
-          _saveButton(),
+
+          AppWidgets.buildButton(
+            'Save note →',
+            onTap: () => Navigator.pop(context, _controller.text),
+            variant: AppButtonVariant.gradient,
+          ),
+          const SizedBox(height: 12),
         ],
       ),
     );

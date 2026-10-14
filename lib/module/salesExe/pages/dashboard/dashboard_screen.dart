@@ -539,7 +539,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        extendBody: true,
+        // extendBody: true,
+        extendBody: false,
         extendBodyBehindAppBar: true,
         appBar: AppTopBar.brand(
           centerImage: const AssetImage('assets/images/logo.jpg'),
@@ -1001,8 +1002,13 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        bottomNavigationBar: const AppBottomNav(
-          backgroundColor: Colors.transparent,
+        // bottomNavigationBar: const AppBottomNav(
+        //   backgroundColor: Colors.transparent,
+        // ),
+
+        bottomNavigationBar: Container(
+          color: Colors.white,
+          child: const AppBottomNav(backgroundColor: Colors.white),
         ),
       ),
     );

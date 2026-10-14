@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
 
-enum AppButtonVariant { primary, outline, dark }
+//enum AppButtonVariant { primary, outline, dark }
+enum AppButtonVariant { primary, outline, dark, gradient }
 
 class AppWidgets {
   // ---------------- Badge ----------------
@@ -126,6 +127,7 @@ class AppWidgets {
     Color bg;
     Color fg;
     BoxBorder? border;
+    Gradient? gradient; // <-- (a) new variable
     switch (variant) {
       case AppButtonVariant.primary:
         bg = AppColors.commandCentreText;
@@ -139,6 +141,11 @@ class AppWidgets {
       case AppButtonVariant.dark:
         bg = AppColors.charcoal;
         fg = Colors.white;
+        break;
+      case AppButtonVariant.gradient: // <-- (b) new case
+        bg = Colors.transparent;
+        fg = Colors.white;
+        gradient = AppColors.buttonGradient;
         break;
     }
     final child = Row(
@@ -169,18 +176,24 @@ class AppWidgets {
         ),
       ],
     );
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: fullWidth ? double.infinity : null,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
-        decoration: BoxDecoration(
-          color: bg,
-          border: border,
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      decoration: BoxDecoration(
+        color: gradient == null ? bg : null,
+        gradient: gradient,
+        border: border,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+            child: child,
+          ),
         ),
-        child: child,
       ),
     );
   }

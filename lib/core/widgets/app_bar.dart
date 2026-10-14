@@ -52,6 +52,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   const AppTopBar.brand({
     super.key,
     this.actions,
+    this.showBackButton = false, // add here
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
     this.systemOverlayStyle = const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -61,7 +62,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   }) : title = null,
        greeting = null,
        subtitle = null,
-       showBackButton = false,
+       //  showBackButton = false,
        onBack = null;
 
   @override
@@ -70,9 +71,13 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
       automaticallyImplyLeading: false,
       backgroundColor: Colors.transparent,
       systemOverlayStyle: systemOverlayStyle,
+      leadingWidth: showBackButton ? 36 : null, // added
+      titleSpacing: showBackButton ? 0 : null, // added
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 16),
+              padding: EdgeInsets.zero, // added
+              constraints: const BoxConstraints(), // added
+              icon: const Icon(Icons.arrow_back_ios, size: 18),
               onPressed: onBack ?? () => Navigator.pop(context),
             )
           : null,
