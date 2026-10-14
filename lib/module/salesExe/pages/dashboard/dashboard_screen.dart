@@ -660,7 +660,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 children: [
                                   const Expanded(
                                     child: Text(
-                                      'Monthly performance',
+                                      'Yearly performance',
                                       style: TextStyle(
                                         fontFamily: AppFonts.display,
                                         fontSize: 18,
@@ -748,7 +748,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                                 ),
                                                 // const SizedBox(height: 3),
                                                 const Text(
-                                                  'of monthly target',
+                                                  'of yearly target',
                                                   style: TextStyle(
                                                     fontSize: 13,
                                                     color: AppColors.steel,
