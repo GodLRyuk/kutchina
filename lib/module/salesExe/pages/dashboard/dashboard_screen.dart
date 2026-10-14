@@ -1033,10 +1033,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        // bottomNavigationBar: const AppBottomNav(
-        //   backgroundColor: Colors.transparent,
-        // ),
-
         bottomNavigationBar: Container(
           color: Colors.white,
           child: const AppBottomNav(backgroundColor: Colors.white),

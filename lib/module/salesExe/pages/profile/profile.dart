@@ -4,6 +4,7 @@ import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
@@ -338,6 +339,10 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: const AppBottomNav(backgroundColor: Colors.white),
       ),
     );
   }

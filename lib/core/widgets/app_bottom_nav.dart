@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/salesExe/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
 import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
 
@@ -48,6 +49,13 @@ class _AppBottomNavState extends State<AppBottomNav> {
       Navigator.push(
         context,
         MaterialPageRoute(builder: (_) => OrderListScreen()),
+      );
+      return; // handled — skip toast/setState, don't steal selection
+    }
+    if (index == 2) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => DashboardScreen()),
       );
       return; // handled — skip toast/setState, don't steal selection
     }

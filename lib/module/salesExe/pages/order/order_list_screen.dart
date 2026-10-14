@@ -3,6 +3,7 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
@@ -314,9 +315,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-       backgroundColor: Colors.transparent,
-        extendBody: true,
-        extendBodyBehindAppBar: true,
+      backgroundColor: Colors.transparent,
+      extendBody: true,
+      extendBodyBehindAppBar: true,
       appBar: AppTopBar.brand(
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
@@ -330,7 +331,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
       body: AppBackground(
         child: SafeArea(
           child: Column(
-             crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: const EdgeInsets.only(left: 22, top: 8),
@@ -355,6 +356,10 @@ class _OrderListScreenState extends State<OrderListScreen> {
             ],
           ),
         ),
+      ),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: const AppBottomNav(backgroundColor: Colors.white),
       ),
     );
   }
