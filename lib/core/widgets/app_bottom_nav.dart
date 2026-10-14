@@ -19,20 +19,26 @@ class AppBottomNav extends StatefulWidget {
 
   static const items = [
     BottomNavigationBarItem(
-      icon: Icon(Icons.chat_bubble_outline),
+      icon: Icon(Icons.chat_bubble_outline, color: AppColors.productChimney),
       label: 'Leads',
     ),
     BottomNavigationBarItem(
-      icon: Icon(Icons.receipt_long_outlined),
+      icon: Icon(Icons.receipt_long_outlined, color: AppColors.productOvens),
       label: 'Orders',
     ),
-    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Home'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home_outlined, color: AppColors.regionBlue),
+      label: 'Home',
+    ),
 
     BottomNavigationBarItem(
-      icon: Icon(Icons.storefront_outlined),
+      icon: Icon(Icons.storefront_outlined, color: AppColors.topProductBg),
       label: 'Dealers',
     ),
-    BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person_outline, color: AppColors.navNormal),
+      label: 'Profile',
+    ),
   ];
 
   @override
