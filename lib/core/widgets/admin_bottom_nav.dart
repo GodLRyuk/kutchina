@@ -1,23 +1,35 @@
+import 'package:kutchina/module/admin/admin_dashboard.dart';
 import 'package:kutchina/module/admin/reports/reports_hub_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
+import 'package:kutchina/module/salesExe/pages/profile/admin_profile.dart';
 
 class AdminBottomNav extends StatefulWidget {
   final int initialIndex;
   final bool Function(int index)? onTap;
 
-  const AdminBottomNav({super.key, this.initialIndex = 0, this.onTap});
+  const AdminBottomNav({
+    super.key,
+    this.initialIndex = 0,
+    this.onTap,
+    required Color backgroundColor,
+  });
 
   static const items = [
-    BottomNavigationBarItem(icon: Icon(Icons.home_outlined), label: 'Overview'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.home_outlined, color: AppColors.topAreaBg),
+      label: 'Home',
+    ),
 
     BottomNavigationBarItem(
-      icon: Icon(Icons.bar_chart_outlined),
+      icon: Icon(Icons.bar_chart_outlined, color: AppColors.topProductBg),
       label: 'Reports',
     ),
-    BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: 'Profile'),
+    BottomNavigationBarItem(
+      icon: Icon(Icons.person_outline, color: AppColors.topSalespersonBg),
+      label: 'Profile',
+    ),
   ];
 
   @override
@@ -27,28 +39,43 @@ class AdminBottomNav extends StatefulWidget {
 class _AdminBottomNavState extends State<AdminBottomNav> {
   late int _navIndex = widget.initialIndex;
 
+  @override
+  void didUpdateWidget(covariant AdminBottomNav oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.initialIndex != widget.initialIndex) {
+      _navIndex = widget.initialIndex;
+    }
+  }
+
   void _onNavTap(int index) {
     if (index == _navIndex) return;
+    setState(() => _navIndex = index);
 
+    if (index == 0) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => const AdminDashboard()),
+      );
+      return;
+    }
     if (index == 1) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ReportsHubScreen()),
+        MaterialPageRoute(builder: (_) => const ReportsHubScreen()),
       );
-      return; // handled — skip toast/setState, don't steal selection
+      return;
     }
     if (index == 2) {
       Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => ProfileScreen()),
+        MaterialPageRoute(builder: (_) => const AdminProfileScreen()),
       );
-      return; // handled — skip toast/setState, don't steal selection
+      return;
     }
 
     final handled = widget.onTap?.call(index) ?? false;
     if (handled) return;
 
-    setState(() => _navIndex = index);
     AppWidgets.toast(context, 'Coming soon');
   }
 
@@ -58,7 +85,7 @@ class _AdminBottomNavState extends State<AdminBottomNav> {
       currentIndex: _navIndex,
       onTap: _onNavTap,
       selectedItemColor: AppColors.navActive,
-      unselectedItemColor: AppColors.navNormal,
+      unselectedItemColor: const Color.fromARGB(255, 112, 97, 85),
       selectedLabelStyle: const TextStyle(
         fontFamily: AppFonts.display,
         fontWeight: FontWeight.bold,

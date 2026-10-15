@@ -49,7 +49,6 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _loadDashboard() async {
-    print('Loading dashboard data for period: $_selectedPeriod');
     setState(() {
       _isLoading = true;
       _loadError = null;
@@ -125,7 +124,13 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ),
       ),
-      bottomNavigationBar: const AdminBottomNav(),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: const AdminBottomNav(
+          initialIndex: 0,
+          backgroundColor: Colors.white,
+        ),
+      ),
     );
   }
 
@@ -189,17 +194,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                     color: AppColors.commandCentreText,
                   ),
                   SizedBox(width: 6),
-                  // Text(
-                  //   'This Month',
-                  //   style: TextStyle(
-                  //     fontFamily: AppFonts.display,
-                  //     fontSize: 11.5,
-                  //     fontWeight: FontWeight.w600,
-                  //     color: AppColors.commandCentreText,
-                  //   ),
-                  // ),
                   PopupMenuButton<String>(
-                    //initialValue: _selectedPeriod,
                     color: Colors.white,
                     surfaceTintColor: Colors.transparent,
                     onSelected: (value) {
@@ -287,7 +282,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildStatCards() {
     final data = _dashboardData;
     final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
-    final cardHeight = 130 + (scale - 1.0) * 80 + 18;
+    final cardHeight = 100 + (scale - 1.0) * 80 + 18;
     return SizedBox(
       height: cardHeight,
       child: ListView(

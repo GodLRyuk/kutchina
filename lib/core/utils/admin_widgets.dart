@@ -43,7 +43,6 @@ class AdminCustomWidgets {
               height: 1.2,
             ),
           ),
-          const Spacer(),
           Text(
             value,
             style: const TextStyle(
@@ -53,7 +52,6 @@ class AdminCustomWidgets {
               color: AppColors.commandCentreText,
             ),
           ),
-          const SizedBox(height: 4),
           footer,
         ],
       ),

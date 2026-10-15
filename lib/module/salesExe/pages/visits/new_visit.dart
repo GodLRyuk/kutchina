@@ -620,8 +620,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   ),
                 ),
               ),
-              
-               
+
               Expanded(
                 child: SingleChildScrollView(
                   keyboardDismissBehavior:
@@ -635,8 +634,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                       _mapCard(),
-                        const SizedBox(height: 18),
+                      _mapCard(),
+                      const SizedBox(height: 18),
                       // ---------------- Visit type ----------------
                       _sectionLabel('VISIT TYPE', AppColors.regionBlue),
                       _vGap(0.01),
@@ -1020,36 +1019,37 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   }
 
   /// Square selfie preview. Change [size] to resize it.
-Widget _selfiePreview() {
-  const double size = 140;
-  const double border = 2;
-  const double radius = 14;
+  Widget _selfiePreview() {
+    const double size = 140;
+    const double border = 2;
+    const double radius = 14;
 
-  return Align(
-    alignment: Alignment.centerLeft,
-    child: GestureDetector(
-      onTap: () => _viewPhoto(_photoFile!),
-      child: Container(
-        width: size,
-        height: size,
-        decoration: BoxDecoration(
-          color: AppColors.white,
-          borderRadius: BorderRadius.circular(radius),
-          border: Border.all(color: AppColors.green, width: border),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(radius - border),
-          child: Image.file(
-            _photoFile!,
-            fit: BoxFit.cover,
-            alignment: Alignment.topCenter,
-            cacheWidth: 600,
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: GestureDetector(
+        onTap: () => _viewPhoto(_photoFile!),
+        child: Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            color: AppColors.white,
+            borderRadius: BorderRadius.circular(radius),
+            border: Border.all(color: AppColors.green, width: border),
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(radius - border),
+            child: Image.file(
+              _photoFile!,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              cacheWidth: 600,
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
+
   Widget _photoSection() {
     final screenWidth = MediaQuery.sizeOf(context).width;
     const perRow = 4;
@@ -1061,23 +1061,23 @@ Widget _selfiePreview() {
       children: [
         Row(
           children: [
-            const Icon(
-              Icons.image_outlined,
-              size: 22,
-              color: AppColors.productChimney,
-            ),
-            _hGap(0.015),
-            const Text(
-              'PHOTOS',
-              style: TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 12,
-                fontWeight: FontWeight.w800,
-                letterSpacing: .4,
-                color: AppColors.productChimney,
-              ),
-            ),
-            const Spacer(),
+            // const Icon(
+            //   Icons.image_outlined,
+            //   size: 22,
+            //   color: AppColors.productChimney,
+            // ),
+            // _hGap(0.015),
+            // const Text(
+            //   'PHOTOS',
+            //   style: TextStyle(
+            //     fontFamily: AppFonts.display,
+            //     fontSize: 12,
+            //     fontWeight: FontWeight.w800,
+            //     letterSpacing: .4,
+            //     color: AppColors.productChimney,
+            //   ),
+            // ),
+            // const Spacer(),
             Material(
               color: AppColors.productChimney.withOpacity(
                 _extraPhotos.isEmpty ? .07 : .12,
@@ -1091,7 +1091,6 @@ Widget _selfiePreview() {
                 onTap: _pickPhoto,
                 customBorder: const StadiumBorder(),
                 child: Padding(
-                  // ~33dp high pill
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
                     vertical: 6,
@@ -1109,7 +1108,7 @@ Widget _selfiePreview() {
                       _hGap(0.015),
                       Text(
                         _extraPhotos.isEmpty
-                            ? 'Capture Photos'
+                            ? 'Take Display Photos'
                             : 'Add more photos',
                         style: const TextStyle(
                           fontSize: 14,
