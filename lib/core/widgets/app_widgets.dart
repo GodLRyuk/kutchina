@@ -63,6 +63,7 @@ class AppWidgets {
     Color? borderColor,
     Color? bgColor,
     EdgeInsetsGeometry? margin,
+  
   }) {
     return Container(
       width: double.infinity,
@@ -71,7 +72,8 @@ class AppWidgets {
       decoration: BoxDecoration(
         color: bgColor ?? AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: borderColor ?? AppColors.line),
+        border: Border.all(color: borderColor ?? AppColors.line, width: 1.5),
+        
       ),
       child: child,
     );
@@ -278,7 +280,7 @@ class AppWidgets {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               color: AppColors.white,
-              border: Border.all(color: AppColors.line, width: 1.3),
+              border: Border.all(color: AppColors.aiBlue, width: 1.3),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

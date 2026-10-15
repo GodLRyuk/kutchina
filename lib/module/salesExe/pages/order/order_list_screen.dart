@@ -526,8 +526,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
                 child: Container(
                   width: 52,
                   height: 52,
-                  decoration: const BoxDecoration(
-                    color: Colors.black,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.buttonGradient,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.tune, color: Colors.white),
@@ -624,148 +624,151 @@ class _OrderListScreenState extends State<OrderListScreen> {
             ),
           );
         }
-        return _orderCard(visibleOrders[i]);
+        final accent = i.isEven ? AppColors.aiBlue : AppColors.dayEndIconBg;
+        return _orderCard(visibleOrders[i], accent);
       },
     );
   }
 
-  Widget _orderCard(List<OrderEntry> group) {
+  Widget _orderCard(List<OrderEntry> group, Color accent) {
     final o = group.first;
     final total = group.fold<double>(0, (sum, x) => sum + (x.price ?? 0));
-    return AppWidgets.buildCard(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Top row: order number + status badge
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                o.orderNumber,
-                style: const TextStyle(
-                  fontFamily: AppFonts.mono,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.steel,
+    return Container(
+      foregroundDecoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent, width: 1.5),
+      ),
+      child: AppWidgets.buildCard(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Top row: order number + status badge
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  o.orderNumber,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.mono,
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.steel,
+                  ),
                 ),
-              ),
-              _statusBadge(o.orderStatus),
-            ],
-          ),
-          const SizedBox(height: 8),
+                _statusBadge(o.orderStatus),
+              ],
+            ),
+            const SizedBox(height: 8),
 
-          // Product names
-          for (final p in group)
-            Padding(
-              padding: const EdgeInsets.only(bottom: 6),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      p.productName,
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.ink,
+            // Product names
+            for (final p in group)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        p.productName,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.ink,
+                        ),
                       ),
                     ),
-                  ),
-                  Text(
-                    'Qty ${_formatQty(p.quantity)}',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.steel,
+                    Text(
+                      'Qty ${_formatQty(p.quantity)}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.steel,
+                      ),
                     ),
+                  ],
+                ),
+              ),
+
+            // Channel chip
+            if (o.userType.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  AppWidgets.buildBadge(
+                    o.orderTypeLabel,
+                    AppColors.aiBlueChipBg,
+                    AppColors.aiBlue,
                   ),
                 ],
               ),
-            ),
+            ],
 
-          // Channel chip
-          if (o.userType.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 6,
-              runSpacing: 6,
+            const SizedBox(height: 10),
+            const Divider(height: 1, color: AppColors.line),
+            const SizedBox(height: 10),
+
+            // Invoice + total
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                AppWidgets.buildBadge(
-                  o.orderTypeLabel,
-                  AppColors.aiBlueChipBg,
-                  AppColors.aiBlue,
+                InkWell(
+                  borderRadius: BorderRadius.circular(6),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderDetailScreen(orders: group),
+                      ),
+                    );
+                  },
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.receipt_long, size: 16, color: accent),
+                        SizedBox(width: 4),
+                        Text(
+                          'View invoice',
+                          style: TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 13,
+                            fontWeight: FontWeight.bold,
+                            color: accent,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const Text(
+                      'Total',
+                      style: TextStyle(fontSize: 11, color: AppColors.steel),
+                    ),
+                    Text(
+                      total > 0
+                          ? '₹${total.toStringAsFixed(2)}'
+                          : 'Price pending',
+                      style: TextStyle(
+                        fontFamily: AppFonts.mono,
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: o.price != null
+                            ? AppColors.commandCentreText
+                            : AppColors.steel,
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
           ],
-
-          const SizedBox(height: 10),
-          const Divider(height: 1, color: AppColors.line),
-          const SizedBox(height: 10),
-
-          // Invoice + total
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              InkWell(
-                borderRadius: BorderRadius.circular(6),
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => OrderDetailScreen(orders: group),
-                    ),
-                  );
-                },
-                child: const Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.receipt_long,
-                        size: 16,
-                        color: AppColors.commandCentreText,
-                      ),
-                      SizedBox(width: 4),
-                      Text(
-                        'View invoice',
-                        style: TextStyle(
-                          fontFamily: AppFonts.display,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.aiBlue,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  const Text(
-                    'Total',
-                    style: TextStyle(fontSize: 11, color: AppColors.steel),
-                  ),
-                  Text(
-                    total > 0
-                        ? '₹${total.toStringAsFixed(2)}'
-                        : 'Price pending',
-                    style: TextStyle(
-                      fontFamily: AppFonts.mono,
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: o.price != null
-                          ? AppColors.commandCentreText
-                          : AppColors.steel,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }

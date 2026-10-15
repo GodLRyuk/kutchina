@@ -646,7 +646,8 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             child: _typeBox(
                               title: 'Distributor',
                               icon: Icons.storefront_outlined,
-                              color: AppColors.regionBlue,
+                              //color: AppColors.regionBlue,
+                              color: AppColors.aiBlue,
                               selected: _visitType == 'D',
                               onTap: () => _selectType('D'),
                             ),
@@ -656,7 +657,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
                             child: _typeBox(
                               title: 'Retailer',
                               icon: Icons.store_mall_directory_outlined,
-                              color: AppColors.regionOrange,
+                              color: AppColors.productOvens,
                               selected: _visitType == 'R',
                               onTap: () => _selectType('R'),
                             ),
@@ -1018,71 +1019,37 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     );
   }
 
-  /// Circular selfie preview. Change [size] to resize everything together.
-  Widget _selfiePreview() {
-    const double size = 140; // was 110 — change this one value to resize
-    const double ring = 4; // white padding between border and image
-    const double border = 2;
-    const double imageSize = size - (ring * 2) - (border * 2);
+  /// Square selfie preview. Change [size] to resize it.
+Widget _selfiePreview() {
+  const double size = 140;
+  const double border = 2;
+  const double radius = 14;
 
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: SizedBox(
+  return Align(
+    alignment: Alignment.centerLeft,
+    child: GestureDetector(
+      onTap: () => _viewPhoto(_photoFile!),
+      child: Container(
         width: size,
         height: size,
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            GestureDetector(
-              onTap: () => _viewPhoto(_photoFile!),
-              child: Container(
-                width: size,
-                height: size,
-                padding: const EdgeInsets.all(ring),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.white,
-                  border: Border.all(color: AppColors.green, width: border),
-                ),
-                child: ClipOval(
-                  child: Image.file(
-                    _photoFile!,
-                    width: imageSize,
-                    height: imageSize,
-                    fit: BoxFit.cover,
-                    alignment: Alignment.topCenter,
-                    cacheWidth: 600,
-                  ),
-                ),
-              ),
-            ),
-            // Retake badge (bottom-right of the circle)
-            Positioned(
-              bottom: 4,
-              right: 4,
-              child: GestureDetector(
-                onTap: _addPhoto,
-                child: Container(
-                  padding: const EdgeInsets.all(7),
-                  decoration: BoxDecoration(
-                    color: AppColors.green,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: AppColors.white, width: 2),
-                  ),
-                  child: const Icon(
-                    Icons.photo_camera,
-                    size: 16,
-                    color: AppColors.white,
-                  ),
-                ),
-              ),
-            ),
-          ],
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(radius),
+          border: Border.all(color: AppColors.green, width: border),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(radius - border),
+          child: Image.file(
+            _photoFile!,
+            fit: BoxFit.cover,
+            alignment: Alignment.topCenter,
+            cacheWidth: 600,
+          ),
         ),
       ),
-    );
-  }
-
+    ),
+  );
+}
   Widget _photoSection() {
     final screenWidth = MediaQuery.sizeOf(context).width;
     const perRow = 4;

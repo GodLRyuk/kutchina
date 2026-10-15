@@ -47,7 +47,7 @@ class EntityPickerSheetState extends State<EntityPickerSheet> {
               color: Colors.transparent,
               child: SafeArea(
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 0),
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,62 +72,69 @@ class EntityPickerSheetState extends State<EntityPickerSheet> {
                         ),
                       ),
                       const SizedBox(height: 10),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight: MediaQuery.of(context).size.height * .5,
-                        ),
-                        child: _filtered.isEmpty
-                            ? const Padding(
-                                padding: EdgeInsets.symmetric(vertical: 24),
-                                child: Text(
-                                  'No results found',
-                                  style: TextStyle(
-                                    color: AppColors.steel,
-                                    fontSize: 12,
+                      Flexible(
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight: MediaQuery.of(context).size.height * .5,
+                          ),
+                          child: _filtered.isEmpty
+                              ? const Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 24),
+                                  child: Text(
+                                    'No results found',
+                                    style: TextStyle(
+                                      color: AppColors.steel,
+                                      fontSize: 12,
+                                    ),
                                   ),
-                                ),
-                              )
-                            : ListView.separated(
-                                shrinkWrap: true,
-                                itemCount: _filtered.length,
-                                separatorBuilder: (_, _) =>
-                                    const SizedBox(height: 10),
-                                // separatorBuilder: (_, _) =>
-                                //     const Divider(height: 1, color: AppColors.line),
-                                itemBuilder: (context, i) {
-                                  final e = _filtered[i];
-                                  return Material(
-                                    color: AppColors.white.withValues(
-                                      alpha: 0.85,
-                                    ),
-                                    clipBehavior: Clip.antiAlias,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(12),
-                                      side: const BorderSide(
-                                        color: AppColors.line,
-                                        width: 1,
+                                )
+                              : ListView.separated(
+                                  shrinkWrap: true,
+                                  itemCount: _filtered.length,
+                                  separatorBuilder: (_, _) =>
+                                      const SizedBox(height: 10),
+                                  // separatorBuilder: (_, _) =>
+                                  //     const Divider(height: 1, color: AppColors.line),
+                                  itemBuilder: (context, i) {
+                                    final e = _filtered[i];
+                                    final accent = i.isEven ? AppColors.aiBlue : AppColors.dayEndIconBg;
+                                       
+                                    return Material(
+                                      color: AppColors.white.withValues(
+                                        alpha: 0.85,
                                       ),
-                                    ),
-                                    child: ListTile(
-                                      contentPadding:
-                                          const EdgeInsets.symmetric(
-                                            horizontal: 14,
-                                            vertical: 2,
-                                          ),
-                                      title: Text(
-                                        e,
-                                        style: const TextStyle(
-                                          fontFamily: AppFonts.display,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.regionBlue,
+                                      clipBehavior: Clip.antiAlias,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                        side: BorderSide(
+                                        color: accent ,
+                                        width: 1.5  
                                         ),
                                       ),
-                                      onTap: () => Navigator.pop(context, e),
-                                    ),
-                                  );
-                                },
-                              ),
+                                      child: ListTile(
+                                        contentPadding:
+                                            const EdgeInsets.symmetric(
+                                              horizontal: 14,
+                                              vertical: 2,
+                                            ),
+                                        title: Text(
+                                          e,
+                                          style: const TextStyle(
+                                            fontFamily: AppFonts.display,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.regionBlue,
+                                          ),
+                                        ),
+                                        onTap: () => Navigator.pop(context, e),
+                                      ),
+                        
+                                      
+                                    );
+                                    
+                                  },
+                                ),
+                        ),
                       ),
                     ],
                   ),

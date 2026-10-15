@@ -102,12 +102,6 @@ class _CartScreenState extends State<CartScreen> {
       backgroundColor: Colors.transparent,
       extendBody: true,
       extendBodyBehindAppBar: true,
-
-      // appBar: AppTopBar(
-      //   showBackButton: true,
-      //   title: 'Order Details',
-      //   centerImage: const AssetImage('assets/images/logo.jpg'),
-      // ),
       appBar: AppTopBar.brand(
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
@@ -146,10 +140,19 @@ class _CartScreenState extends State<CartScreen> {
                             ? 'Ordering for distributor'
                             : 'Ordering for retailer',
                         value: widget.entityName,
+                        
                       ),
-                      const SizedBox(height: 14),
-          
-                      ...widget.items.map(_itemCard),
+                      const SizedBox(height: 15),
+                      ...widget.items.asMap().entries.map(
+                        (e) => _itemCard(
+                          e.value,
+                          e.key.isEven
+                              ? AppColors.aiBlue
+                              : AppColors.dayEndIconBg,
+                        ),
+                      ),
+
+                      //...widget.items.map(_itemCard),
                       const SizedBox(height: 4),
                       _totalRow('Subtotal', subtotal),
                       const Divider(height: 24, color: AppColors.line),
@@ -170,7 +173,7 @@ class _CartScreenState extends State<CartScreen> {
                   border: Border(top: BorderSide(color: AppColors.line)),
                 ),
                 child: AppWidgets.buildButton(
-                  _placingOrder ? 'Placing order...' : 'Place order',
+                  _placingOrder ? 'Placing order...' : 'Place order →',
                   onTap: _placingOrder ? null : _placeOrder,
                   loading: _placingOrder,
                   variant: AppButtonVariant.gradient,
@@ -183,50 +186,54 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-  Widget _itemCard(Map<String, dynamic> item) {
-    final Product p = item['product'];
-    final int qty = item['qty'];
+Widget _itemCard(Map<String, dynamic> item, Color accent) {
+  final Product p = item['product'];
+  final int qty = item['qty'];
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: AppWidgets.buildCard(
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+  return Container(
+    margin: const EdgeInsets.only(bottom: 12),
+    padding: const EdgeInsets.all(12),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(12),
+      border: Border.all(color: accent, width: 1.5),
+    ),
+    child: Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  p.name,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                Text(
-                  '₹${p.price.toStringAsFixed(2)} × $qty',
-                  style: const TextStyle(
-                    fontFamily: AppFonts.mono,
-                    fontSize: 11,
-                    color: AppColors.steel,
-                  ),
-                ),
-              ],
-            ),
             Text(
-              '₹${(p.price * qty).toStringAsFixed(2)}',
+              p.name,
               style: const TextStyle(
-                fontFamily: AppFonts.mono,
+                fontFamily: AppFonts.display,
                 fontSize: 12.5,
                 fontWeight: FontWeight.bold,
               ),
             ),
+            Text(
+              '₹${p.price.toStringAsFixed(2)} × $qty',
+              style: const TextStyle(
+                fontFamily: AppFonts.mono,
+                fontSize: 11,
+                color: AppColors.steel,
+              ),
+            ),
           ],
         ),
-      ),
-    );
-  }
+        Text(
+          '₹${(p.price * qty).toStringAsFixed(2)}',
+          style: const TextStyle(
+            fontFamily: AppFonts.mono,
+            fontSize: 12.5,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+      ],
+    ),
+  );
+}
 
   Widget _totalRow(
     String label,

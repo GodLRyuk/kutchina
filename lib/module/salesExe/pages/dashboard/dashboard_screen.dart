@@ -193,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                   ),
                 ),
               ),
-              const Divider(height: 1),
+              //const Divider(height: 1),
               Expanded(
                 child: notifications.isEmpty
                     ? const Center(
@@ -203,24 +203,41 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         ),
                       )
                     : ListView.separated(
+                       padding: const EdgeInsets.fromLTRB(16, 10, 16, 20),
                         itemCount: notifications.length,
                         separatorBuilder: (_, __) =>
-                            const Divider(height: 1, indent: 64),
+                           const SizedBox(height: 12),
                         itemBuilder: (context, index) {
                           final notification = notifications[index];
-                          return ListTile(
-                            leading: const CircleAvatar(
-                              backgroundColor: AppColors.greenLight,
-                              child: Icon(
-                                Icons.flag_outlined,
-                                color: AppColors.green,
-                              ),
+                          final accent = index.isEven
+                              ? AppColors.aiBlue
+                              : AppColors.dayEndIconBg;
+
+                          return Container(
+                            padding: const EdgeInsets.all(8.0),
+                          
+                        
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: accent, width: 1.5),
                             ),
-                            title: Text(notification.message),
-                            subtitle: Text(
-                              DateFormat(
-                                'dd MMM yyyy, hh:mm a',
-                              ).format(notification.createdAt.toLocal()),
+                            child: ListTile(
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              leading: const CircleAvatar(
+                                backgroundColor: AppColors.greenLight,
+                                child: Icon(
+                                  Icons.flag_outlined,
+                                  color: AppColors.green,
+                                ),
+                              ),
+                              title: Text(notification.message),
+                              subtitle: Text(
+                                DateFormat(
+                                  'dd MMM yyyy, hh:mm a',
+                                ).format(notification.createdAt.toLocal()),
+                              ),
                             ),
                           );
                         },
@@ -660,7 +677,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 children: [
                                   const Expanded(
                                     child: Text(
-                                      'Yearly performance',
+                                      'Your performance',
                                       style: TextStyle(
                                         fontFamily: AppFonts.display,
                                         fontSize: 18,
@@ -670,7 +687,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                     ),
                                   ),
 
-                                 
                                   IconButton(
                                     onPressed: _openTarget,
                                     padding: EdgeInsets.zero,
@@ -764,6 +780,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ),
                               ),
                               const Divider(height: 2, color: AppColors.line),
+                              SizedBox(height: 10),
 
                               Row(
                                 children: [

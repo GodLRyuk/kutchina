@@ -510,15 +510,28 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                         accent: AppColors.regionCyan,
                         onTap: _pickProduct,
                       ),
-                      for (final p in _selectedProducts) ...[
+                      // for (final p in _selectedProducts) ...[
+                      for (int i = 0; i < _selectedProducts.length; i++) ...[
                         const SizedBox(height: 12),
-                        AppWidgets.buildCard(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                        Builder(
+                          builder: (_) {
+                            final p = _selectedProducts[i];
+                            final accent = i.isEven
+                                ? AppColors.aiBlue
+                                : AppColors.dayEndIconBg;
+                            return Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.white.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: accent, width: 1.5),
+                              ),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     p.name,
@@ -528,28 +541,27 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
+                                  Text(
+                                    p.category.name, // need check
+                                    style: const TextStyle(
+                                      fontSize: 11,
+                                      color: AppColors.steel,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                    '₹${p.price.toStringAsFixed(2)}',
+                                    style: const TextStyle(
+                                      fontFamily: AppFonts.mono,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.commandCentreText,
+                                    ),
+                                  ),
                                 ],
                               ),
-                              const SizedBox(height: 4),
-                              Text(
-                                p.category.name,
-                                style: const TextStyle(
-                                  fontSize: 11,
-                                  color: AppColors.steel,
-                                ),
-                              ),
-                              const SizedBox(height: 8),
-                              Text(
-                                '₹${p.price.toStringAsFixed(2)}',
-                                style: const TextStyle(
-                                  fontFamily: AppFonts.mono,
-                                  fontSize: 15,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.commandCentreText,
-                                ),
-                              ),
-                            ],
-                          ),
+                            );
+                          },
                         ),
                       ],
                     ],
@@ -600,6 +612,7 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
     return widget.products
         .where((p) => p.name.toLowerCase().contains(q))
         .toList();
+   
   }
 
   @override
@@ -708,7 +721,11 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 //   color: AppColors.line,
                                 // ),
                                 itemBuilder: (context, i) {
+                                  print('filter list is ${_filtered.toString()}');
                                   final p = _filtered[i];
+                                  final accent = i.isEven
+                                      ? AppColors.aiBlue
+                                      : AppColors.dayEndIconBg;
                                   return Material(
                                     color: AppColors.white.withValues(
                                       alpha: 0.85,
@@ -716,6 +733,10 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                     clipBehavior: Clip.antiAlias,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
+                                      side: BorderSide(
+                                        color: accent,
+                                        width: 1.5,
+                                      ),
                                     ),
                                     child: ListTile(
                                       contentPadding:
@@ -723,13 +744,16 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                             horizontal: 14,
                                             vertical: 2,
                                           ),
-                                      title: Text(
-                                        p.name,
-                                        style: const TextStyle(
-                                          fontFamily: AppFonts.display,
-                                          fontSize: 13,
-                                          fontWeight: FontWeight.w600,
-                                          color: AppColors.regionBlue,
+                                      title: Padding(
+                                        padding: const EdgeInsets.only(top: 17),
+                                        child: Text(
+                                          p.name,
+                                          style: const TextStyle(
+                                            fontFamily: AppFonts.display,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                            color: AppColors.regionBlue,
+                                          ),
                                         ),
                                       ),
                                       subtitle: Text(
@@ -775,7 +799,9 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                       ),
                       const SizedBox(height: 12),
                       AppWidgets.buildButton(
-                        _checked.isEmpty ? 'Done' : 'Done (${_checked.length})',
+                        _checked.isEmpty
+                            ? 'Done →'
+                            : 'Done (${_checked.length}) →',
                         onTap: () => Navigator.pop(context, _checked.toList()),
                         variant: AppButtonVariant.gradient,
                       ),
