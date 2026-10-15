@@ -368,6 +368,7 @@ class MastersApi {
   }
 
   static Future<List<Product>> fetchProducts() async {
+    print("Product czll");
     final res = await ApiService.instance.getCached(
       '/api/v1/masters/products/',
     );
@@ -404,10 +405,7 @@ class OrderService {
   static Future<MonthlyTarget> fetchCurrentTarget(
     // required String userId,
   ) async {
-    final res = await ApiService.instance.getCached(
-      '/api/v1/orders/target/',
-      // queryParams: {'user_id': int.tryParse(userId) ?? userId},
-    );
+    final res = await ApiService.instance.getCached('/api/v1/orders/target/');
     final raw = res.data;
     final responseData = raw is Map ? raw['data'] ?? raw : raw;
     final targetRows = responseData is List
@@ -456,43 +454,39 @@ class OrderService {
     );
   }
 
-  
   static Future<List<MonthlyTarget>> fetchAllTargets() async {
-  final res = await ApiService.instance.getCached('/api/v1/orders/target/');
-  final raw = res.data;
-  final responseData = raw is Map ? raw['data'] ?? raw : raw;
-  final rows = responseData is List
-      ? responseData
-      : responseData is Map
-          ? responseData['results'] as List? ??
+    final res = await ApiService.instance.getCached('/api/v1/orders/target/');
+    final raw = res.data;
+    final responseData = raw is Map ? raw['data'] ?? raw : raw;
+    final rows = responseData is List
+        ? responseData
+        : responseData is Map
+        ? responseData['results'] as List? ??
               responseData['targets'] as List? ??
               [responseData]
-          : <dynamic>[];
+        : <dynamic>[];
 
-  final list = rows.whereType<Map>().map((e) {
-    final t = Map<String, dynamic>.from(e);
-    // final assigned = t['assigned_by'];
-    return MonthlyTarget(
-      
-      amount: double.tryParse(
-            (t['target_value'] ?? t['target'])?.toString() ?? '',
-          ) ??
-          0,
-      month: DateTime.tryParse(
-        (t['month'] ?? t['target_month'])?.toString() ?? '',
-      ),
-      targetDate: DateTime.tryParse(
-        (t['target_date'] ?? t['end_date'])?.toString() ?? '',
-      ),
-    );
-  }).toList();
-  
-  return list;
-}
-  
-  
-  
-  
+    final list = rows.whereType<Map>().map((e) {
+      final t = Map<String, dynamic>.from(e);
+      // final assigned = t['assigned_by'];
+      return MonthlyTarget(
+        amount:
+            double.tryParse(
+              (t['target_value'] ?? t['target'])?.toString() ?? '',
+            ) ??
+            0,
+        month: DateTime.tryParse(
+          (t['month'] ?? t['target_month'])?.toString() ?? '',
+        ),
+        targetDate: DateTime.tryParse(
+          (t['target_date'] ?? t['end_date'])?.toString() ?? '',
+        ),
+      );
+    }).toList();
+
+    return list;
+  }
+
   // static Future<void> placeOrder({
   //   required String orderType,
   //   required String entityName,
@@ -642,53 +636,29 @@ class OrderService {
     return orders;
   }
 
-  //  static Future<List<OrderEntry>> searchOrders(String search) async {
-  //   final query = search.trim();
-  //   if (query.isEmpty) return [];
-
-  //   final res =
-  //       await ApiService.instance.getCached('/api/v1/orders/place/$query');
-  //   final raw = res.data;
-  //   final list = raw is Map ? (raw['orders'] as List? ?? []) : [];
-
-  //   // product_id -> name (the search endpoint doesn't send names)
-  //   final names = <String, String>{};
-  //   try {
-  //     final products = await MastersApi.fetchProducts();
-  //     for (final p in products) {
-  //       names[p.id.toString()] = p.name;
-  //     }
-  //   } catch (_) {}
-
-  //   final orders = <OrderEntry>[];
-  //   for (final value in list) {
-  //     if (value is! Map) continue;
-  //     try {
-  //       final row = Map<String, dynamic>.from(value);
-  //       final pid = row['product_id']?.toString() ?? '';
-
-  //       if ((row['product_name']?.toString() ?? '').isEmpty) {
-  //         row['product_name'] = names[pid] ?? 'Product #$pid';
-  //       }
-
-  //       orders.add(OrderEntry.fromJson(row));
-  //     } catch (e) {
-  //       print('Failed to parse order row: $e\nrow: $value');
-  //     }
-  //   }
-  //   return orders;
-  // }
-
   static Future<List<OrderEntry>> searchOrders(
     String search, {
     String? entityId,
     String? entityType, // 'R' or 'D'
   }) async {
     final query = search.trim();
-    print(
-      "searchOrders: query=$query, entityId=$entityId, entityType=$entityType",
-    );
+
     if (query.isEmpty && entityId == null) return [];
+
+    // For offline work
+    if (!ConnectivityService.instance.isOnline) {
+      final all = await fetchOrders(); // reads from cache
+      final q = query.toLowerCase();
+      return all
+          .where(
+            (o) =>
+                q.isEmpty ||
+                o.orderNumber.toLowerCase().contains(q) ||
+                o.userType.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+    //Done
 
     final res = entityId == null
         ? await ApiService.instance.getCached('/api/v1/orders/place/$query/')
@@ -753,25 +723,21 @@ class MonthlyTarget {
 // ************************************************
 // class allMonthlyTarget {
 //   final int? id;
- 
+
 //   final double amount;
 //   final DateTime? month;
 //   final DateTime? targetDate;
 
 //   const allMonthlyTarget({
 //     this.id,
-    
+
 //     required this.amount,
 //     required this.month,
 //     required this.targetDate,
 //   });
 // }
 
-
-//*************************************************** 
-
-
-
+//***************************************************
 
 class VisitService {
   /// [payload] holds plain text fields only. Photos are passed as file

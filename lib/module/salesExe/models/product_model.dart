@@ -35,6 +35,19 @@ class Product {
     this.isActive = true,
   });
 
+  // added
+  Product copyWith({Category? category}) => Product(
+    id: id,
+    name: name,
+    category: category ?? this.category,
+    color: color,
+    price: price,
+    filterType: filterType,
+    warranty: warranty,
+    isActive: isActive,
+  );
+  // done
+
   factory Product.fromJson(Map<String, dynamic> json) {
     final rawCategory = json['category'];
     final rawColor = json['color'];
@@ -60,8 +73,26 @@ class Product {
   static bool _loaded = false;
 
   static Future<void> loadCatalog({bool force = false}) async {
+    print("loaded is $_loaded");
+    print("force is $force");
     if (_loaded && !force) return;
-    catalog = await MastersApi.fetchProducts();
+
+    final products = await MastersApi.fetchProducts();
+    final cats = await MastersApi.fetchCategories();
+    final nameById = {for (final c in cats) c.id.toString(): c.name};
+
+    // catalog = await MastersApi.fetchProducts();
+    catalog = products
+        .map(
+          (p) => p.copyWith(
+            category: Category(
+              id: p.category.id,
+              name: nameById[p.category.id.toString()] ?? '',
+            ),
+          ),
+        )
+        .toList();
+
     _loaded = true;
   }
 }
@@ -74,10 +105,10 @@ class CategoryModel {
   }
 }
 
-
-class SuggestionModel{
+class SuggestionModel {
   final String text;
-  final int usageCount; // Optional: Track how many times this suggestion has been used
+  final int
+  usageCount; // Optional: Track how many times this suggestion has been used
   SuggestionModel({required this.text, required this.usageCount});
 
   factory SuggestionModel.fromJson(Map<String, dynamic> json) {
@@ -86,5 +117,4 @@ class SuggestionModel{
       usageCount: json['usage_count'] as int? ?? 0,
     );
   }
-
 }

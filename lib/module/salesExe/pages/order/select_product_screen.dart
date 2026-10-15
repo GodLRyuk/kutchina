@@ -57,6 +57,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
       setState(() {});
     });
     Product.loadCatalog().then((_) => setState(() {}));
+    //print('product is this ${Product.catalog.length}');
   }
 
   Future<void> _loadDistributors() async {
@@ -539,23 +540,25 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
                                       fontFamily: AppFonts.display,
                                       fontSize: 13,
                                       fontWeight: FontWeight.bold,
+                                     
                                     ),
                                   ),
                                   Text(
                                     p.category.name, // need check
                                     style: const TextStyle(
                                       fontSize: 11,
-                                      color: AppColors.steel,
+                                      fontWeight: FontWeight.bold
+                                      
                                     ),
                                   ),
                                   const SizedBox(height: 8),
                                   Text(
                                     '₹${p.price.toStringAsFixed(2)}',
-                                    style: const TextStyle(
+                                    style:  TextStyle(
                                       fontFamily: AppFonts.mono,
                                       fontSize: 15,
                                       fontWeight: FontWeight.bold,
-                                      color: AppColors.commandCentreText,
+                                      color: accent,
                                     ),
                                   ),
                                 ],
@@ -608,11 +611,11 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
 
   List<Product> get _filtered {
     final q = _searchController.text.trim().toLowerCase();
+
     if (q.isEmpty) return widget.products;
     return widget.products
         .where((p) => p.name.toLowerCase().contains(q))
         .toList();
-   
   }
 
   @override
@@ -715,14 +718,10 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                 itemCount: _filtered.length,
                                 separatorBuilder: (_, _) =>
                                     const SizedBox(height: 10),
-                                // separatorBuilder: (_, _) =>
-                                // const Divider(
-                                //   height: 1,
-                                //   color: AppColors.line,
-                                // ),
+
                                 itemBuilder: (context, i) {
-                                  print('filter list is ${_filtered.toString()}');
                                   final p = _filtered[i];
+
                                   final accent = i.isEven
                                       ? AppColors.aiBlue
                                       : AppColors.dayEndIconBg;
@@ -745,7 +744,10 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                             vertical: 2,
                                           ),
                                       title: Padding(
-                                        padding: const EdgeInsets.only(top: 17),
+                                        padding: const EdgeInsets.only(
+                                          top: 12,
+                                          bottom: 12,
+                                        ),
                                         child: Text(
                                           p.name,
                                           style: const TextStyle(
@@ -756,13 +758,13 @@ class _ProductPickerSheetState extends State<_ProductPickerSheet> {
                                           ),
                                         ),
                                       ),
-                                      subtitle: Text(
-                                        p.category.name,
-                                        style: const TextStyle(
-                                          fontSize: 10.5,
-                                          color: AppColors.steel,
-                                        ),
-                                      ),
+                                      // subtitle: Text(
+                                      //   p.category.name,
+                                      //   style: const TextStyle(
+                                      //     fontSize: 10.5,
+                                      //     color: AppColors.red,
+                                      //   ),
+                                      // ),
                                       trailing: Row(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
