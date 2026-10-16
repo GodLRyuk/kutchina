@@ -35,9 +35,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
   int _refreshTick = 0;
   List<VisitEntry> _todayVisits = [];
   bool _visitsLoading = true;
-  double? _monthlyTarget;
-  DateTime? _monthlyTargetMonth;
-  double _monthlyOrderTotal = 0;
+  double? _yearlyTarget;
+  int? _targetYear;
+  double _yearlyOrderTotal = 0;
   double _targetProgress = 0;
   bool _targetLoading = true;
   List<TargetMilestoneNotification> _targetNotifications = [];
@@ -100,15 +100,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
       if (mounted) setState(() => _targetLoading = false);
       return;
     }
-    MonthlyTarget? monthlyTarget;
+    AnnualTarget? annualTarget;
     List<OrderEntry>? orders;
     var targetLoadFailed = false;
     var ordersLoadFailed = false;
     await Future.wait([
       () async {
         try {
-          monthlyTarget = await OrderService.fetchCurrentTarget(
-            // userId: user.id,
+          annualTarget = await OrderService.fetchAnnualTarget(
+            userId: user.id,
+            year: DateTime.now().year,
           );
         } catch (_) {
           targetLoadFailed = true;
@@ -123,14 +124,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
       }(),
     ]);
 
-    final currentMonth = DateTime(DateTime.now().year, DateTime.now().month);
-    final targetMonth = monthlyTarget?.month ?? currentMonth;
-    final orderTotal = _calculateOrderTotal(
+    final targetYear = annualTarget?.year ?? DateTime.now().year;
+    final orderTotal = _calculateYearOrderTotal(
       orders ?? const [],
-      month: targetMonth,
-      targetDate: monthlyTarget?.targetDate,
+      year: targetYear,
     );
-    final targetAmount = monthlyTarget?.amount ?? 0;
+    final targetAmount = annualTarget?.amount ?? 0;
     final progress = targetAmount <= 0
         ? 0.0
         : (orderTotal / targetAmount).clamp(0.0, 1.0);
@@ -139,22 +138,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ? const TargetMilestoneUpdate(notifications: [], newlyReached: [])
         : await TargetMilestoneNotificationService.recordProgress(
             userId: userId,
-            targetMonth: targetMonth,
+            targetMonth: DateTime(targetYear),
             progress: progress,
           );
     if (!mounted) return;
     setState(() {
-      _monthlyTarget = monthlyTarget?.amount;
-      _monthlyTargetMonth = targetMonth;
-      _monthlyOrderTotal = orderTotal;
+      _yearlyTarget = annualTarget?.amount;
+      _targetYear = targetYear;
+      _yearlyOrderTotal = orderTotal;
       _targetProgress = progress;
       _targetLoading = false;
       _targetNotifications = notificationUpdate.notifications;
     });
     if (targetLoadFailed) {
-      AppWidgets.toast(context, 'Could not load monthly target');
+      AppWidgets.toast(context, 'Could not load yearly target');
     } else if (ordersLoadFailed) {
-      AppWidgets.toast(context, 'Could not load monthly orders');
+      AppWidgets.toast(context, 'Could not load yearly orders');
     }
     if (userId.isNotEmpty) {
       for (final notification in notificationUpdate.newlyReached) {
@@ -250,17 +249,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  double _calculateOrderTotal(
-    List<OrderEntry> orders, {
-    required DateTime month,
-    required DateTime? targetDate,
-  }) {
-    final start = DateTime(month.year, month.month, 1);
-    final monthEnd = DateTime(month.year, month.month + 1, 1);
-    final targetEnd = targetDate == null
-        ? monthEnd
-        : DateTime(targetDate.year, targetDate.month, targetDate.day + 1);
-    final end = targetEnd.isBefore(monthEnd) ? targetEnd : monthEnd;
+  double _calculateYearOrderTotal(List<OrderEntry> orders, {required int year}) {
+    final start = DateTime(year);
+    final end = DateTime(year + 1);
 
     return orders
         .where((order) {
@@ -654,17 +645,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    // ---- Monthly performance ----
+                    // ---- Yearly performance ----
                     Builder(
                       builder: (context) {
-                        final target = _monthlyTarget ?? 0;
-                        final achieved = _monthlyOrderTotal;
+                        final target = _yearlyTarget ?? 0;
+                        final achieved = _yearlyOrderTotal;
                         final remaining = (target - achieved)
                             .clamp(0.0, double.infinity)
                             .toDouble();
-                        final month = DateFormat(
-                          'MMMM yyyy',
-                        ).format(_monthlyTargetMonth ?? DateTime.now());
+                        final year = _targetYear ?? DateTime.now().year;
 
                         return AppWidgets.buildCard(
                           padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
@@ -701,7 +690,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                                 ],
                               ),
                               Text(
-                                month,
+                                year.toString(),
                                 style: const TextStyle(
                                   fontSize: 13,
                                   color: AppColors.steel,

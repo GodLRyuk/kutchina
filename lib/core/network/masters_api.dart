@@ -402,59 +402,19 @@ class MastersApi {
 class OrderService {
   OrderService._();
 
-  static Future<MonthlyTarget> fetchCurrentTarget(
-    // required String userId,
-  ) async {
-    final res = await ApiService.instance.getCached('/api/v1/orders/target/');
-    final raw = res.data;
-    final responseData = raw is Map ? raw['data'] ?? raw : raw;
-    final targetRows = responseData is List
-        ? responseData
-        : responseData is Map
-        ? responseData['results'] as List? ??
-              responseData['targets'] as List? ??
-              [responseData]
-        : <dynamic>[];
-    final targets = targetRows.whereType<Map>().map(
-      (target) => Map<String, dynamic>.from(target),
-    );
-    final now = DateTime.now();
-    Map<String, dynamic>? currentTarget;
-    for (final target in targets) {
-      final month = DateTime.tryParse(
-        (target['month'] ?? target['target_month'])?.toString() ?? '',
-      );
-      if (month != null && month.year == now.year && month.month == now.month) {
-        currentTarget = target;
-        break;
-      }
-    }
-
-    if (currentTarget == null) {
-      throw ApiException('Monthly target was not found');
-    }
-
-    return MonthlyTarget(
-      amount:
-          double.tryParse(
-            (currentTarget['target_value'] ?? currentTarget['target'])
-                    ?.toString() ??
-                '',
-          ) ??
-          0,
-      month: DateTime.tryParse(
-        (currentTarget['month'] ?? currentTarget['target_month'])?.toString() ??
-            '',
-      ),
-      targetDate: DateTime.tryParse(
-        (currentTarget['target_date'] ?? currentTarget['end_date'])
-                ?.toString() ??
-            '',
-      ),
+  static Future<AnnualTarget?> fetchAnnualTarget({
+    required String userId,
+    required int year,
+  }) async {
+    final targets = await fetchAllTargets();
+    return AnnualTarget.fromAssignments(
+      targets,
+      userId: userId,
+      year: year,
     );
   }
 
-  static Future<List<MonthlyTarget>> fetchAllTargets() async {
+  static Future<List<TargetAssignment>> fetchAllTargets() async {
     final res = await ApiService.instance.getCached('/api/v1/orders/target/');
     final raw = res.data;
     final responseData = raw is Map ? raw['data'] ?? raw : raw;
@@ -466,23 +426,10 @@ class OrderService {
               [responseData]
         : <dynamic>[];
 
-    final list = rows.whereType<Map>().map((e) {
-      final t = Map<String, dynamic>.from(e);
-      // final assigned = t['assigned_by'];
-      return MonthlyTarget(
-        amount:
-            double.tryParse(
-              (t['target_value'] ?? t['target'])?.toString() ?? '',
-            ) ??
-            0,
-        month: DateTime.tryParse(
-          (t['month'] ?? t['target_month'])?.toString() ?? '',
-        ),
-        targetDate: DateTime.tryParse(
-          (t['target_date'] ?? t['end_date'])?.toString() ?? '',
-        ),
-      );
-    }).toList();
+    final list = rows
+        .whereType<Map>()
+        .map((row) => TargetAssignment.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
 
     return list;
   }
@@ -708,16 +655,68 @@ class OrderService {
   }
 }
 
-class MonthlyTarget {
+class TargetAssignment {
   final double amount;
   final DateTime? month;
   final DateTime? targetDate;
+  final String userId;
 
-  const MonthlyTarget({
+  const TargetAssignment({
     required this.amount,
     required this.month,
     required this.targetDate,
+    required this.userId,
   });
+
+  factory TargetAssignment.fromJson(Map<String, dynamic> json) {
+    final rawUser = json['user'];
+    final user = rawUser is Map
+        ? Map<String, dynamic>.from(rawUser)
+        : const <String, dynamic>{};
+
+    return TargetAssignment(
+      amount:
+          double.tryParse(
+            (json['amount'] ?? json['target_value'] ?? json['target'])
+                    ?.toString() ??
+                '',
+          ) ??
+          0,
+      month: DateTime.tryParse(
+        (json['FY_date'] ?? json['month'] ?? json['target_month'])?.toString() ??
+            '',
+      ),
+      targetDate: DateTime.tryParse(
+        (json['target_date'] ?? json['end_date'])?.toString() ?? '',
+      ),
+      userId: (user['id'] ?? json['user_id'] ?? '').toString(),
+    );
+  }
+}
+
+class AnnualTarget {
+  final double amount;
+  final int year;
+
+  const AnnualTarget({required this.amount, required this.year});
+
+  static AnnualTarget? fromAssignments(
+    Iterable<TargetAssignment> assignments, {
+    required String userId,
+    required int year,
+  }) {
+    var amount = 0.0;
+    var hasTargets = false;
+    for (final assignment in assignments) {
+      if (assignment.userId != userId || assignment.month?.year != year) {
+        continue;
+      }
+      amount += assignment.amount;
+      hasTargets = true;
+    }
+    if (!hasTargets) return null;
+    return AnnualTarget(amount: amount, year: year);
+  }
 }
 
 // ************************************************

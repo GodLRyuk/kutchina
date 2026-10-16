@@ -16,7 +16,7 @@ class TargetScreen extends StatefulWidget {
 class _TargetScreenState extends State<TargetScreen> {
   bool _targetLoading = true;
   String? _error;
-  List<MonthlyTarget> _targets = [];
+  List<TargetAssignment> _targets = [];
 
   @override
   void initState() {
@@ -149,7 +149,7 @@ class _TargetScreenState extends State<TargetScreen> {
 }
 
 class _TargetCard extends StatelessWidget {
-  final MonthlyTarget target;
+  final TargetAssignment target;
   final NumberFormat money;
   final Color accent;
 
