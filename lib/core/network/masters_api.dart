@@ -427,11 +427,7 @@ class OrderService {
     required int year,
   }) async {
     final targets = await fetchAllTargets();
-    return AnnualTarget.fromAssignments(
-      targets,
-      userId: userId,
-      year: year,
-    );
+    return AnnualTarget.fromAssignments(targets, userId: userId, year: year);
   }
 
   static Future<List<TargetAssignment>> fetchAllTargets() async {
@@ -678,14 +674,20 @@ class OrderService {
 class TargetAssignment {
   final double amount;
   final DateTime? month;
-  final DateTime? targetDate;
+  // final DateTime? targetDate;
   final String userId;
+  final String locationName;
+  final String retailerName;
+  final String categoryName;
 
   const TargetAssignment({
     required this.amount,
     required this.month,
-    required this.targetDate,
+    // required this.targetDate,
     required this.userId,
+    required this.locationName,
+    required this.retailerName,
+    required this.categoryName,
   });
 
   factory TargetAssignment.fromJson(Map<String, dynamic> json) {
@@ -693,6 +695,22 @@ class TargetAssignment {
     final user = rawUser is Map
         ? Map<String, dynamic>.from(rawUser)
         : const <String, dynamic>{};
+
+    final rawRetailer = json['retailer'];
+    final retailer = rawRetailer is Map
+        ? Map<String, dynamic>.from(rawRetailer)
+        : const <String, dynamic>{};
+
+    final rawCategory = json['category'];
+    final category = rawCategory is Map
+        ? Map<String, dynamic>.from(rawCategory)
+        : const <String, dynamic>{};
+
+    final rawLocation = json['location'];
+    final location = rawLocation is Map
+        ? Map<String, dynamic>.from(rawLocation)
+        : const <String, dynamic>{};
+
 
     return TargetAssignment(
       amount:
@@ -703,13 +721,21 @@ class TargetAssignment {
           ) ??
           0,
       month: DateTime.tryParse(
-        (json['FY_date'] ?? json['month'] ?? json['target_month'])?.toString() ??
+        (json['FY_date'] ?? json['month'] ?? json['target_month'])
+                ?.toString() ??
             '',
       ),
-      targetDate: DateTime.tryParse(
-        (json['target_date'] ?? json['end_date'])?.toString() ?? '',
-      ),
+      // targetDate: DateTime.tryParse(
+      //   (json['target_date'] ?? json['end_date'])?.toString() ?? '',
+      // ),
+      
       userId: (user['id'] ?? json['user_id'] ?? '').toString(),
+
+      retailerName: (retailer['name'] ?? '').toString(),
+      categoryName: (category['name'] ?? '').toString(),
+      locationName: (location['name'] ?? '').toString()
+
+     
     );
   }
 }
