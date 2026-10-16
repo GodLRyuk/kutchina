@@ -402,6 +402,26 @@ class MastersApi {
 class OrderService {
   OrderService._();
 
+  static double calculateAnnualSales(
+    Iterable<OrderEntry> orders, {
+    required String userId,
+    required int year,
+  }) {
+    final start = DateTime(year);
+    final end = DateTime(year + 1);
+    return orders
+        .where((order) {
+          final createdAt = order.createdAt;
+          final isCurrentUserOrder =
+              order.createdBy == userId ||
+              (order.id < 0 && order.createdBy.isEmpty);
+          if (!isCurrentUserOrder || createdAt == null) return false;
+          final orderDate = createdAt.toLocal();
+          return !orderDate.isBefore(start) && orderDate.isBefore(end);
+        })
+        .fold<double>(0, (total, order) => total + order.total);
+  }
+
   static Future<AnnualTarget?> fetchAnnualTarget({
     required String userId,
     required int year,

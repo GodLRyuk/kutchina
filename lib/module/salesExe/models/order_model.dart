@@ -11,8 +11,9 @@ class OrderEntry {
   final String? warranty;
   final double? price;
   final String orderStatus;
+  final String createdBy;
   final DateTime? createdAt;
-
+ 
   OrderEntry({
     required this.id,
     required this.orderNumber,
@@ -26,29 +27,34 @@ class OrderEntry {
     this.warranty,
     this.price,
     required this.orderStatus,
+    this.createdBy = '',
     this.createdAt,
   });
-
+ 
   String get orderTypeLabel => userType == 'D' ? 'Distributor' : 'Retailer';
-
+ 
   double get total => (price ?? 0);
-
+ 
   factory OrderEntry.fromJson(Map<String, dynamic> json) {
     double? toDouble(dynamic v) {
       if (v == null) return null;
       if (v is num) return v.toDouble();
       return double.tryParse(v.toString());
     }
-
+ 
     String? nonEmpty(dynamic v) {
       final s = v?.toString().trim();
       return (s == null || s.isEmpty) ? null : s;
     }
-
+ 
     final product = json['product'] is Map
         ? Map<String, dynamic>.from(json['product'] as Map)
         : const <String, dynamic>{};
-
+    final rawCreator = json['created_by'] ?? json['user_id'] ?? json['user'];
+    final creator = rawCreator is Map
+        ? Map<String, dynamic>.from(rawCreator)
+        : const <String, dynamic>{};
+ 
     return OrderEntry(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       orderNumber: json['order_number']?.toString() ?? '',
@@ -69,9 +75,13 @@ class OrderEntry {
         json['total_price'] ?? json['total_amount'] ?? json['price'],
       ),
       orderStatus: json['order_status_display']?.toString() ?? '',
+      createdBy: (creator['id'] ?? (rawCreator is Map ? '' : rawCreator) ?? '')
+          .toString(),
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
     );
   }
 }
+ 
+ 

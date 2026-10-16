@@ -88,7 +88,9 @@ class AuthInterceptor extends Interceptor {
     final alreadyRetried = err.requestOptions.extra['retried'] == true;
     final silent = err.requestOptions.extra['silent'] == true;
 
-    if (!isUnauthorized || alreadyRetried) {
+    final skipAuth = err.requestOptions.extra['skipAuth'] == true;
+
+    if (!isUnauthorized || alreadyRetried || skipAuth) {
       handler.next(err);
       return;
     }

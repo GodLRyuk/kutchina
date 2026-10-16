@@ -79,7 +79,7 @@ class _LoginScreenState extends State<LoginScreen> {
     final userId = _mobileController.text.trim();
     final password = _passwordController.text;
     if (userId.isEmpty || password.isEmpty) {
-      AppWidgets.toast(context, 'Enter mobile number and password');
+      AppWidgets.toast(context, 'Enter UserID and Password');
       return;
     }
 

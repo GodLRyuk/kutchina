@@ -161,12 +161,12 @@ class _TargetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final monthText = target.month != null
-        ? DateFormat('MMMM yyyy').format(target.month!)
-        : '-';
-    final endText = target.targetDate != null
-        ? DateFormat('dd MMM yyyy').format(target.targetDate!)
-        : '-';
+    // final monthText = target.month != null
+    //     ? DateFormat('MMMM yyyy').format(target.month!)
+    //     : '-';
+    // final endText = target.targetDate != null
+    //     ? DateFormat('dd MMM yyyy').format(target.targetDate!)
+    //     : '-';
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -201,7 +201,7 @@ class _TargetCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      monthText,
+                      "monthText",
                       style: const TextStyle(
                         fontFamily: AppFonts.display,
                         fontWeight: FontWeight.w700,
@@ -245,7 +245,7 @@ class _TargetCard extends StatelessWidget {
               ),
               const Spacer(),
               Text(
-                endText,
+                "endText",
                 style: const TextStyle(
                   fontFamily: AppFonts.body,
                   fontSize: 13,
