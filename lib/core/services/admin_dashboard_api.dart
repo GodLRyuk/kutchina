@@ -189,12 +189,13 @@ class AdminDashboardApi {
   static Future<AdminDashboardData> fetchOverview({
     String? period,
   }) async {
-     final path = (period == null || period.isEmpty)
-      ? '/api/v1/reports/overview/'
-      : '/api/v1/reports/overview/?period=$period';
-      
+    const path = '/api/v1/reports/overview/';
+    final normalizedPeriod = period == null || period.isEmpty ? null : period;
     final response = await ApiService.instance.getCached(
       path,
+      queryParams: normalizedPeriod == null
+          ? null
+          : {'period': normalizedPeriod},
     );
     final body = _map(response.data);
     if (body == null || body['success'] != true) {
@@ -202,7 +203,14 @@ class AdminDashboardApi {
         body?['message']?.toString() ?? 'Unable to load dashboard overview',
       );
     }
-    return AdminDashboardData.fromJson(body);
+    final dashboardData = AdminDashboardData.fromJson(body);
+    if (normalizedPeriod != null && dashboardData.period != normalizedPeriod) {
+      throw ApiException(
+        'Requested $normalizedPeriod dashboard data, '
+        'but the server returned ${dashboardData.period} data.',
+      );
+    }
+    return dashboardData;
   }
 }
 

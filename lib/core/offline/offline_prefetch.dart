@@ -28,21 +28,16 @@ class OfflinePrefetch {
         //
         _safe(OrderService.fetchOrders),
         _safe(OrderService.fetchAllTargets),
-        _safe(OrderService.fetchCurrentTarget),
-        
 
       //    _safe(VisitService.fetchAllVisits),
       //  _safe(VisitService.fetchTodayVisits),
 
-       
-
       //   // Add at 15-10-2026
-      //   _safe(OrderService.fetchCurrentTarget),
-      //   _safe(OrderService.fetchAllTargets),
+      //   // _safe(OrderService.fetchCurrentTarget),
+      //   // _safe(OrderService.fetchAllTargets),
       //  _safe(OrderService.fetchOrders),
       //  //_safe(OrderService.placeOrder),
       //  _safe(OrderService.searchOrders),
-
 
       //  _safe(VisitService.fetchAllVisits),
       //  _safe(VisitService.fetchTodayVisits),
@@ -51,9 +46,6 @@ class OfflinePrefetch {
       //  _safe(SalespersonSalesApi.fetch),
       //  _safe(CategoryOrdersApi.fetch),
       //  _safe(RegionOrdersApi.fetch),
-
-
-
       ]);
     } finally {
       _running = false;

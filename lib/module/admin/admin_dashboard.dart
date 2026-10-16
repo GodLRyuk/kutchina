@@ -32,7 +32,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
     'year': 'Last 12 months',
   };
 
-  String _selectedPeriod = 'month';
+  String _selectedPeriod = 'year';
 
   AdminDashboardData? _dashboardData;
   bool _isLoading = true;
@@ -49,24 +49,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _loadDashboard() async {
+    final requestedPeriod = _selectedPeriod;
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
     try {
       final data = await AdminDashboardApi.fetchOverview(
-        period: _selectedPeriod,
+        period: requestedPeriod,
       );
-      if (!mounted) return;
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
       setState(() => _dashboardData = data);
     } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _loadError = error.message);
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
+      setState(() {
+        _dashboardData = null;
+        _loadError = error.message;
+      });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadError = 'Unable to load dashboard data');
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
+      setState(() {
+        _dashboardData = null;
+        _loadError = 'Unable to load dashboard data';
+      });
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && requestedPeriod == _selectedPeriod) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -201,8 +210,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       if (value == _selectedPeriod) return;
                       setState(() {
                         _selectedPeriod = value;
-                        _loadDashboard();
+                        _dashboardData = null;
                       });
+                      _loadDashboard();
                     },
                     itemBuilder: (context) {
                       return _periodLabels.entries.map((entry) {
