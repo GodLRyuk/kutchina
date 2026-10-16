@@ -125,8 +125,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ]);
 
     final targetYear = annualTarget?.year ?? DateTime.now().year;
-    final orderTotal = _calculateYearOrderTotal(
+    final orderTotal = OrderService.calculateAnnualSales(
       orders ?? const [],
+      userId: user.id,
       year: targetYear,
     );
     final targetAmount = annualTarget?.amount ?? 0;
@@ -247,24 +248,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ),
       ),
     );
-  }
-
-  double _calculateYearOrderTotal(List<OrderEntry> orders, {required int year}) {
-    final start = DateTime(year);
-    final end = DateTime(year + 1);
-
-    return orders
-        .where((order) {
-          final createdAt = order.createdAt;
-          if (createdAt == null) return false;
-          final orderDate = DateTime(
-            createdAt.toLocal().year,
-            createdAt.toLocal().month,
-            createdAt.toLocal().day,
-          );
-          return !orderDate.isBefore(start) && orderDate.isBefore(end);
-        })
-        .fold<double>(0, (total, order) => total + order.total);
   }
 
   String _formatAmount(double amount) {

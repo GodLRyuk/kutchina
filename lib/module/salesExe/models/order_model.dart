@@ -13,7 +13,7 @@ class OrderEntry {
   final String orderStatus;
   final String createdBy;
   final DateTime? createdAt;
- 
+
   OrderEntry({
     required this.id,
     required this.orderNumber,
@@ -30,23 +30,23 @@ class OrderEntry {
     this.createdBy = '',
     this.createdAt,
   });
- 
+
   String get orderTypeLabel => userType == 'D' ? 'Distributor' : 'Retailer';
- 
+
   double get total => (price ?? 0);
- 
+
   factory OrderEntry.fromJson(Map<String, dynamic> json) {
     double? toDouble(dynamic v) {
       if (v == null) return null;
       if (v is num) return v.toDouble();
       return double.tryParse(v.toString());
     }
- 
+
     String? nonEmpty(dynamic v) {
       final s = v?.toString().trim();
       return (s == null || s.isEmpty) ? null : s;
     }
- 
+
     final product = json['product'] is Map
         ? Map<String, dynamic>.from(json['product'] as Map)
         : const <String, dynamic>{};
@@ -54,7 +54,7 @@ class OrderEntry {
     final creator = rawCreator is Map
         ? Map<String, dynamic>.from(rawCreator)
         : const <String, dynamic>{};
- 
+
     return OrderEntry(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       orderNumber: json['order_number']?.toString() ?? '',
@@ -83,5 +83,3 @@ class OrderEntry {
     );
   }
 }
- 
- 
