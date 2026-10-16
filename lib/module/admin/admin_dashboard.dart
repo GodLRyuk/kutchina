@@ -292,7 +292,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget _buildStatCards() {
     final data = _dashboardData;
     final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
-    final cardHeight = 100 + (scale - 1.0) * 80 + 18;
+    final cardHeight = 110 + (scale - 1.0) * 80 + 18;
     return SizedBox(
       height: cardHeight,
       child: ListView(
@@ -337,20 +337,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: ((data?.targetAchievedPercentage ?? 0) / 100).clamp(
-                      0.0,
-                      1.0,
-                    ),
-                    minHeight: 4,
-                    backgroundColor: AppColors.ash,
-                    valueColor: const AlwaysStoppedAnimation(
-                      AppColors.achievementIconBg,
-                    ),
-                  ),
-                ),
+                // ClipRRect(
+                //   borderRadius: BorderRadius.circular(4),
+                //   child: LinearProgressIndicator(
+                //     value: ((data?.targetAchievedPercentage ?? 0) / 100).clamp(
+                //       0.0,
+                //       1.0,
+                //     ),
+                //     minHeight: 4,
+                //     backgroundColor: AppColors.ash,
+                //     valueColor: const AlwaysStoppedAnimation(
+                //       AppColors.achievementIconBg,
+                //     ),
+                //   ),
+                // ),
                 const SizedBox(height: 3),
                 Text(
                   'of ${_currency(data?.targetValue ?? 0)} Target',
