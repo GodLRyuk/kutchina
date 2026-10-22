@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/report_api.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
@@ -388,118 +389,121 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               _Kpi(color: k.color, label: k.label, value: pending),
           ];
     return Scaffold(
-      backgroundColor: _C.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: _C.bg,
-            surfaceTintColor: _C.bg,
-            centerTitle: true,
-            leadingWidth: 54,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Center(
-                child: _IconBtn(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  onTap: () => Navigator.pop(context),
-                ),
-              ),
-            ),
-            title: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'KUTCHINA',
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: _C.navy,
+      body: AppBackground(
+        child: CustomScrollView(
+          slivers: [
+            SliverAppBar(
+              pinned: true,
+              elevation: 0,
+              scrolledUnderElevation: 0,
+              // backgroundColor: _C.bg,
+              // surfaceTintColor: _C.bg,
+              backgroundColor: Colors.transparent,
+              surfaceTintColor: Colors.transparent,
+              centerTitle: true,
+              leadingWidth: 54,
+              leading: Padding(
+                padding: const EdgeInsets.only(left: 12),
+                child: Center(
+                  child: _IconBtn(
+                    icon: Icons.arrow_back_ios_new_rounded,
+                    onTap: () => Navigator.pop(context),
                   ),
                 ),
-                Text(
-                  'AI REPORT',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: _C.inkFaint,
-                    letterSpacing: 0.8,
+              ),
+              title: const Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'KUTCHINA',
+                    style: TextStyle(
+                      fontFamily: AppFonts.display,
+                      fontSize: 13,
+                      fontWeight: FontWeight.w800,
+                      color: _C.navy,
+                    ),
+                  ),
+                  Text(
+                    'AI REPORT',
+                    style: TextStyle(
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                      color: _C.inkFaint,
+                      letterSpacing: 0.8,
+                    ),
+                  ),
+                ],
+              ),
+              actions: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 12),
+                  child: Center(
+                    child: _IconBtn(
+                      icon: Icons.ios_share_outlined,
+                      onTap: () =>
+                          AppWidgets.toast(context, 'Export coming soon'),
+                    ),
                   ),
                 ),
               ],
             ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Center(
-                  child: _IconBtn(
-                    icon: Icons.ios_share_outlined,
-                    onTap: () =>
-                        AppWidgets.toast(context, 'Export coming soon'),
+            SliverPadding(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 60),
+              sliver: SliverList(
+                delegate: SliverChildListDelegate([
+                  _SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
+                  _Hero(
+                    icon: report.icon,
+                    copy: (!hasData && _loading)
+                        ? 'Generating report…'
+                        : view.copy,
+                    badges: hasData ? view.badges : const [],
                   ),
-                ),
-              ),
-            ],
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 60),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
-                _Hero(
-                  icon: report.icon,
-                  copy: (!hasData && _loading)
-                      ? 'Generating report…'
-                      : view.copy,
-                  badges: hasData ? view.badges : const [],
-                ),
-                const SizedBox(height: 14),
-                _PeriodSelector(
-                  value: _period,
-                  onChanged: _loading ? (_) {} : _onPeriodChanged,
-                ),
-                if (_period == 'today' || _period == 'week') ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Target-based figures aren't available for this period.",
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: _C.inkFaint,
-                      fontStyle: FontStyle.italic,
+                  const SizedBox(height: 14),
+                  _PeriodSelector(
+                    value: _period,
+                    onChanged: _loading ? (_) {} : _onPeriodChanged,
+                  ),
+                  if (_period == 'today' || _period == 'week') ...[
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Target-based figures aren't available for this period.",
+                      style: TextStyle(
+                        fontSize: 10.5,
+                        color: _C.inkFaint,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
-                  ),
-                ],
-                if (report.supportsHorizon) ...[
+                  ],
+                  if (report.supportsHorizon) ...[
+                    const SizedBox(height: 10),
+                    _HorizonSelector(
+                      value: _horizon,
+                      onChanged: _loading ? (_) {} : _onHorizonChanged,
+                    ),
+                  ],
+                  const SizedBox(height: 12),
+                  _FilterChips(labels: view.filters),
                   const SizedBox(height: 10),
-                  _HorizonSelector(
-                    value: _horizon,
-                    onChanged: _loading ? (_) {} : _onHorizonChanged,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                _FilterChips(labels: view.filters),
-                const SizedBox(height: 10),
-                if (_error != null)
-                  _ReportError(message: _error!, onRetry: _loadReport),
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: LinearProgressIndicator(
-                      minHeight: 2,
-                      color: _C.navy,
-                      backgroundColor: _C.line,
+                  if (_error != null)
+                    _ReportError(message: _error!, onRetry: _loadReport),
+                  if (_loading)
+                    const Padding(
+                      padding: EdgeInsets.only(bottom: 12),
+                      child: LinearProgressIndicator(
+                        minHeight: 2,
+                        color: _C.navy,
+                        backgroundColor: _C.line,
+                      ),
                     ),
-                  ),
-                _KpiGrid(kpis: kpis),
-                ...view.sections,
-                ..._actionWidgets(view.actions),
-              ]),
+                  _KpiGrid(kpis: kpis),
+                  ...view.sections,
+                  ..._actionWidgets(view.actions),
+                ]),
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -1496,7 +1500,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       ),
     ];
 
-    
     final cards = <_TargetData>[
       for (final it in items)
         () {
@@ -1513,7 +1516,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             title: it.products,
             sub: it.orderNumber,
             growth: it.orderGrowthPercentage,
-             
+
             avatarText: _initials(it.products),
             badgeText: cancelled
                 ? 'CANCELLED'
@@ -1567,10 +1570,9 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           //const [],
           cards,
           _placeholderTarget(footLabel: 'RISK LEVEL'),
-          
         ),
       ],
-      actions: const[],
+      actions: const [],
     );
   }
 }

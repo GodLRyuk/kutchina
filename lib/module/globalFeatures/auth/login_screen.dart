@@ -8,6 +8,8 @@ import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/auth_api.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/utils/responsive.dart';
 import 'package:provider/provider.dart';
@@ -227,147 +229,161 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: ResponsiveCenter(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Center(
-                child: Column(
-                  children: [
-                    Container(
-                      // width: 100,
-                      // height: 55,
-                      decoration: BoxDecoration(
-                        color: AppColors.commandCentreText,
-                        borderRadius: BorderRadius.circular(14),
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
+      body: AppBackground(
+        child: SafeArea(
+          child: ResponsiveCenter(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Center(
+                  child: Column(
+                    children: [
+                      Container(
+                        // width: 100,
+                        // height: 55,
+                        decoration: BoxDecoration(
+                          color: AppColors.commandCentreText,
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Image(
+                          image: AssetImage('assets/images/logo.jpg'),
+                          width: 100,
+                          // height: 50,
+                          fit: BoxFit.contain,
+                        ),
                       ),
-                      child: Image(
-                        image: AssetImage('assets/images/logo.jpg'),
-                        width: 100,
-                        // height: 50,
-                        fit: BoxFit.contain,
+                      const SizedBox(height: 14),
+                      const Text(
+                        'Sign in to manage your territory',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: AppColors.steel,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Sign in to manage your territory',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.steel),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 28),
+                const SizedBox(height: 28),
 
-              // Role selector (dropdown)
-              // _roleDropdown(),
-              const SizedBox(height: 16),
+                // Role selector (dropdown)
+                // _roleDropdown(),
+                const SizedBox(height: 16),
 
-              AppWidgets.buildTextField(
-                label: 'User Id',
-                controller: _mobileController,
-                hint: 'KUT***',
-                keyboardType: TextInputType.text,
-              ),
-              const SizedBox(height: 12),
-              AppWidgets.buildTextField(
-                label: 'Password',
-                controller: _passwordController,
-                hint: '••••••••',
-                obscure: true,
-              ),
+                AppWidgets.buildTextField(
+                  label: 'User Id',
+                  controller: _mobileController,
+                  hint: 'KUT***',
+                  keyboardType: TextInputType.text,
+                ),
+                const SizedBox(height: 12),
+                AppWidgets.buildTextField(
+                  label: 'Password',
+                  controller: _passwordController,
+                  hint: '••••••••',
+                  obscure: true,
+                ),
 
-              Align(
-                alignment: Alignment.centerRight,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: GestureDetector(
-                    onTap: () =>
-                        AppWidgets.toast(context, 'Password reset coming soon'),
-                    child: const Text(
-                      'Forgot password?',
-                      style: TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 11,
-                        color: AppColors.commandCentreText,
-                        fontWeight: FontWeight.bold,
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 6),
+                    child: GestureDetector(
+                      onTap: () => AppWidgets.toast(
+                        context,
+                        'Password reset coming soon',
+                      ),
+                      child: const Text(
+                        'Forgot password?',
+                        style: TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontSize: 11,
+                          color: AppColors.commandCentreText,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 16),
+                const SizedBox(height: 16),
 
-              if (_bioAvailable && !_bioEnabled)
-                InkWell(
-                  onTap: _loading
-                      ? null
-                      : () => setState(
-                          () => _useFingerprintNext = !_useFingerprintNext,
-                        ),
-                  child: Padding(
-                    padding: const EdgeInsets.only(bottom: 10),
-                    child: Row(
-                      children: [
-                        SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: Checkbox(
-                            value: _useFingerprintNext,
-                            onChanged: _loading
-                                ? null
-                                : (v) => setState(
-                                    () => _useFingerprintNext = v ?? false,
-                                  ),
+                if (_bioAvailable && !_bioEnabled)
+                  InkWell(
+                    onTap: _loading
+                        ? null
+                        : () => setState(
+                            () => _useFingerprintNext = !_useFingerprintNext,
                           ),
-                        ),
-                        const SizedBox(width: 8),
-                        const Expanded(
-                          child: Text(
-                            'Use fingerprint to log in next time',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: AppColors.steel,
+                    child: Padding(
+                      padding: const EdgeInsets.only(bottom: 10),
+                      child: Row(
+                        children: [
+                          SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: Checkbox(
+                              value: _useFingerprintNext,
+                              onChanged: _loading
+                                  ? null
+                                  : (v) => setState(
+                                      () => _useFingerprintNext = v ?? false,
+                                    ),
                             ),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-              AppWidgets.buildButton(
-                _loading ? 'Logging in…' : 'Log in with password',
-                onTap: _loading ? null : _login,
-              ),
-              if (_bioAvailable) ...[
-                const SizedBox(height: 12),
-                Row(
-                  children: const [
-                    Expanded(child: Divider(color: AppColors.line)),
-                    Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 10),
-                      child: Text(
-                        'or',
-                        style: TextStyle(fontSize: 11, color: AppColors.steel),
+                          const SizedBox(width: 8),
+                          const Expanded(
+                            child: Text(
+                              'Use fingerprint to log in next time',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: AppColors.steel,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    Expanded(child: Divider(color: AppColors.line)),
-                  ],
-                ),
-                const SizedBox(height: 12),
+                  ),
+
                 AppWidgets.buildButton(
-                  _bioEnabled
-                      ? 'Login with fingerprint'
-                      : 'Set up fingerprint login',
-                  icon: Icons.fingerprint,
-                  variant: AppButtonVariant.outline,
-                  onTap: _loading ? null : _loginWithFingerprint,
+                  _loading ? 'Logging in…' : 'Log in with password',
+                  onTap: _loading ? null : _login,
                 ),
+                if (_bioAvailable) ...[
+                  const SizedBox(height: 12),
+                  Row(
+                    children: const [
+                      Expanded(child: Divider(color: AppColors.line)),
+                      Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'or',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.steel,
+                          ),
+                        ),
+                      ),
+                      Expanded(child: Divider(color: AppColors.line)),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  AppWidgets.buildButton(
+                    _bioEnabled
+                        ? 'Login with fingerprint'
+                        : 'Set up fingerprint login',
+                    icon: Icons.fingerprint,
+                    variant: AppButtonVariant.outline,
+                    onTap: _loading ? null : _loginWithFingerprint,
+                  ),
+                ],
+                const SizedBox(height: 10),
               ],
-              const SizedBox(height: 10),
-            ],
+            ),
           ),
         ),
       ),

@@ -711,7 +711,6 @@ class TargetAssignment {
         ? Map<String, dynamic>.from(rawLocation)
         : const <String, dynamic>{};
 
-
     return TargetAssignment(
       amount:
           double.tryParse(
@@ -728,14 +727,12 @@ class TargetAssignment {
       // targetDate: DateTime.tryParse(
       //   (json['target_date'] ?? json['end_date'])?.toString() ?? '',
       // ),
-      
+
       userId: (user['id'] ?? json['user_id'] ?? '').toString(),
 
       retailerName: (retailer['name'] ?? '').toString(),
       categoryName: (category['name'] ?? '').toString(),
-      locationName: (location['name'] ?? '').toString()
-
-     
+      locationName: (location['name'] ?? '').toString(),
     );
   }
 }
@@ -961,25 +958,88 @@ class VisitService {
   }
 }
 
+// Added for paginaton
+class AdminUsersPage {
+  final List<AdminUser> users;
+  final int count;
+  final bool hasMore;
+
+  const AdminUsersPage({
+    required this.users,
+    required this.count,
+    required this.hasMore,
+  });
+}
+
+// done
 class AdminUsersApi {
   AdminUsersApi._();
-
-  static Future<List<AdminUser>> fetchUsers() async {
+  static Future<AdminUsersPage> fetchUsers({
+    int page = 1,
+    int pageSize = 10,
+    String search = '',
+  }) async {
+     final isSearch = search.isNotEmpty;
     final res = await ApiService.instance.getCached(
       '/api/v1/users/superadmin/userlist/',
+     queryParams: isSearch
+        ? {'search': search}
+        : {'page': page, 'page_size': pageSize},
     );
     final raw = res.data;
-    final list = raw is List
-        ? raw
-        : (raw is Map
-              ? raw['data'] as List? ?? raw['results'] as List? ?? []
-              : []);
 
-    return list
+    final List list;
+    int? count;
+    bool hasMore = false;
+
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map) {
+      list = (raw['results'] ?? raw['data'] ?? []) as List;
+      count = raw['count'] as int?;
+      hasMore = raw['next'] != null;
+    } else {
+      list = [];
+    }
+
+    final users = list
         .whereType<Map<String, dynamic>>()
         .map(AdminUser.fromJson)
         .toList();
+
+    return AdminUsersPage(
+      users: users,
+      count: count ?? users.length,
+      hasMore: hasMore,
+    );
   }
+
+  
+  
+  
+  
+  
+  
+  // static Future<List<AdminUser>> fetchUsers({
+  //   int page = 1,
+  //   int pageSize = 10
+  // }) async {
+  //   final res = await ApiService.instance.getCached(
+  //     '/api/v1/users/superadmin/userlist/',
+  //      queryParams: {'page': page, 'page_size': pageSize},
+  //   );
+  //   final raw = res.data;
+  //   final list = raw is List
+  //       ? raw
+  //       : (raw is Map
+  //             ? raw['data'] as List? ?? raw['results'] as List? ?? []
+  //             : []);
+
+  //   return list
+  //       .whereType<Map<String, dynamic>>()
+  //       .map(AdminUser.fromJson)
+  //       .toList();
+  // }
 }
 
 class SalesProduct {

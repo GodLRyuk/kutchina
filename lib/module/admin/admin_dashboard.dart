@@ -5,6 +5,7 @@ import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/admin_widgets.dart';
 import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_product_detail_screen.dart';
@@ -94,7 +95,10 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.ash,
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
       appBar: AppTopBar.greeting(
         greeting: getGreeting(),
         subtitle: user.fullName,
@@ -106,29 +110,31 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadDashboard,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_isLoading) const LinearProgressIndicator(minHeight: 2),
-                _buildHeader(),
-                if (_loadError != null) _buildLoadError(),
-                const SizedBox(height: 14),
-                _buildStatCards(),
-                const SizedBox(height: 16),
-                _buildHighPerformers(),
-                const SizedBox(height: 16),
-                _buildSalesByCategory(),
-                const SizedBox(height: 16),
-                _buildSalesByRegion(),
-                const SizedBox(height: 16),
-                _buildTeamPerformance(),
-              ],
+      body: AppBackground(
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadDashboard,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_isLoading) const LinearProgressIndicator(minHeight: 2),
+                  _buildHeader(),
+                  if (_loadError != null) _buildLoadError(),
+                  const SizedBox(height: 14),
+                  _buildStatCards(),
+                  const SizedBox(height: 16),
+                  _buildHighPerformers(),
+                  const SizedBox(height: 16),
+                  _buildSalesByCategory(),
+                  const SizedBox(height: 16),
+                  _buildSalesByRegion(),
+                  const SizedBox(height: 16),
+                  _buildTeamPerformance(),
+                ],
+              ),
             ),
           ),
         ),
@@ -372,7 +378,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   size: 11,
                   color: AppColors.aiBlue,
                 ),
-                const SizedBox(height: 3),
+                // const SizedBox(height: 3),
+                const SizedBox(width: 3),
                 Text(
                   '${(data?.forecastTomorrowConfidencePercentage ?? 0).toStringAsFixed(0)}% Confidence',
                   style: const TextStyle(

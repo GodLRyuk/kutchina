@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 
 // ─────────────────────────── helpers ───────────────────────────
@@ -181,15 +182,20 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
       appBar: AppTopBar.simple(title: _title),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [_hero(), const SizedBox(height: 16), ..._content()],
+      body: AppBackground(
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              children: [_hero(), const SizedBox(height: 16), ..._content()],
+            ),
           ),
         ),
       ),

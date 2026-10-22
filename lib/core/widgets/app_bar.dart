@@ -83,13 +83,16 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
           : null,
       centerTitle: title != null,
       flexibleSpace: greeting != null && centerImage != null
-          ? Padding(
-              padding: const EdgeInsets.only(top: 25),
-              child: Center(
-                child: SizedBox(
-                  width: 100,
-                  height: 22,
-                  child: Image(image: centerImage!, fit: BoxFit.contain),
+          ? SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Center(
+                  child: SizedBox(
+                    width: 100,
+                    height: 22,
+                    child: Image(image: centerImage!, fit: BoxFit.contain),
+                  ),
                 ),
               ),
             )

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 
 // ─────────────────────────── helpers ───────────────────────────
@@ -148,46 +149,50 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
       appBar: const AppTopBar.simple(title: 'Products'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Select a category to view its orders',
-                style: TextStyle(fontSize: 12, color: AppColors.steel),
-              ),
-              const SizedBox(height: 14),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  border: Border.all(color: AppColors.line, width: 1.3),
-                  borderRadius: BorderRadius.circular(10),
+      body: AppBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Select a category to view its orders',
+                  style: TextStyle(fontSize: 12, color: AppColors.steel),
                 ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (_) => setState(() {}),
-                  style: const TextStyle(fontSize: 13, color: AppColors.ink),
-                  decoration: const InputDecoration(
-                    icon: Icon(Icons.search, size: 18, color: AppColors.steel),
-                    hintText: 'Search categories',
-                    hintStyle: TextStyle(
-                      color: AppColors.steelLight,
-                      fontSize: 13,
+                const SizedBox(height: 14),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: AppColors.white,
+                    border: Border.all(color: AppColors.line, width: 1.3),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (_) => setState(() {}),
+                    style: const TextStyle(fontSize: 13, color: AppColors.ink),
+                    decoration: const InputDecoration(
+                      icon: Icon(Icons.search, size: 18, color: AppColors.steel),
+                      hintText: 'Search categories',
+                      hintStyle: TextStyle(
+                        color: AppColors.steelLight,
+                        fontSize: 13,
+                      ),
+                      border: InputBorder.none,
+                      isDense: true,
+                      contentPadding: EdgeInsets.symmetric(vertical: 11),
                     ),
-                    border: InputBorder.none,
-                    isDense: true,
-                    contentPadding: EdgeInsets.symmetric(vertical: 11),
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
-              Expanded(child: _buildBody()),
-            ],
+                const SizedBox(height: 14),
+                Expanded(child: _buildBody()),
+              ],
+            ),
           ),
         ),
       ),
@@ -405,15 +410,19 @@ class _AdminCategoryProductsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
+     backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
       appBar: AppTopBar.simple(title: widget.category.name),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [_hero(), const SizedBox(height: 16), ..._content()],
+      body: AppBackground(
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _load,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+              children: [_hero(), const SizedBox(height: 16), ..._content()],
+            ),
           ),
         ),
       ),

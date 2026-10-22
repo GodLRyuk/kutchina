@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_regions_screen.dart';
 
@@ -61,31 +62,36 @@ class _AdminRegionsScreenState extends State<AdminRegionsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
       appBar: const AppTopBar.simple(title: 'Regions'),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Regions',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.commandCentreText,
+      body: AppBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Regions',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.commandCentreText,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              const Text(
-                'Select a region to view its sales',
-                style: TextStyle(fontSize: 12, color: AppColors.steel),
-              ),
-              const SizedBox(height: 16),
-              Expanded(child: _buildBody()),
-            ],
+                const SizedBox(height: 4),
+                const Text(
+                  'Select a region to view its sales',
+                  style: TextStyle(fontSize: 12, color: AppColors.steel),
+                ),
+                const SizedBox(height: 16),
+                Expanded(child: _buildBody()),
+              ],
+            ),
           ),
         ),
       ),
