@@ -32,6 +32,7 @@ class _TargetScreenState extends State<TargetScreen> {
     try {
       final response = await OrderService.fetchAllTargets();
       if (!mounted) return;
+
       setState(() {
         _targets = response;
         _targetLoading = false;
@@ -69,7 +70,7 @@ class _TargetScreenState extends State<TargetScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-               Padding(
+              Padding(
                 padding: const EdgeInsets.only(left: 22, top: 8),
                 child: Text(
                   'Your Targets',
@@ -161,13 +162,9 @@ class _TargetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // final monthText = target.month != null
-    //     ? DateFormat('MMMM yyyy').format(target.month!)
-    //     : '-';
-    // final endText = target.targetDate != null
-    //     ? DateFormat('dd MMM yyyy').format(target.targetDate!)
-    //     : '-';
-
+   final fyText = target.month != null
+        ? DateFormat('MMMM yyyy').format(target.month!)
+        : '-';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -178,7 +175,7 @@ class _TargetCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Icon + month + amount
+          // Icon + retailer + amount
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -201,7 +198,7 @@ class _TargetCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      "monthText",
+                      target.retailerName.isEmpty ? '-' : target.retailerName,
                       style: const TextStyle(
                         fontFamily: AppFonts.display,
                         fontWeight: FontWeight.w700,
@@ -230,33 +227,40 @@ class _TargetCard extends StatelessWidget {
           const Divider(height: 1, thickness: 1, color: AppColors.line),
           const SizedBox(height: 12),
 
-          // Target end date
-          Row(
-            children: [
-              Icon(Icons.event_rounded, size: 16, color: accent),
-              const SizedBox(width: 8),
-              const Text(
-                'Target end date',
-                style: TextStyle(
-                  fontFamily: AppFonts.body,
-                  fontSize: 12.5,
-                  color: AppColors.steel,
-                ),
-              ),
-              const Spacer(),
-              Text(
-                "endText",
-                style: const TextStyle(
-                  fontFamily: AppFonts.body,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.ink,
-                ),
-              ),
-            ],
-          ),
+          _infoRow(Icons.category_outlined, 'Category', target.categoryName),
+          const SizedBox(height: 5),
+          _infoRow(Icons.location_on_outlined, 'Location', target.locationName),
+          const SizedBox(height: 5),
+          _infoRow(Icons.event_rounded, 'Financial Year', fyText),
         ],
       ),
+    );
+  }
+
+  Widget _infoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: accent),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontFamily: AppFonts.body,
+            fontSize: 12.5,
+            color: AppColors.steel,
+          ),
+        ),
+        const Spacer(),
+        Text(
+          value.isEmpty ? '-' : value,
+          style: const TextStyle(
+            fontFamily: AppFonts.body,
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+            color: AppColors.ink,
+          ),
+        ),
+      ],
     );
   }
 }
