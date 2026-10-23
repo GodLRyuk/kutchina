@@ -103,12 +103,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
         greeting: getGreeting(),
         subtitle: user.fullName,
         centerImage: const AssetImage('assets/images/logo.jpg'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
+        // actions: [
+        //   IconButton(
+        //     icon: const Icon(Icons.notifications_outlined),
+        //     onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+        //   ),
+        // ],
       ),
       body: AppBackground(
         child: SafeArea(

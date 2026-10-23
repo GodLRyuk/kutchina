@@ -2,6 +2,7 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_detail_screen.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +18,14 @@ class ReportsHubScreen extends StatefulWidget {
 class _ReportsHubScreenState extends State<ReportsHubScreen> {
   final _searchController = TextEditingController();
   String _query = '';
+  static const List<Color> _cardAccents = [
+    Color(0xFF1D5FD8),
+    Color(0xFF12B981),
+    Color(0xFFF07A2B),
+    Color(0xFF9B2FD1),
+    Color(0xFF5EB70A), 
+    Color(0xFFBA0808),
+  ];
 
   @override
   void dispose() {
@@ -65,16 +74,12 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [Color(0xFF1E2430), Color(0xFF343C4E)],
-                  ),
+                  gradient: AppColors.buttonGradient,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF1E2430).withValues(alpha: 0.30),
-                      blurRadius: 18,
+                      color: const Color(0xFF1E2430).withValues(alpha: 0.18),
+                      blurRadius: 20,
                       offset: const Offset(0, 8),
                     ),
                   ],
@@ -100,7 +105,7 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                         const SizedBox(width: 12),
                         const Expanded(
                           child: Text(
-                            'Reports Center',
+                            "REPORTS CENTER",
                             style: TextStyle(
                               fontFamily: AppFonts.display,
                               fontSize: 16,
@@ -117,8 +122,9 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                       child: Text(
                         'Everything you need to track performance, in one place',
                         style: TextStyle(
-                          fontSize: 11.5,
-                          color: Colors.white.withValues(alpha: 0.65),
+                          fontSize: 12.5,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white.withValues(alpha: 0.90),
                         ),
                       ),
                     ),
@@ -128,9 +134,9 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                         _heroStat('$_totalReports', 'Reports'),
                         Container(
                           width: 1,
-                          height: 30,
+                          height: 36,
                           margin: const EdgeInsets.symmetric(horizontal: 18),
-                          color: Colors.white.withValues(alpha: 0.14),
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
                         _heroStat(
                           '${ReportCatalog.categories.length}',
@@ -138,9 +144,9 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                         ),
                         Container(
                           width: 1,
-                          height: 30,
+                          height: 36,
                           margin: const EdgeInsets.symmetric(horizontal: 18),
-                          color: Colors.white.withValues(alpha: 0.14),
+                          color: Colors.white.withValues(alpha: 0.55),
                         ),
                         _heroStat('2', 'AI-powered'),
                       ],
@@ -148,8 +154,9 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                   ],
                 ),
               ),
+
               const SizedBox(height: 16),
-          
+
               // ---- Search ----
               Container(
                 decoration: BoxDecoration(
@@ -168,7 +175,7 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                   onChanged: (v) => setState(() => _query = v),
                   style: const TextStyle(fontSize: 13),
                   decoration: InputDecoration(
-                    hintText: 'Search reports…',
+                    hintText: 'Search reports',
                     hintStyle: const TextStyle(
                       color: AppColors.steelLight,
                       fontSize: 13,
@@ -202,7 +209,7 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                 ),
               ),
               const SizedBox(height: 6),
-          
+
               // ---- Categories ----
               if (categories.isEmpty)
                 Padding(
@@ -217,7 +224,10 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                       const SizedBox(height: 10),
                       const Text(
                         'No reports match your search',
-                        style: TextStyle(color: AppColors.steel, fontSize: 12.5),
+                        style: TextStyle(
+                          color: AppColors.steel,
+                          fontSize: 12.5,
+                        ),
                       ),
                     ],
                   ),
@@ -241,7 +251,8 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              category.name.toUpperCase(),
+                              category.name,
+                              //category.name.toUpperCase(),
                               style: const TextStyle(
                                 fontFamily: AppFonts.display,
                                 fontSize: 10.5,
@@ -255,16 +266,27 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
                               '(${category.reports.length})',
                               style: const TextStyle(
                                 fontSize: 10.5,
-                                color: AppColors.steelLight,
+                                color: AppColors.steel,
+                                //color: AppColors.steelLight,
                               ),
                             ),
                           ],
                         ),
                         const SizedBox(height: 10),
-                        ...category.reports.map(
-                          (r) => Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
-                            child: _ReportCard(report: r),
+                        // ...category.reports.map(
+                        //   (r) => Padding(
+                        //     padding: const EdgeInsets.only(bottom: 10),
+                        //     child: _ReportCard(report: r),
+                        //   ),
+                        // ),
+                        ...category.reports.asMap().entries.map(
+                          (entry) => Padding(
+                            padding: EdgeInsets.only(bottom: 14),
+                            child: _ReportCard(
+                              report: entry.value,
+                              accent:
+                                  _cardAccents[entry.key % _cardAccents.length],
+                            ),
                           ),
                         ),
                       ],
@@ -286,24 +308,25 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
   }
 
   Widget _heroStat(String value, String label) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         Text(
           value,
           style: const TextStyle(
             fontFamily: AppFonts.display,
-            fontSize: 18,
+            fontSize: 16,
             fontWeight: FontWeight.bold,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 2),
+        const SizedBox(width: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10.5,
-            color: Colors.white.withValues(alpha: 0.6),
+            fontSize: 16,
+            color: Colors.white.withValues(alpha: 0.9),
           ),
         ),
       ],
@@ -313,7 +336,8 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
 
 class _ReportCard extends StatelessWidget {
   final ReportConfig report;
-  const _ReportCard({required this.report});
+  final Color accent;
+  const _ReportCard({required this.report, required this.accent});
 
   @override
   Widget build(BuildContext context) {
@@ -330,6 +354,7 @@ class _ReportCard extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.white,
           borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: accent.withValues(alpha: 0.55), width: 1.4),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.045),
@@ -344,17 +369,10 @@ class _ReportCard extends StatelessWidget {
               width: 46,
               height: 46,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [
-                    report.accent.withValues(alpha: 0.16),
-                    report.accent.withValues(alpha: 0.28),
-                  ],
-                ),
+                color: accent,
                 borderRadius: BorderRadius.circular(13),
               ),
-              child: Icon(report.icon, color: report.accent, size: 22),
+              child: Icon(report.icon, color: AppColors.white, size: 22),
             ),
             const SizedBox(width: 13),
             Expanded(
@@ -363,11 +381,11 @@ class _ReportCard extends StatelessWidget {
                 children: [
                   Text(
                     report.title,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontFamily: AppFonts.display,
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: AppColors.ink,
+                      color: accent,
                       height: 1.25,
                     ),
                   ),
@@ -395,7 +413,7 @@ class _ReportCard extends StatelessWidget {
               ),
               child: const Icon(
                 Icons.chevron_right,
-                color: AppColors.steel,
+                color: AppColors.black, //steel,
                 size: 16,
               ),
             ),

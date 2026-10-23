@@ -55,8 +55,10 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
       // setState(() => _users = data);
 
       final data = await AdminUsersApi.fetchUsers(
-        page: 1, pageSize: _pageSize, search: _query
-        );
+        page: 1,
+        pageSize: _pageSize,
+        search: _query,
+      );
       if (!mounted) return;
       setState(() {
         _users = data.users;
@@ -78,7 +80,6 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
   Future<void> _searchUser() async {
     _query = _searchController.text.trim();
     _loadUsers();
-   
   }
 
   Future<void> _loadMore() async {
@@ -189,7 +190,7 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
     if (_users.isEmpty) {
       return Center(
         child: Text(
-           _query.isEmpty ? 'No team members found' : 'No results found',
+          _query.isEmpty ? 'No team members found' : 'No results found',
           style: TextStyle(color: AppColors.steel),
         ),
       );
@@ -334,12 +335,15 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
         controller: controller,
         cursorColor: AppColors.ink,
         textInputAction: TextInputAction.search,
+        textAlignVertical: TextAlignVertical.center,
         onSubmitted: (_) => _searchUser(),
         style: const TextStyle(fontSize: 14, color: AppColors.ink),
         decoration: InputDecoration(
           hintText: "Search by name",
           hintStyle: const TextStyle(fontSize: 14, color: AppColors.steelLight),
           border: InputBorder.none,
+          isDense: true,
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
           prefixIcon: IconButton(
             icon: const Icon(Icons.search_rounded, color: AppColors.steel),
             onPressed: _searchUser,
@@ -349,7 +353,6 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
             onPressed: () {
               _searchController.clear();
               _searchUser();
-              
             },
           ),
         ),

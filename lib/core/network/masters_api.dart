@@ -163,6 +163,7 @@ class SalesOrder {
   final String status;
   final String createdBy; // id of the user who placed the order
   final DateTime? createdAt;
+  final String createdByName;
 
   SalesOrder({
     required this.id,
@@ -178,6 +179,7 @@ class SalesOrder {
     required this.status,
     required this.createdBy,
     required this.createdAt,
+    required this.createdByName
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -197,6 +199,7 @@ class SalesOrder {
       status: s('order_status_display'),
       createdBy: s('created_by'),
       createdAt: DateTime.tryParse(s('created_at')),
+      createdByName: s('created_by_name')
     );
   }
 

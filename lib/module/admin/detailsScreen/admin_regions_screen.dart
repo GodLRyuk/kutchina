@@ -518,7 +518,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
 
     final extras = [
       if (o.filterType.isNotEmpty) 'Filter: ${o.filterType}',
-      if (o.warranty.isNotEmpty) 'Warranty: ${o.warranty}',
+      // if (o.warranty.isNotEmpty) 'Warranty: ${o.warranty}',
     ].join('  •  ');
 
     return Container(
@@ -535,7 +535,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
             Container(width: 4, color: typeColor),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -612,9 +612,9 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
                             color: AppColors.regionOrange,
                             icon: Icons.check_circle_outline,
                           ),
-                        if (o.createdBy.isNotEmpty)
+                        if (o.createdByName.isNotEmpty)
                           _chip(
-                            'By user #${o.createdBy}',
+                            'By user ${o.createdByName}',
                             color: AppColors.regionBlue,
                             icon: Icons.person_outline,
                           ),
