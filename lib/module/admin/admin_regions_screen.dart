@@ -65,12 +65,16 @@ class _AdminRegionsScreenState extends State<AdminRegionsScreen> {
       backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
 
-      appBar: const AppTopBar.simple(title: 'Regions'),
+      //appBar: const AppTopBar.(title: 'Regions'),
       body: AppBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

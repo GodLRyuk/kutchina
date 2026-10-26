@@ -186,16 +186,43 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
       extendBody: false,
       extendBodyBehindAppBar: true,
 
-      appBar: AppTopBar.simple(title: _title),
+      // appBar: AppTopBar.simple(title: _title),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
       body: AppBackground(
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [_hero(), const SizedBox(height: 16), ..._content()],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+               padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  _title,
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                    children: [
+                      _hero(),
+                      const SizedBox(height: 16),
+                      ..._content(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

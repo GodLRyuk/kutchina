@@ -23,7 +23,7 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
     Color(0xFF12B981),
     Color(0xFFF07A2B),
     Color(0xFF9B2FD1),
-    Color(0xFF5EB70A), 
+    Color(0xFF5EB70A),
     Color(0xFFBA0808),
   ];
 
@@ -64,236 +64,267 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
       backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
-      appBar: AppTopBar.simple(title: 'Reports'),
+      appBar: AppTopBar.brand(
+        showBackButton: true,
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+      ),
       body: AppBackground(
         child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(18, 14, 18, 28),
-            children: [
-              // ---- Hero summary card ----
-              Container(
-                padding: const EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  gradient: AppColors.buttonGradient,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF1E2430).withValues(alpha: 0.18),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(11),
-                          ),
-                          child: const Icon(
-                            Icons.insights_rounded,
-                            color: Colors.white,
-                            size: 21,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Expanded(
-                          child: Text(
-                            "REPORTS CENTER",
-                            style: TextStyle(
-                              fontFamily: AppFonts.display,
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 52),
-                      child: Text(
-                        'Everything you need to track performance, in one place',
-                        style: TextStyle(
-                          fontSize: 12.5,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white.withValues(alpha: 0.90),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        _heroStat('$_totalReports', 'Reports'),
-                        Container(
-                          width: 1,
-                          height: 36,
-                          margin: const EdgeInsets.symmetric(horizontal: 18),
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                        _heroStat(
-                          '${ReportCatalog.categories.length}',
-                          'Categories',
-                        ),
-                        Container(
-                          width: 1,
-                          height: 36,
-                          margin: const EdgeInsets.symmetric(horizontal: 18),
-                          color: Colors.white.withValues(alpha: 0.55),
-                        ),
-                        _heroStat('2', 'AI-powered'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 16),
-
-              // ---- Search ----
-              Container(
-                decoration: BoxDecoration(
-                  color: AppColors.white,
-                  borderRadius: BorderRadius.circular(13),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.04),
-                      blurRadius: 10,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
-                ),
-                child: TextField(
-                  controller: _searchController,
-                  onChanged: (v) => setState(() => _query = v),
-                  style: const TextStyle(fontSize: 13),
-                  decoration: InputDecoration(
-                    hintText: 'Search reports',
-                    hintStyle: const TextStyle(
-                      color: AppColors.steelLight,
-                      fontSize: 13,
-                    ),
-                    prefixIcon: const Icon(
-                      Icons.search,
-                      color: AppColors.steel,
-                      size: 20,
-                    ),
-                    suffixIcon: _query.isEmpty
-                        ? null
-                        : IconButton(
-                            icon: const Icon(
-                              Icons.close,
-                              size: 18,
-                              color: AppColors.steel,
-                            ),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _query = '');
-                            },
-                          ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(13),
-                      borderSide: BorderSide.none,
-                    ),
-                    filled: true,
-                    fillColor: Colors.transparent,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 12),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(14, 0, 14, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Reports",
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
                   ),
                 ),
-              ),
-              const SizedBox(height: 6),
-
-              // ---- Categories ----
-              if (categories.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(top: 60),
-                  child: Column(
+                const SizedBox(height: 8),
+                Expanded(
+                  child: ListView(
                     children: [
-                      Icon(
-                        Icons.search_off_rounded,
-                        size: 38,
-                        color: AppColors.steelLight,
-                      ),
-                      const SizedBox(height: 10),
-                      const Text(
-                        'No reports match your search',
-                        style: TextStyle(
-                          color: AppColors.steel,
-                          fontSize: 12.5,
-                        ),
-                      ),
-                    ],
-                  ),
-                )
-              else
-                ...categories.map(
-                  (category) => Padding(
-                    padding: const EdgeInsets.only(top: 22),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Container(
-                              width: 6,
-                              height: 6,
-                              decoration: BoxDecoration(
-                                color: category.reports.first.accent,
-                                shape: BoxShape.circle,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            Text(
-                              category.name,
-                              //category.name.toUpperCase(),
-                              style: const TextStyle(
-                                fontFamily: AppFonts.display,
-                                fontSize: 10.5,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.steel,
-                                letterSpacing: .5,
-                              ),
-                            ),
-                            const SizedBox(width: 6),
-                            Text(
-                              '(${category.reports.length})',
-                              style: const TextStyle(
-                                fontSize: 10.5,
-                                color: AppColors.steel,
-                                //color: AppColors.steelLight,
-                              ),
+                      // ---- Hero summary card ----
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: AppColors.buttonGradient,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(
+                                0xFF1E2430,
+                              ).withValues(alpha: 0.18),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 10),
-                        // ...category.reports.map(
-                        //   (r) => Padding(
-                        //     padding: const EdgeInsets.only(bottom: 10),
-                        //     child: _ReportCard(report: r),
-                        //   ),
-                        // ),
-                        ...category.reports.asMap().entries.map(
-                          (entry) => Padding(
-                            padding: EdgeInsets.only(bottom: 14),
-                            child: _ReportCard(
-                              report: entry.value,
-                              accent:
-                                  _cardAccents[entry.key % _cardAccents.length],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              children: [
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.12),
+                                    borderRadius: BorderRadius.circular(11),
+                                  ),
+                                  child: const Icon(
+                                    Icons.insights_rounded,
+                                    color: Colors.white,
+                                    size: 21,
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                const Expanded(
+                                  child: Text(
+                                    "REPORTS CENTER",
+                                    style: TextStyle(
+                                      fontFamily: AppFonts.display,
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 4),
+                            Padding(
+                              padding: const EdgeInsets.only(left: 52),
+                              child: Text(
+                                'Everything you need to track performance, in one place',
+                                style: TextStyle(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white.withValues(alpha: 0.90),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 18),
+                            Row(
+                              children: [
+                                _heroStat('$_totalReports', 'Reports'),
+                                Container(
+                                  width: 1,
+                                  height: 36,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                  ),
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                ),
+                                _heroStat(
+                                  '${ReportCatalog.categories.length}',
+                                  'Categories',
+                                ),
+                                Container(
+                                  width: 1,
+                                  height: 36,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 18,
+                                  ),
+                                  color: Colors.white.withValues(alpha: 0.55),
+                                ),
+                                _heroStat('2', 'AI-powered'),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      // ---- Search ----
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.white,
+                          borderRadius: BorderRadius.circular(13),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.04),
+                              blurRadius: 10,
+                              offset: const Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: TextField(
+                          controller: _searchController,
+                          onChanged: (v) => setState(() => _query = v),
+                          style: const TextStyle(fontSize: 13),
+                          decoration: InputDecoration(
+                            hintText: 'Search reports',
+                            hintStyle: const TextStyle(
+                              color: AppColors.steelLight,
+                              fontSize: 13,
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.search,
+                              color: AppColors.steel,
+                              size: 20,
+                            ),
+                            suffixIcon: _query.isEmpty
+                                ? null
+                                : IconButton(
+                                    icon: const Icon(
+                                      Icons.close,
+                                      size: 18,
+                                      color: AppColors.steel,
+                                    ),
+                                    onPressed: () {
+                                      _searchController.clear();
+                                      setState(() => _query = '');
+                                    },
+                                  ),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(13),
+                              borderSide: BorderSide.none,
+                            ),
+                            filled: true,
+                            fillColor: Colors.transparent,
+                            contentPadding: const EdgeInsets.symmetric(
+                              vertical: 12,
                             ),
                           ),
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(height: 6),
+
+                      // ---- Categories ----
+                      if (categories.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 60),
+                          child: Column(
+                            children: [
+                              Icon(
+                                Icons.search_off_rounded,
+                                size: 38,
+                                color: AppColors.steelLight,
+                              ),
+                              const SizedBox(height: 10),
+                              const Text(
+                                'No reports match your search',
+                                style: TextStyle(
+                                  color: AppColors.steel,
+                                  fontSize: 12.5,
+                                ),
+                              ),
+                            ],
+                          ),
+                        )
+                      else
+                        ...categories.map(
+                          (category) => Padding(
+                            padding: const EdgeInsets.only(top: 22),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    Container(
+                                      width: 6,
+                                      height: 6,
+                                      decoration: BoxDecoration(
+                                        color: category.reports.first.accent,
+                                        shape: BoxShape.circle,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      category.name,
+                                      //category.name.toUpperCase(),
+                                      style: const TextStyle(
+                                        fontFamily: AppFonts.display,
+                                        fontSize: 10.5,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.steel,
+                                        letterSpacing: .5,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      '(${category.reports.length})',
+                                      style: const TextStyle(
+                                        fontSize: 10.5,
+                                        color: AppColors.steel,
+                                        //color: AppColors.steelLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 10),
+                                // ...category.reports.map(
+                                //   (r) => Padding(
+                                //     padding: const EdgeInsets.only(bottom: 10),
+                                //     child: _ReportCard(report: r),
+                                //   ),
+                                // ),
+                                ...category.reports.asMap().entries.map(
+                                  (entry) => Padding(
+                                    padding: EdgeInsets.only(bottom: 14),
+                                    child: _ReportCard(
+                                      report: entry.value,
+                                      accent:
+                                          _cardAccents[entry.key %
+                                              _cardAccents.length],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
                 ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

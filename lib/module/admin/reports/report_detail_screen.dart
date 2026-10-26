@@ -4,6 +4,7 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/report_api.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
@@ -402,128 +403,109 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
               ),
           ];
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+      appBar: AppTopBar.brand(
+        showBackButton: true,
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: _IconBtn(
+                icon: Icons.ios_share_outlined,
+                onTap: () => AppWidgets.toast(context, 'Export coming soon'),
+              ),
+            ),
+          ),
+        ],
+
+      ),
+      // appBar: AppTopBar.simple(
+      //   title: 'AI Report',
+      //   actions: [
+      //     Padding(
+      //       padding: const EdgeInsets.only(right: 12),
+      //       child: Center(
+      //         child: _IconBtn(
+      //           icon: Icons.ios_share_outlined,
+      //           onTap: () => AppWidgets.toast(context, 'Export coming soon'),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+        
+      // ),
       body: AppBackground(
-        child: CustomScrollView(
-          slivers: [
-            SliverAppBar(
-              pinned: true,
-              elevation: 0,
-              scrolledUnderElevation: 0,
-              // backgroundColor: _C.bg,
-              // surfaceTintColor: _C.bg,
-              backgroundColor: Colors.transparent,
-              surfaceTintColor: Colors.transparent,
-              centerTitle: true,
-              leadingWidth: 54,
-              leading: Padding(
-                padding: const EdgeInsets.only(left: 12),
-                child: Center(
-                  child: _IconBtn(
-                    icon: Icons.arrow_back_ios_new_rounded,
-                    onTap: () => Navigator.pop(context),
-                  ),
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 60),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    //_SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
+                    // _Hero(
+                    //   //icon: report.icon,
+                    //   copy: (!hasData && _loading)
+                    //       ? 'Generating report…'
+                    //       : view.copy,
+                    //   badges: hasData ? view.badges : const [],
+                    // ),
+                    _Hero(
+                      title: report.title,
+                      period: _displayPeriodLabel,
+                      copy: (!hasData && _loading)
+                          ? 'Generating report…'
+                          : view.copy,
+                      badges: hasData ? view.badges : const [],
+                    ),
+                    const SizedBox(height: 14),
+                    _PeriodSelector(
+                      value: _period,
+                      onChanged: _loading ? (_) {} : _onPeriodChanged,
+                    ),
+                    if (_period == 'today' || _period == 'week') ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Target-based figures aren't available for this period.",
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: _C.inkFaint,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                    if (report.supportsHorizon) ...[
+                      const SizedBox(height: 10),
+                      _HorizonSelector(
+                        value: _horizon,
+                        onChanged: _loading ? (_) {} : _onHorizonChanged,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    // _FilterChips(labels: view.filters),
+                    // const SizedBox(height: 10),
+                    if (_error != null)
+                      _ReportError(message: _error!, onRetry: _loadReport),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          color: _C.navy,
+                          backgroundColor: _C.line,
+                        ),
+                      ),
+                    _KpiGrid(kpis: kpis),
+                    ...view.sections,
+                    ..._actionWidgets(view.actions),
+                  ]),
                 ),
               ),
-              title: const Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'KUTCHINA',
-                    style: TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w800,
-                      color: _C.navy,
-                    ),
-                  ),
-                  Text(
-                    'AI REPORT',
-                    style: TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w700,
-                      color: _C.inkFaint,
-                      letterSpacing: 0.8,
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                Padding(
-                  padding: const EdgeInsets.only(right: 12),
-                  child: Center(
-                    child: _IconBtn(
-                      icon: Icons.ios_share_outlined,
-                      onTap: () =>
-                          AppWidgets.toast(context, 'Export coming soon'),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SliverPadding(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 60),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  //_SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
-                  // _Hero(
-                  //   //icon: report.icon,
-                  //   copy: (!hasData && _loading)
-                  //       ? 'Generating report…'
-                  //       : view.copy,
-                  //   badges: hasData ? view.badges : const [],
-                  // ),
-                  _Hero(
-                    title: report.title,
-                    period: _displayPeriodLabel,
-                    copy: (!hasData && _loading)
-                        ? 'Generating report…'
-                        : view.copy,
-                    badges: hasData ? view.badges : const [],
-                  ),
-                  const SizedBox(height: 14),
-                  _PeriodSelector(
-                    value: _period,
-                    onChanged: _loading ? (_) {} : _onPeriodChanged,
-                  ),
-                  if (_period == 'today' || _period == 'week') ...[
-                    const SizedBox(height: 8),
-                    const Text(
-                      "Target-based figures aren't available for this period.",
-                      style: TextStyle(
-                        fontSize: 10.5,
-                        color: _C.inkFaint,
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  ],
-                  if (report.supportsHorizon) ...[
-                    const SizedBox(height: 10),
-                    _HorizonSelector(
-                      value: _horizon,
-                      onChanged: _loading ? (_) {} : _onHorizonChanged,
-                    ),
-                  ],
-                  const SizedBox(height: 12),
-                  // _FilterChips(labels: view.filters),
-                  // const SizedBox(height: 10),
-                  if (_error != null)
-                    _ReportError(message: _error!, onRetry: _loadReport),
-                  if (_loading)
-                    const Padding(
-                      padding: EdgeInsets.only(bottom: 12),
-                      child: LinearProgressIndicator(
-                        minHeight: 2,
-                        color: _C.navy,
-                        backgroundColor: _C.line,
-                      ),
-                    ),
-                  _KpiGrid(kpis: kpis),
-                  ...view.sections,
-                  ..._actionWidgets(view.actions),
-                ]),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -2875,30 +2857,46 @@ class _StatCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          stat.label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w600,
-            color: _C.inkFaint,
-            height: 1.2,
+        SizedBox(
+          height: 24,
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Text(
+              stat.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              strutStyle: const StrutStyle(
+                fontSize: 9.5,
+                height: 1.2,
+                forceStrutHeight: true,
+              ),
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: _C.inkFaint,
+                height: 1.2,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 3),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            stat.value,
-            maxLines: 1,
-            style: TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              color: stat.color ?? _C.ink,
+        SizedBox(
+          height: 20,
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              stat.value,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: stat.color ?? _C.ink,
+              ),
             ),
           ),
         ),

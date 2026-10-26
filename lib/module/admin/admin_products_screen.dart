@@ -152,14 +152,29 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
       backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
-      appBar: const AppTopBar.simple(title: 'Products'),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
       body: AppBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                Text(
+                  'Products',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+
+                const SizedBox(height: 4),
+
                 const Text(
                   'Select a category to view its orders',
                   style: TextStyle(fontSize: 12, color: AppColors.steel),
@@ -177,7 +192,11 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
                     onChanged: (_) => setState(() {}),
                     style: const TextStyle(fontSize: 13, color: AppColors.ink),
                     decoration: const InputDecoration(
-                      icon: Icon(Icons.search, size: 18, color: AppColors.steel),
+                      icon: Icon(
+                        Icons.search,
+                        size: 18,
+                        color: AppColors.steel,
+                      ),
                       hintText: 'Search categories',
                       hintStyle: TextStyle(
                         color: AppColors.steelLight,
@@ -410,19 +429,45 @@ class _AdminCategoryProductsScreenState
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-     backgroundColor: Colors.transparent,
+      backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
-      appBar: AppTopBar.simple(title: widget.category.name),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
       body: AppBackground(
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [_hero(), const SizedBox(height: 16), ..._content()],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  widget.category.name,
+                  style: const TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(14, 8, 14, 24),
+                    children: [
+                      _hero(),
+                      const SizedBox(height: 16),
+                      ..._content(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),

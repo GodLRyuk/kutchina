@@ -2,12 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:provider/provider.dart';
 
 class CartScreen extends StatefulWidget {
   final String orderType;
@@ -33,6 +37,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   bool _placingOrder = false;
+  List<TargetMilestoneNotification> _targetNotifications = [];
 
   Future<void> _placeOrder() async {
     if (_placingOrder) return;
@@ -86,6 +91,18 @@ class _CartScreenState extends State<CartScreen> {
     }
   }
 
+  Future<void> _openTargetNotifications() async {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
+  }
+
   @override
   Widget build(BuildContext context) {
     // final subtotal = widget.product.price * widget.qty;
@@ -107,8 +124,28 @@ class _CartScreenState extends State<CartScreen> {
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+            onPressed: _openTargetNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined),
+                if (_targetNotifications.any(
+                  (notification) => !notification.isRead,
+                ))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -140,7 +177,6 @@ class _CartScreenState extends State<CartScreen> {
                             ? 'Ordering for distributor'
                             : 'Ordering for retailer',
                         value: widget.entityName,
-                        
                       ),
                       const SizedBox(height: 15),
                       ...widget.items.asMap().entries.map(
@@ -186,54 +222,54 @@ class _CartScreenState extends State<CartScreen> {
     );
   }
 
-Widget _itemCard(Map<String, dynamic> item, Color accent) {
-  final Product p = item['product'];
-  final int qty = item['qty'];
+  Widget _itemCard(Map<String, dynamic> item, Color accent) {
+    final Product p = item['product'];
+    final int qty = item['qty'];
 
-  return Container(
-    margin: const EdgeInsets.only(bottom: 12),
-    padding: const EdgeInsets.all(12),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(12),
-      border: Border.all(color: accent, width: 1.5),
-    ),
-    child: Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              p.name,
-              style: const TextStyle(
-                fontFamily: AppFonts.display,
-                fontSize: 12.5,
-                fontWeight: FontWeight.bold,
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent, width: 1.5),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                p.name,
+                style: const TextStyle(
+                  fontFamily: AppFonts.display,
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
-            ),
-            Text(
-              '₹${p.price.toStringAsFixed(2)} × $qty',
-              style: const TextStyle(
-                fontFamily: AppFonts.mono,
-                fontSize: 11,
-                color: AppColors.steel,
+              Text(
+                '₹${p.price.toStringAsFixed(2)} × $qty',
+                style: const TextStyle(
+                  fontFamily: AppFonts.mono,
+                  fontSize: 11,
+                  color: AppColors.steel,
+                ),
               ),
-            ),
-          ],
-        ),
-        Text(
-          '₹${(p.price * qty).toStringAsFixed(2)}',
-          style: const TextStyle(
-            fontFamily: AppFonts.mono,
-            fontSize: 12.5,
-            fontWeight: FontWeight.bold,
+            ],
           ),
-        ),
-      ],
-    ),
-  );
-}
+          Text(
+            '₹${(p.price * qty).toStringAsFixed(2)}',
+            style: const TextStyle(
+              fontFamily: AppFonts.mono,
+              fontSize: 12.5,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 
   Widget _totalRow(
     String label,

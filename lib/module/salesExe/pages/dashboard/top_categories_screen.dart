@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/admin_dashboard_api.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:provider/provider.dart';
 
 class TopCategoriesScreen extends StatefulWidget {
   const TopCategoriesScreen({super.key});
@@ -14,6 +18,7 @@ class TopCategoriesScreen extends StatefulWidget {
 
 class _TopCategoriesScreenState extends State<TopCategoriesScreen> {
   List<DashboardCategory> _categories = [];
+  List<TargetMilestoneNotification> _targetNotifications = [];
   bool _loading = true;
   String? _error;
 
@@ -53,6 +58,18 @@ class _TopCategoriesScreenState extends State<TopCategoriesScreen> {
     }
   }
 
+  Future<void> _openTargetNotifications() async {
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
+  }
+
   String _formatAmount(double amount) {
     if (amount >= 10000000) {
       return '₹${(amount / 10000000).toStringAsFixed(1)}Cr';
@@ -76,14 +93,34 @@ class _TopCategoriesScreenState extends State<TopCategoriesScreen> {
       backgroundColor: Colors.transparent,
       extendBody: true,
       extendBodyBehindAppBar: true,
-      //appBar: AppBar(title: const Text('Top selling categories')),
+
       appBar: AppTopBar.brand(
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+            onPressed: _openTargetNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined),
+                if (_targetNotifications.any(
+                  (notification) => !notification.isRead,
+                ))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

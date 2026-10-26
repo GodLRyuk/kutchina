@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_detail_screen.dart';
+import 'package:provider/provider.dart';
 
 class OrderListScreen extends StatefulWidget {
   const OrderListScreen({super.key});
@@ -36,6 +40,8 @@ class _OrderListScreenState extends State<OrderListScreen> {
   String? _entityError;
   List<dynamic> _distributors = [];
   List<dynamic> _retailers = [];
+   List<TargetMilestoneNotification> _targetNotifications = [];
+
 
   // Selected retailer / distributor (its id goes to the search API)
   String? _selectedEntityId;
@@ -76,6 +82,19 @@ class _OrderListScreenState extends State<OrderListScreen> {
     if (nearBottom && !_loadingMore && _visibleCount < _groups.length) {
       _loadMore();
     }
+  }
+
+  Future<void> _openTargetNotifications() async {
+    
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
   }
 
   Future<void> _loadMore() async {
@@ -130,7 +149,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
     });
 
     try {
-      print("i am here");
       final orders = await OrderService.searchOrders(
         search,
         entityId: _selectedEntityId,
@@ -323,8 +341,28 @@ class _OrderListScreenState extends State<OrderListScreen> {
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+            onPressed: _openTargetNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined),
+                if (_targetNotifications.any(
+                  (notification) => !notification.isRead,
+                ))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),

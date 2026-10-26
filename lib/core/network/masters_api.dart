@@ -179,7 +179,7 @@ class SalesOrder {
     required this.status,
     required this.createdBy,
     required this.createdAt,
-    required this.createdByName
+    required this.createdByName,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -199,7 +199,7 @@ class SalesOrder {
       status: s('order_status_display'),
       createdBy: s('created_by'),
       createdAt: DateTime.tryParse(s('created_at')),
-      createdByName: s('created_by_name')
+      createdByName: s('created_by_name'),
     );
   }
 
@@ -636,7 +636,6 @@ class OrderService {
               if (query.isNotEmpty) 'order_number': query,
             },
           );
-    print("searchOrders: res.data=${res.data}");
 
     final raw = res.data;
     final list = raw is List
@@ -982,12 +981,12 @@ class AdminUsersApi {
     int pageSize = 10,
     String search = '',
   }) async {
-     final isSearch = search.isNotEmpty;
+    final isSearch = search.isNotEmpty;
     final res = await ApiService.instance.getCached(
       '/api/v1/users/superadmin/userlist/',
-     queryParams: isSearch
-        ? {'search': search}
-        : {'page': page, 'page_size': pageSize},
+      queryParams: isSearch
+          ? {'search': search}
+          : {'page': page, 'page_size': pageSize},
     );
     final raw = res.data;
 
@@ -1017,12 +1016,6 @@ class AdminUsersApi {
     );
   }
 
-  
-  
-  
-  
-  
-  
   // static Future<List<AdminUser>> fetchUsers({
   //   int page = 1,
   //   int pageSize = 10

@@ -93,12 +93,6 @@ class AdminProfileScreen extends StatelessWidget {
       appBar: AppTopBar.brand(
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
       ),
       body: AppBackground(
         child: SafeArea(

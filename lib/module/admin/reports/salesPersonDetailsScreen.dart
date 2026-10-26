@@ -185,16 +185,44 @@ class _AdminSalespersonDetailScreenState
       backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
-      appBar: const AppTopBar.simple(title: 'Salesperson'),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
+
       body: AppBackground(
         child: SafeArea(
-          child: RefreshIndicator(
-            onRefresh: _load,
-            child: ListView(
-              physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-              children: [_hero(), const SizedBox(height: 16), ..._content()],
-            ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  'Salesperson',
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 19,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 4),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                    children: [
+                      _hero(),
+                      const SizedBox(height: 16),
+                      ..._content(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -602,7 +630,7 @@ class _AdminSalespersonDetailScreenState
     }
 
     return SizedBox(
-      height: 112,
+      height: 130,
       child: ListView.separated(
         scrollDirection: Axis.horizontal,
         itemCount: _products.length,

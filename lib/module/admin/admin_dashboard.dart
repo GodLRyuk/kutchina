@@ -99,16 +99,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
       extendBody: false,
       extendBodyBehindAppBar: true,
 
-      appBar: AppTopBar.greeting(
-        greeting: getGreeting(),
-        subtitle: user.fullName,
+      appBar: AppTopBar.brand(
         centerImage: const AssetImage('assets/images/logo.jpg'),
-        // actions: [
-        //   IconButton(
-        //     icon: const Icon(Icons.notifications_outlined),
-        //     onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-        //   ),
-        // ],
       ),
       body: AppBackground(
         child: SafeArea(
@@ -116,11 +108,43 @@ class _AdminDashboardState extends State<AdminDashboard> {
             onRefresh: _loadDashboard,
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  if (_isLoading) const LinearProgressIndicator(minHeight: 2),
+                   Text(
+                    getGreeting(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.steel,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildDropDown(),
+                    ],
+                  ),
+                  SizedBox(height: 14,),
+
+                  if (_isLoading)...[
+                    LinearProgressIndicator(minHeight: 2),
+                    const SizedBox(height: 12),
+                  ] ,
+
                   _buildHeader(),
                   if (_loadError != null) _buildLoadError(),
                   const SizedBox(height: 14),
@@ -179,84 +203,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              child: Text(
-                'Sales Command Centre',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.commandCentreText,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 13,
-                    color: AppColors.commandCentreText,
-                  ),
-                  SizedBox(width: 6),
-                  PopupMenuButton<String>(
-                    color: Colors.white,
-                    surfaceTintColor: Colors.transparent,
-                    onSelected: (value) {
-                      if (value == _selectedPeriod) return;
-                      setState(() {
-                        _selectedPeriod = value;
-                        _dashboardData = null;
-                      });
-                      _loadDashboard();
-                    },
-                    itemBuilder: (context) {
-                      return _periodLabels.entries.map((entry) {
-                        return PopupMenuItem<String>(
-                          value: entry.key,
-                          child: Text(
-                            entry.value,
-                            style: TextStyle(
-                              fontFamily: AppFonts.display,
-                              fontSize: 12,
-                              fontWeight: entry.key == _selectedPeriod
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
-                            ),
-                          ),
-                        );
-                      }).toList();
-                    },
-                    child: Text(
-                      _periodLabels[_selectedPeriod] ?? 'Select Period',
-                      style: const TextStyle(
-                        fontFamily: AppFonts.display,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.commandCentreText,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 15,
-                    color: AppColors.commandCentreText,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Text(
+          'Sales Command Centre',
+          style: TextStyle(
+            fontFamily: AppFonts.display,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.commandCentreText,
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -290,6 +244,74 @@ class _AdminDashboardState extends State<AdminDashboard> {
           ),
         ),
       ],
+    );
+  }
+
+  // ---------------- Drop down -----------------
+  Widget _buildDropDown() {
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      onSelected: (value) {
+        if (value == _selectedPeriod) return;
+        setState(() {
+          _selectedPeriod = value;
+          _dashboardData = null;
+        });
+        _loadDashboard();
+      },
+      itemBuilder: (context) {
+        return _periodLabels.entries.map((entry) {
+          return PopupMenuItem<String>(
+            value: entry.key,
+            child: Text(
+              entry.value,
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 12,
+                fontWeight: entry.key == _selectedPeriod
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 13,
+              color: AppColors.commandCentreText,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _periodLabels[_selectedPeriod] ?? 'Select Period',
+              style: const TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.commandCentreText,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 15,
+              color: AppColors.commandCentreText,
+            ),
+          ],
+        ),
+      ),
     );
   }
 

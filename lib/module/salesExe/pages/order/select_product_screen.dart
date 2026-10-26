@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
@@ -8,7 +10,9 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/salesExe/models/category_model.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart'
     hide CategoryModel;
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
 import 'package:kutchina/module/salesExe/pages/order/product_detail_screen.dart';
+import 'package:provider/provider.dart';
 
 class SelectProductScreen extends StatefulWidget {
   final String orderType;
@@ -35,6 +39,7 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
   bool _loadingRetailers = false;
   String? _retailerError;
   String? _distributorError;
+   List<TargetMilestoneNotification> _targetNotifications = [];
 
   // Category chip colours, assigned by position (All, 2nd, 3rd, ...).
   static const List<Color> _categoryColors = [
@@ -59,6 +64,20 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
     Product.loadCatalog().then((_) => setState(() {}));
     //print('product is this ${Product.catalog.length}');
   }
+
+  Future<void> _openTargetNotifications() async {
+    
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
+  }
+
 
   Future<void> _loadDistributors() async {
     setState(() {
@@ -284,11 +303,31 @@ class _SelectProductScreenState extends State<SelectProductScreen> {
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
+            IconButton(
+              onPressed: _openTargetNotifications,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (_targetNotifications.any(
+                    (notification) => !notification.isRead,
+                  ))
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
       ),
       body: AppBackground(
         child: SafeArea(

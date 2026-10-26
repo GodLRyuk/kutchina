@@ -129,11 +129,16 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
       backgroundColor: Colors.transparent,
       extendBody: false,
       extendBodyBehindAppBar: true,
-      appBar: const AppTopBar.simple(title: 'Sales Team'),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
+     
       body: AppBackground(
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.all(16),
+             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            //padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

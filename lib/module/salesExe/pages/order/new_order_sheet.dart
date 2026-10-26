@@ -27,8 +27,8 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
   String? _channelError;
   String? _orderTypeError;
 
-  // Accent colours / icons for the channel cards (assigned by position,
-  // so it works with whatever names ChannelModel returns).
+  
+  
   static const List<Color> _channelColors = [
     AppColors.regionBlue,
     AppColors.regionOrange,

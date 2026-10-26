@@ -2,16 +2,38 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/offline/pending_sync_screen.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+   List<TargetMilestoneNotification> _targetNotifications = [];
+   
+  Future<void> _openTargetNotifications() async {
+    
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
+  }
 
   Future<void> _confirmLogout(BuildContext context) async {
     final confirmed = await showDialog<bool>(
@@ -92,12 +114,32 @@ class ProfileScreen extends StatelessWidget {
       appBar: AppTopBar.brand(
         showBackButton: true,
         centerImage: const AssetImage('assets/images/logo.jpg'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
+       actions: [
+            IconButton(
+              onPressed: _openTargetNotifications,
+              icon: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  const Icon(Icons.notifications_outlined),
+                  if (_targetNotifications.any(
+                    (notification) => !notification.isRead,
+                  ))
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        width: 9,
+                        height: 9,
+                        decoration: const BoxDecoration(
+                          color: AppColors.red,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          ],
       ),
       body: AppBackground(
         child: SafeArea(

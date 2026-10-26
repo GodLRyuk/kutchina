@@ -7,7 +7,9 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/offline/connectivity_service.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/utils/dropdown.dart';
 import 'package:kutchina/core/utils/note_sheet.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
@@ -16,6 +18,8 @@ import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/suggestion_dropdown.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:provider/provider.dart';
 
 class NewVisitScreen extends StatefulWidget {
   const NewVisitScreen({super.key});
@@ -50,6 +54,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   bool _loadingLocation = true;
   bool _loadingAddress = false;
   final List<File> _extraPhotos = [];
+  List<TargetMilestoneNotification> _targetNotifications = [];
   String _lastQuery = '';
 
   static const double _sidePad = 14;
@@ -155,6 +160,19 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
     });
 
     _fetchNow(newText); // next suggestions for the full text
+  }
+
+  Future<void> _openTargetNotifications() async {
+    
+    final userId = context.read<AuthProvider>().user?.id;
+    if (userId == null || userId.isEmpty) return;
+    final notifications = await TargetMilestoneNotificationService.markAllRead(
+      userId,
+    );
+
+    if (!mounted) return;
+    setState(() => _targetNotifications = notifications);
+    await NotificationScreen.show(context, notifications);
   }
 
   Future<void> _loadEntities() async {
@@ -364,12 +382,22 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       await _showLocationNotCapturedAlert();
       return;
     }
+    if (_purposeController.text == "") {
+      AppWidgets.toast(context, "Please specify Purpose of Visit");
+      return;
+    }
+
     if (_noteController.text == "") {
       AppWidgets.toast(context, "Please Enter Note");
       return;
     }
     if (_photoFile == null) {
       AppWidgets.toast(context, "Please Take a selfie");
+      return;
+    }
+
+    if (_extraPhotos.isEmpty) {
+      AppWidgets.toast(context, "Please add Display photos");
       return;
     }
 
@@ -390,9 +418,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       ..._extraPhotos.map((f) => f.path),
     ];
 
-    debugPrint('===== CHECK-IN PAYLOAD =====');
-    payload.forEach((key, value) => debugPrint('$key: $value'));
-    debugPrint('images: ${imagePaths.length}');
     setState(() => _submitting = true);
     try {
       final result = await VisitService.checkIn(
@@ -576,7 +601,7 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       _entityName = null;
       _entityError = null;
       if (code == 'O') _loadingEntities = false;
-      _purposeController.text = 'Stock check & new display';
+      _purposeController.text; //= 'Stock check & new display';
       _noteController.clear();
       _noteAdded = false;
       _photoFile = null;
@@ -597,8 +622,28 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
         centerImage: const AssetImage('assets/images/logo.jpg'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
+            onPressed: _openTargetNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined),
+                if (_targetNotifications.any(
+                  (notification) => !notification.isRead,
+                ))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
           ),
         ],
       ),
@@ -1061,23 +1106,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
       children: [
         Row(
           children: [
-            // const Icon(
-            //   Icons.image_outlined,
-            //   size: 22,
-            //   color: AppColors.productChimney,
-            // ),
-            // _hGap(0.015),
-            // const Text(
-            //   'PHOTOS',
-            //   style: TextStyle(
-            //     fontFamily: AppFonts.display,
-            //     fontSize: 12,
-            //     fontWeight: FontWeight.w800,
-            //     letterSpacing: .4,
-            //     color: AppColors.productChimney,
-            //   ),
-            // ),
-            // const Spacer(),
             Material(
               color: AppColors.productChimney.withOpacity(
                 _extraPhotos.isEmpty ? .07 : .12,
