@@ -5,6 +5,7 @@ import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/admin_widgets.dart';
 import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_product_detail_screen.dart';
@@ -24,6 +25,16 @@ class AdminDashboard extends StatefulWidget {
 }
 
 class _AdminDashboardState extends State<AdminDashboard> {
+  static const _periodLabels = {
+    'today': 'Today',
+    'week': 'Last 7 days',
+    'month': 'This month',
+    'six_months': 'Last 6 months',
+    'year': 'Last 12 months',
+  };
+
+  String _selectedPeriod = 'year';
+
   AdminDashboardData? _dashboardData;
   bool _isLoading = true;
   String? _loadError;
@@ -39,22 +50,33 @@ class _AdminDashboardState extends State<AdminDashboard> {
   }
 
   Future<void> _loadDashboard() async {
+    final requestedPeriod = _selectedPeriod;
     setState(() {
       _isLoading = true;
       _loadError = null;
     });
     try {
-      final data = await AdminDashboardApi.fetchOverview();
-      if (!mounted) return;
+      final data = await AdminDashboardApi.fetchOverview(
+        period: requestedPeriod,
+      );
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
       setState(() => _dashboardData = data);
     } on ApiException catch (error) {
-      if (!mounted) return;
-      setState(() => _loadError = error.message);
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
+      setState(() {
+        _dashboardData = null;
+        _loadError = error.message;
+      });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadError = 'Unable to load dashboard data');
+      if (!mounted || requestedPeriod != _selectedPeriod) return;
+      setState(() {
+        _dashboardData = null;
+        _loadError = 'Unable to load dashboard data';
+      });
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && requestedPeriod == _selectedPeriod) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -73,46 +95,81 @@ class _AdminDashboardState extends State<AdminDashboard> {
     }
 
     return Scaffold(
-      backgroundColor: AppColors.ash,
-      appBar: AppTopBar.greeting(
-        greeting: getGreeting(),
-        subtitle: user.fullName,
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
+      appBar: AppTopBar.brand(
         centerImage: const AssetImage('assets/images/logo.jpg'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.notifications_outlined),
-            onPressed: () => AppWidgets.toast(context, 'No new notifications'),
-          ),
-        ],
       ),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _loadDashboard,
-          child: SingleChildScrollView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_isLoading) const LinearProgressIndicator(minHeight: 2),
-                _buildHeader(),
-                if (_loadError != null) _buildLoadError(),
-                const SizedBox(height: 14),
-                _buildStatCards(),
-                const SizedBox(height: 16),
-                _buildHighPerformers(),
-                const SizedBox(height: 16),
-                _buildSalesByCategory(),
-                const SizedBox(height: 16),
-                _buildSalesByRegion(),
-                const SizedBox(height: 16),
-                _buildTeamPerformance(),
-              ],
+      body: AppBackground(
+        child: SafeArea(
+          child: RefreshIndicator(
+            onRefresh: _loadDashboard,
+            child: SingleChildScrollView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                   Text(
+                    getGreeting(),
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.steel,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          user.fullName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      _buildDropDown(),
+                    ],
+                  ),
+                  SizedBox(height: 14,),
+
+                  if (_isLoading)...[
+                    LinearProgressIndicator(minHeight: 2),
+                    const SizedBox(height: 12),
+                  ] ,
+
+                  _buildHeader(),
+                  if (_loadError != null) _buildLoadError(),
+                  const SizedBox(height: 14),
+                  _buildStatCards(),
+                  const SizedBox(height: 16),
+                  _buildHighPerformers(),
+                  const SizedBox(height: 16),
+                  _buildSalesByCategory(),
+                  const SizedBox(height: 16),
+                  _buildSalesByRegion(),
+                  const SizedBox(height: 16),
+                  _buildTeamPerformance(),
+                ],
+              ),
             ),
           ),
         ),
       ),
-      bottomNavigationBar: const AdminBottomNav(),
+      bottomNavigationBar: Container(
+        color: Colors.white,
+        child: const AdminBottomNav(
+          initialIndex: 0,
+          backgroundColor: Colors.white,
+        ),
+      ),
     );
   }
 
@@ -146,55 +203,14 @@ class _AdminDashboardState extends State<AdminDashboard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Expanded(
-              child: Text(
-                'Sales Command Centre',
-                style: TextStyle(
-                  fontFamily: AppFonts.display,
-                  fontSize: 19,
-                  fontWeight: FontWeight.bold,
-                  color: AppColors.commandCentreText,
-                ),
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-              decoration: BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: AppColors.line),
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(
-                    Icons.calendar_today_outlined,
-                    size: 13,
-                    color: AppColors.commandCentreText,
-                  ),
-                  SizedBox(width: 6),
-                  Text(
-                    'This Month',
-                    style: TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.commandCentreText,
-                    ),
-                  ),
-                  SizedBox(width: 4),
-                  Icon(
-                    Icons.keyboard_arrow_down,
-                    size: 15,
-                    color: AppColors.commandCentreText,
-                  ),
-                ],
-              ),
-            ),
-          ],
+        Text(
+          'Sales Command Centre',
+          style: TextStyle(
+            fontFamily: AppFonts.display,
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+            color: AppColors.commandCentreText,
+          ),
         ),
         const SizedBox(height: 8),
         Container(
@@ -231,12 +247,82 @@ class _AdminDashboardState extends State<AdminDashboard> {
     );
   }
 
+  // ---------------- Drop down -----------------
+  Widget _buildDropDown() {
+    return PopupMenuButton<String>(
+      padding: EdgeInsets.zero,
+      color: Colors.white,
+      surfaceTintColor: Colors.transparent,
+      onSelected: (value) {
+        if (value == _selectedPeriod) return;
+        setState(() {
+          _selectedPeriod = value;
+          _dashboardData = null;
+        });
+        _loadDashboard();
+      },
+      itemBuilder: (context) {
+        return _periodLabels.entries.map((entry) {
+          return PopupMenuItem<String>(
+            value: entry.key,
+            child: Text(
+              entry.value,
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 12,
+                fontWeight: entry.key == _selectedPeriod
+                    ? FontWeight.w700
+                    : FontWeight.w500,
+              ),
+            ),
+          );
+        }).toList();
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.white,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.calendar_today_outlined,
+              size: 13,
+              color: AppColors.commandCentreText,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              _periodLabels[_selectedPeriod] ?? 'Select Period',
+              style: const TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w600,
+                color: AppColors.commandCentreText,
+              ),
+            ),
+            const SizedBox(width: 4),
+            const Icon(
+              Icons.keyboard_arrow_down,
+              size: 15,
+              color: AppColors.commandCentreText,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   // ---------------- Stat cards ----------------
 
   Widget _buildStatCards() {
     final data = _dashboardData;
+    final scale = MediaQuery.textScalerOf(context).scale(1.0).clamp(1.0, 1.5);
+    final cardHeight = 110 + (scale - 1.0) * 80 + 18;
     return SizedBox(
-      height: 130,
+      height: cardHeight,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -279,20 +365,20 @@ class _AdminDashboardState extends State<AdminDashboard> {
             footer: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
-                  child: LinearProgressIndicator(
-                    value: ((data?.targetAchievedPercentage ?? 0) / 100).clamp(
-                      0.0,
-                      1.0,
-                    ),
-                    minHeight: 4,
-                    backgroundColor: AppColors.ash,
-                    valueColor: const AlwaysStoppedAnimation(
-                      AppColors.achievementIconBg,
-                    ),
-                  ),
-                ),
+                // ClipRRect(
+                //   borderRadius: BorderRadius.circular(4),
+                //   child: LinearProgressIndicator(
+                //     value: ((data?.targetAchievedPercentage ?? 0) / 100).clamp(
+                //       0.0,
+                //       1.0,
+                //     ),
+                //     minHeight: 4,
+                //     backgroundColor: AppColors.ash,
+                //     valueColor: const AlwaysStoppedAnimation(
+                //       AppColors.achievementIconBg,
+                //     ),
+                //   ),
+                // ),
                 const SizedBox(height: 3),
                 Text(
                   'of ${_currency(data?.targetValue ?? 0)} Target',
@@ -314,7 +400,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                   size: 11,
                   color: AppColors.aiBlue,
                 ),
-                const SizedBox(height: 3),
+                // const SizedBox(height: 3),
+                const SizedBox(width: 3),
                 Text(
                   '${(data?.forecastTomorrowConfidencePercentage ?? 0).toStringAsFixed(0)}% Confidence',
                   style: const TextStyle(

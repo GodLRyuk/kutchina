@@ -104,15 +104,20 @@ Future<bool> showCheckInRequiredDialogall(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  alignment: Alignment.center,
-                  decoration: BoxDecoration(
-                    color: AppColors.greenLight,
-                    borderRadius: BorderRadius.circular(14),
+                Center(
+                  child: FractionallySizedBox(
+                     widthFactor: 0.3,
+                    child: Container(
+                    
+                      height: 50,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.greenLight,
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(icon, color: AppColors.green, size: 24),
+                    ),
                   ),
-                  child: Icon(icon, color: AppColors.green, size: 24),
                 ),
                 const SizedBox(height: 14),
                 Text(
@@ -136,6 +141,7 @@ Future<bool> showCheckInRequiredDialogall(
                 const SizedBox(height: 18),
                 AppWidgets.buildButton(
                   buttonLabel,
+                  variant: AppButtonVariant.gradient,
                   icon: icon,
                   onTap: () {
                     confirmed = true;

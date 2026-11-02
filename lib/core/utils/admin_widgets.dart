@@ -33,7 +33,7 @@ class AdminCustomWidgets {
             ),
             child: Icon(icon, size: 16, color: iconColor),
           ),
-          const SizedBox(height: 8),
+          // const SizedBox(height: 8),
           Text(
             label,
             maxLines: 2,
@@ -43,7 +43,6 @@ class AdminCustomWidgets {
               height: 1.2,
             ),
           ),
-          const Spacer(),
           Text(
             value,
             style: const TextStyle(
@@ -53,7 +52,6 @@ class AdminCustomWidgets {
               color: AppColors.commandCentreText,
             ),
           ),
-          const SizedBox(height: 4),
           footer,
         ],
       ),

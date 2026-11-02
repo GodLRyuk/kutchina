@@ -3,7 +3,8 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../constants/app_theme.dart';
 
-enum AppButtonVariant { primary, outline, dark }
+//enum AppButtonVariant { primary, outline, dark }
+enum AppButtonVariant { primary, outline, dark, gradient }
 
 class AppWidgets {
   // ---------------- Badge ----------------
@@ -62,6 +63,7 @@ class AppWidgets {
     Color? borderColor,
     Color? bgColor,
     EdgeInsetsGeometry? margin,
+  
   }) {
     return Container(
       width: double.infinity,
@@ -70,7 +72,8 @@ class AppWidgets {
       decoration: BoxDecoration(
         color: bgColor ?? AppColors.white,
         borderRadius: BorderRadius.circular(AppRadius.md),
-        border: Border.all(color: borderColor ?? AppColors.line),
+        border: Border.all(color: borderColor ?? AppColors.line, width: 1.5),
+        
       ),
       child: child,
     );
@@ -126,6 +129,7 @@ class AppWidgets {
     Color bg;
     Color fg;
     BoxBorder? border;
+    Gradient? gradient; // <-- (a) new variable
     switch (variant) {
       case AppButtonVariant.primary:
         bg = AppColors.commandCentreText;
@@ -139,6 +143,11 @@ class AppWidgets {
       case AppButtonVariant.dark:
         bg = AppColors.charcoal;
         fg = Colors.white;
+        break;
+      case AppButtonVariant.gradient: // <-- (b) new case
+        bg = Colors.transparent;
+        fg = Colors.white;
+        gradient = AppColors.buttonGradient;
         break;
     }
     final child = Row(
@@ -169,18 +178,24 @@ class AppWidgets {
         ),
       ],
     );
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        width: fullWidth ? double.infinity : null,
-        padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
-        decoration: BoxDecoration(
-          color: bg,
-          border: border,
+    return Container(
+      width: fullWidth ? double.infinity : null,
+      decoration: BoxDecoration(
+        color: gradient == null ? bg : null,
+        gradient: gradient,
+        border: border,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
           borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 13, horizontal: 16),
+            child: child,
+          ),
         ),
-        child: child,
       ),
     );
   }
@@ -192,6 +207,7 @@ class AppWidgets {
     String? hint,
     bool obscure = false,
     TextInputType? keyboardType,
+    ValueChanged<String>? onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -201,7 +217,7 @@ class AppWidgets {
           style: const TextStyle(
             fontFamily: AppFonts.display,
             fontSize: 10.5,
-            color: AppColors.steel,
+            color: AppColors.dayEndIconBg,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.4,
           ),
@@ -216,6 +232,7 @@ class AppWidgets {
           ),
           child: TextField(
             controller: controller,
+            onChanged: onChanged,
             obscureText: obscure,
             keyboardType: keyboardType,
             style: const TextStyle(color: AppColors.ink, fontSize: 13),
@@ -250,7 +267,7 @@ class AppWidgets {
           style: const TextStyle(
             fontFamily: AppFonts.display,
             fontSize: 10.5,
-            color: AppColors.steel,
+            color: AppColors.dayEndIconBg,
             fontWeight: FontWeight.bold,
             letterSpacing: 0.4,
           ),
@@ -263,7 +280,7 @@ class AppWidgets {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
             decoration: BoxDecoration(
               color: AppColors.white,
-              border: Border.all(color: AppColors.line, width: 1.3),
+              border: Border.all(color: AppColors.aiBlue, width: 1.3),
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(

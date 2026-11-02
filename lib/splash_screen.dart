@@ -65,24 +65,24 @@ class _SplashScreenState extends State<SplashScreen> {
                 ),
               ],
             ),
-            Positioned(
-              bottom: 46,
-              child: Row(
-                children: List.generate(3, (i) {
-                  return Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 3),
-                    width: 7,
-                    height: 7,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: i == 0
-                          ? Colors.white
-                          : Colors.white.withValues(alpha: 0.4),
-                    ),
-                  );
-                }),
-              ),
-            ),
+            // Positioned(
+            //   bottom: 46,
+            //   child: Row(
+            //     children: List.generate(3, (i) {
+            //       return Container(
+            //         margin: const EdgeInsets.symmetric(horizontal: 3),
+            //         width: 7,
+            //         height: 7,
+            //         decoration: BoxDecoration(
+            //           shape: BoxShape.circle,
+            //           color: i == 0
+            //               ? Colors.white
+            //               : Colors.white.withValues(alpha: 0.4),
+            //         ),
+            //       );
+            //     }),
+            //   ),
+            // ),
           ],
         ),
       ),

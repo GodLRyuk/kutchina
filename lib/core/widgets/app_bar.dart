@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 
 class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
@@ -9,6 +10,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final VoidCallback? onBack;
   final ImageProvider? centerImage;
+  final SystemUiOverlayStyle? systemOverlayStyle;
 
   const AppTopBar({
     super.key,
@@ -19,6 +21,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : assert(
          title != null || subtitle != null,
          'Provide either title or (greeting + subtitle)',
@@ -31,6 +34,7 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : greeting = null,
        subtitle = null;
 
@@ -42,27 +46,53 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.onBack,
     this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle,
   }) : title = null;
+
+  const AppTopBar.brand({
+    super.key,
+    this.actions,
+    this.showBackButton = false, // add here
+    this.centerImage = const AssetImage('assets/images/logo.jpg'),
+    this.systemOverlayStyle = const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemStatusBarContrastEnforced: false,
+    ),
+  }) : title = null,
+       greeting = null,
+       subtitle = null,
+       //  showBackButton = false,
+       onBack = null;
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
       automaticallyImplyLeading: false,
+      backgroundColor: Colors.transparent,
+      systemOverlayStyle: systemOverlayStyle,
+      leadingWidth: showBackButton ? 36 : null, // added
+      titleSpacing: showBackButton ? 0 : null, // added
       leading: showBackButton
           ? IconButton(
-              icon: const Icon(Icons.arrow_back_ios, size: 16),
+              padding: EdgeInsets.zero, // added
+              constraints: const BoxConstraints(), // added
+              icon: const Icon(Icons.arrow_back_ios, size: 18),
               onPressed: onBack ?? () => Navigator.pop(context),
             )
           : null,
       centerTitle: title != null,
-      flexibleSpace: title == null && centerImage != null
-          ? Padding(
-              padding: const EdgeInsets.only(top: 25),
-              child: Center(
-                child: SizedBox(
-                  width: 100,
-                  height: 22,
-                  child: Image(image: centerImage!, fit: BoxFit.contain),
+      flexibleSpace: greeting != null && centerImage != null
+          ? SafeArea(
+              bottom: false,
+              child: SizedBox(
+                height: kToolbarHeight,
+                child: Center(
+                  child: SizedBox(
+                    width: 100,
+                    height: 22,
+                    child: Image(image: centerImage!, fit: BoxFit.contain),
+                  ),
                 ),
               ),
             )
@@ -91,7 +121,8 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                 ),
               ],
             )
-          : Row(
+          : greeting != null
+          ? Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Column(
@@ -117,7 +148,10 @@ class AppTopBar extends StatelessWidget implements PreferredSizeWidget {
                   ],
                 ),
               ],
-            ),
+            )
+          : centerImage != null
+          ? Image(image: centerImage!, height: 32, fit: BoxFit.contain)
+          : null,
       actions: actions,
     );
   }

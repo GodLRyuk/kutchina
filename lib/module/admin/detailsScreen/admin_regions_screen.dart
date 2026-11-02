@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 
 // ─────────────────────────── helpers ───────────────────────────
@@ -181,15 +182,47 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.ash,
-      appBar: AppTopBar.simple(title: _title),
-      body: SafeArea(
-        child: RefreshIndicator(
-          onRefresh: _load,
-          child: ListView(
-            physics: const AlwaysScrollableScrollPhysics(),
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            children: [_hero(), const SizedBox(height: 16), ..._content()],
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+
+      // appBar: AppTopBar.simple(title: _title),
+      appBar: const AppTopBar.brand(
+        showBackButton: true,
+        centerImage: AssetImage('assets/images/logo.jpg'),
+      ),
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Padding(
+               padding: EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  _title,
+                  style: TextStyle(
+                    fontFamily: AppFonts.display,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.commandCentreText,
+                  ),
+                ),
+              ),
+              Expanded(
+                child: RefreshIndicator(
+                  onRefresh: _load,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                    children: [
+                      _hero(),
+                      const SizedBox(height: 16),
+                      ..._content(),
+                    ],
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -512,7 +545,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
 
     final extras = [
       if (o.filterType.isNotEmpty) 'Filter: ${o.filterType}',
-      if (o.warranty.isNotEmpty) 'Warranty: ${o.warranty}',
+      // if (o.warranty.isNotEmpty) 'Warranty: ${o.warranty}',
     ].join('  •  ');
 
     return Container(
@@ -529,7 +562,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
             Container(width: 4, color: typeColor),
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(14),
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 20),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -606,9 +639,9 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
                             color: AppColors.regionOrange,
                             icon: Icons.check_circle_outline,
                           ),
-                        if (o.createdBy.isNotEmpty)
+                        if (o.createdByName.isNotEmpty)
                           _chip(
-                            'By user #${o.createdBy}',
+                            'By user ${o.createdByName}',
                             color: AppColors.regionBlue,
                             icon: Icons.person_outline,
                           ),

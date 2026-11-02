@@ -6,6 +6,8 @@ class VisitEntry {
   final String visitType;
   final String? note;
   final DateTime? createdAt;
+  final bool isPendingSync;
+  final bool syncFailed;
 
   VisitEntry({
     required this.id,
@@ -15,6 +17,8 @@ class VisitEntry {
     required this.visitType,
     this.note,
     this.createdAt,
+    this.isPendingSync = false,
+    this.syncFailed = false,
   });
 
   factory VisitEntry.fromJson(Map<String, dynamic> json) {
@@ -28,16 +32,23 @@ class VisitEntry {
       createdAt: json['created_at'] != null
           ? DateTime.tryParse(json['created_at'].toString())
           : null,
+      isPendingSync: false,
+      syncFailed: false,
     );
   }
 
-  /// e.g. "10:30 AM" for the visit-card badge
   String get timeLabel {
+    if (isPendingSync) {
+      return syncFailed ? 'Sync failed' : 'Pending sync';
+    }
+
     if (createdAt == null) return '';
+
     final hour = createdAt!.hour;
     final minute = createdAt!.minute.toString().padLeft(2, '0');
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour % 12 == 0 ? 12 : hour % 12;
+
     return '$displayHour:$minute $period';
   }
 }

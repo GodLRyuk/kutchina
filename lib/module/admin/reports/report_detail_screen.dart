@@ -3,11 +3,13 @@ import 'dart:math' as math;
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/report_api.dart';
+import 'package:kutchina/core/widgets/app_background.dart';
+import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
 
-const bool _kShowPlaceholders = true;
+const bool _kShowPlaceholders = false;
 
 class _C {
   static const bg = Color(0xFFF3F1EC);
@@ -27,6 +29,12 @@ class _C {
   static const warnSoft = Color(0xFFFBF0DA);
   static const info = Color(0xFF6D4FD6);
   static const infoSoft = Color(0xFFEFEAFC);
+
+  // KPI card colors
+  static const kpiBlue = Color(0xFF2563EB);
+  static const kpiGreen = Color(0xFF10A37F);
+  static const kpiOrange = Color(0xFFF97316);
+  static const kpiPurple = Color(0xFF9333EA);
 
   static const avatarPalette = [
     [primarySoft, primary],
@@ -62,8 +70,10 @@ class _Kpi {
   final String value;
   final String sub;
   final _Tone subTone;
+  final IconData icon;
   const _Kpi({
     required this.color,
+    required this.icon,
     required this.label,
     required this.value,
     this.sub = '',
@@ -127,14 +137,14 @@ class _TargetData {
 class _View {
   final String copy;
   final List<String> badges;
-  final List<String> filters;
+  // final List<String> filters;
   final List<_Kpi> kpis;
   final List<Widget> sections;
   final List<_Action> actions;
   const _View({
     required this.copy,
     required this.badges,
-    required this.filters,
+    // required this.filters,
     required this.kpis,
     required this.sections,
     required this.actions,
@@ -385,121 +395,118 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ? view.kpis
         : [
             for (final k in view.kpis)
-              _Kpi(color: k.color, label: k.label, value: pending),
+              _Kpi(
+                color: k.color,
+                icon: k.icon,
+                label: k.label,
+                value: pending,
+              ),
           ];
     return Scaffold(
-      backgroundColor: _C.bg,
-      body: CustomScrollView(
-        slivers: [
-          SliverAppBar(
-            pinned: true,
-            elevation: 0,
-            scrolledUnderElevation: 0,
-            backgroundColor: _C.bg,
-            surfaceTintColor: _C.bg,
-            centerTitle: true,
-            leadingWidth: 54,
-            leading: Padding(
-              padding: const EdgeInsets.only(left: 12),
-              child: Center(
-                child: _IconBtn(
-                  icon: Icons.arrow_back_ios_new_rounded,
-                  onTap: () => Navigator.pop(context),
-                ),
+      backgroundColor: Colors.transparent,
+      extendBody: false,
+      extendBodyBehindAppBar: true,
+      appBar: AppTopBar.brand(
+        showBackButton: true,
+        centerImage: const AssetImage('assets/images/logo.jpg'),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(
+              child: _IconBtn(
+                icon: Icons.ios_share_outlined,
+                onTap: () => AppWidgets.toast(context, 'Export coming soon'),
               ),
             ),
-            title: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  'KUTCHINA',
-                  style: TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: _C.navy,
-                  ),
-                ),
-                Text(
-                  'AI REPORT',
-                  style: TextStyle(
-                    fontSize: 9,
-                    fontWeight: FontWeight.w700,
-                    color: _C.inkFaint,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-              ],
-            ),
-            actions: [
-              Padding(
-                padding: const EdgeInsets.only(right: 12),
-                child: Center(
-                  child: _IconBtn(
-                    icon: Icons.ios_share_outlined,
-                    onTap: () =>
-                        AppWidgets.toast(context, 'Export coming soon'),
-                  ),
+          ),
+        ],
+
+      ),
+      // appBar: AppTopBar.simple(
+      //   title: 'AI Report',
+      //   actions: [
+      //     Padding(
+      //       padding: const EdgeInsets.only(right: 12),
+      //       child: Center(
+      //         child: _IconBtn(
+      //           icon: Icons.ios_share_outlined,
+      //           onTap: () => AppWidgets.toast(context, 'Export coming soon'),
+      //         ),
+      //       ),
+      //     ),
+      //   ],
+        
+      // ),
+      body: AppBackground(
+        child: SafeArea(
+          child: CustomScrollView(
+            slivers: [
+              SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 60),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    //_SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
+                    // _Hero(
+                    //   //icon: report.icon,
+                    //   copy: (!hasData && _loading)
+                    //       ? 'Generating report…'
+                    //       : view.copy,
+                    //   badges: hasData ? view.badges : const [],
+                    // ),
+                    _Hero(
+                      title: report.title,
+                      period: _displayPeriodLabel,
+                      copy: (!hasData && _loading)
+                          ? 'Generating report…'
+                          : view.copy,
+                      badges: hasData ? view.badges : const [],
+                    ),
+                    const SizedBox(height: 14),
+                    _PeriodSelector(
+                      value: _period,
+                      onChanged: _loading ? (_) {} : _onPeriodChanged,
+                    ),
+                    if (_period == 'today' || _period == 'week') ...[
+                      const SizedBox(height: 8),
+                      const Text(
+                        "Target-based figures aren't available for this period.",
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          color: _C.inkFaint,
+                          fontStyle: FontStyle.italic,
+                        ),
+                      ),
+                    ],
+                    if (report.supportsHorizon) ...[
+                      const SizedBox(height: 10),
+                      _HorizonSelector(
+                        value: _horizon,
+                        onChanged: _loading ? (_) {} : _onHorizonChanged,
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    // _FilterChips(labels: view.filters),
+                    // const SizedBox(height: 10),
+                    if (_error != null)
+                      _ReportError(message: _error!, onRetry: _loadReport),
+                    if (_loading)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: LinearProgressIndicator(
+                          minHeight: 2,
+                          color: _C.navy,
+                          backgroundColor: _C.line,
+                        ),
+                      ),
+                    _KpiGrid(kpis: kpis),
+                    ...view.sections,
+                    ..._actionWidgets(view.actions),
+                  ]),
                 ),
               ),
             ],
           ),
-          SliverPadding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 60),
-            sliver: SliverList(
-              delegate: SliverChildListDelegate([
-                _SectionLabel(report.title, '· $_displayPeriodLabel', top: 4),
-                _Hero(
-                  icon: report.icon,
-                  copy: (!hasData && _loading)
-                      ? 'Generating report…'
-                      : view.copy,
-                  badges: hasData ? view.badges : const [],
-                ),
-                const SizedBox(height: 14),
-                _PeriodSelector(
-                  value: _period,
-                  onChanged: _loading ? (_) {} : _onPeriodChanged,
-                ),
-                if (_period == 'today' || _period == 'week') ...[
-                  const SizedBox(height: 8),
-                  const Text(
-                    "Target-based figures aren't available for this period.",
-                    style: TextStyle(
-                      fontSize: 10.5,
-                      color: _C.inkFaint,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ],
-                if (report.supportsHorizon) ...[
-                  const SizedBox(height: 10),
-                  _HorizonSelector(
-                    value: _horizon,
-                    onChanged: _loading ? (_) {} : _onHorizonChanged,
-                  ),
-                ],
-                const SizedBox(height: 12),
-                _FilterChips(labels: view.filters),
-                const SizedBox(height: 10),
-                if (_error != null)
-                  _ReportError(message: _error!, onRetry: _loadReport),
-                if (_loading)
-                  const Padding(
-                    padding: EdgeInsets.only(bottom: 12),
-                    child: LinearProgressIndicator(
-                      minHeight: 2,
-                      color: _C.navy,
-                      backgroundColor: _C.line,
-                    ),
-                  ),
-                _KpiGrid(kpis: kpis),
-                ...view.sections,
-                ..._actionWidgets(view.actions),
-              ]),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -518,8 +525,34 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         : (_showPh ? [placeholder] : <_TargetData>[]);
     if (src.isEmpty) return const [];
     return [
-      _SectionLabel(title, span),
-      for (int i = 0; i < src.length; i++) _TargetCard(data: src[i], index: i),
+      Container(
+        margin: const EdgeInsets.only(top: 20),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+            color: _C.primary.withValues(alpha: 0.25),
+            width: 1.2,
+          ),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              _C.primarySoft.withValues(alpha: 0.7),
+              Colors.white.withValues(alpha: 0.5),
+              _C.infoSoft.withValues(alpha: 0.7),
+            ],
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _SectionLabel(title, span, top: 0),
+            for (int i = 0; i < src.length; i++)
+              _TargetCard(data: src[i], index: i),
+          ],
+        ),
+      ),
     ];
   }
 
@@ -581,19 +614,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final kpis = [
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiBlue,
         label: 'CURRENT PERIOD SALES',
         value: first == null ? '₹0' : _currency(first.currentPeriodSales),
         sub: 'so far this period',
+        icon: Icons.analytics_rounded,
       ),
       _Kpi(
-        color: _C.info,
+        color: _C.kpiGreen,
         label: 'TARGET',
         value: first == null ? '₹0' : _currency(first.targetValue),
         sub: 'set for the period',
+        icon: Icons.track_changes_rounded,
       ),
       _Kpi(
-        color: _C.good,
+        color: _C.kpiOrange,
         label: 'PROJECTED SALES',
         value: first == null ? '₹0' : _currency(first.projectedSales),
         sub: first == null
@@ -602,14 +637,16 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         subTone: first == null
             ? _Tone.neutral
             : (first.projectedGap < 0 ? _Tone.risk : _Tone.good),
+        icon: Icons.analytics_rounded,
       ),
       _Kpi(
-        color: _C.warn,
+        color: _C.kpiPurple,
         label: 'CONFIDENCE',
         value: first == null
             ? '00%'
             : '${first.confidencePercentage.toStringAsFixed(0)}%',
         sub: 'model confidence',
+        icon: Icons.shield_outlined,
       ),
     ];
 
@@ -634,12 +671,13 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             '${gapShort ? 'Shortfall' : 'Surplus'} **${_currency(it.projectedGap.abs())}**',
           ];
           return _TargetData(
-            title: title.isEmpty ? 'Test' : title,
+            title: title.isEmpty ? '--' : title,
             sub:
                 '${it.confidencePercentage.toStringAsFixed(0)}% confidence · ${it.daysToTarget} days to target',
             avatarText: _initials(title),
             badgeText: badge.$1,
             badgeTone: badge.$2,
+            growth: it.achievementProbabilityPercentage, // added to show growth
             stats: [
               _Stat('THIS PERIOD SALES', _currency(it.currentPeriodSales)),
               _Stat('TARGET', _currency(it.targetValue)),
@@ -680,7 +718,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '🎯 ${first == null ? '00' : first.confidencePercentage.toStringAsFixed(0)}% confidence',
         '📅 ${_horizon == 'current' ? 'Current horizon' : 'Next 3 months'}',
       ],
-      filters: ['Region: All', 'Product: All', 'Team: All'],
+      //filters: ['Region: All', 'Product: All', 'Team: All'],
       kpis: kpis,
       sections: [
         ..._targetSection(
@@ -718,32 +756,36 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final kpis = [
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiBlue,
         label: 'TOP SKU (SALES VALUE)',
         value: sum == null ? '₹0' : _currency(sum.topSku.salesValue),
-        sub: topName.isEmpty ? 'Test' : topName,
+        sub: topName.isEmpty ? '--' : topName,
+        icon: Icons.emoji_events_outlined,
       ),
       _Kpi(
-        color: _C.risk,
+        color: _C.kpiGreen,
         label: 'MISSED TARGET',
         value: missed == null ? '00' : '${missed.round()} SKUs',
         sub: 'of ${loaded ? sum!.productsTracked : '00'} tracked',
         subTone: (missed ?? 0) > 0 ? _Tone.risk : _Tone.neutral,
+        icon: Icons.error_outline,
       ),
       _Kpi(
-        color: _C.good,
+        color: _C.kpiOrange,
         label: 'AVG ACHIEVEMENT',
         value: avgAch == null ? '00%' : '${avgAch.round()}%',
         sub: 'across tracked SKUs',
         subTone: avgAch == null
             ? _Tone.neutral
             : (avgAch >= 100 ? _Tone.good : _Tone.warn),
+        icon: Icons.speed_outlined,
       ),
       _Kpi(
-        color: _C.info,
+        color: _C.kpiPurple,
         label: 'PROJECTED REVENUE (NEXT MO.)',
         value: sum == null ? '₹0' : _currency(sum.projectedRevenueNextMonth),
         sub: 'sum of next-mo. projections',
+        icon: Icons.insights_outlined,
       ),
     ];
 
@@ -831,7 +873,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '📦 ${loaded ? sum!.productsTracked : '00'} SKUs tracked',
         '🎯 ${recovery == null ? '00' : recovery.round()} need recovery targets',
       ],
-      filters: ['Category: All', 'Region: All', 'Dealer Segment: All'],
+      //filters: ['Category: All', 'Region: All', 'Dealer Segment: All'],
       kpis: kpis,
       sections: _targetSection(
         'Monthly projection & next month\'s target',
@@ -888,33 +930,37 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final kpis = [
       _Kpi(
-        color: _C.good,
+        color: _C.kpiBlue,
         label: 'BEST PERFORMING ZONE',
-        value: bestName.isEmpty ? 'Test' : bestName,
+        value: bestName.isEmpty ? '--' : bestName,
         sub: bestAch == null
             ? 'no achievement data'
             : '${bestAch.round()}% of target',
         subTone: bestAch == null
             ? _Tone.neutral
             : (bestAch >= 100 ? _Tone.good : _Tone.warn),
+        icon: Icons.place_outlined,
       ),
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiGreen,
         label: 'ZONES TRACKED',
         value: sum == null ? '00' : '${sum.zonesTracked}',
         sub: 'this period',
+        icon: Icons.map_outlined,
       ),
       _Kpi(
-        color: _C.risk,
+        color: _C.kpiOrange,
         label: 'LARGEST OPPORTUNITY GAP',
         value: gapNum == null ? '₹0' : _currency(gapNum),
         sub: gapNum == null ? 'potential not tracked' : 'untapped value',
+        icon: Icons.pie_chart_outline,
       ),
       _Kpi(
-        color: _C.warn,
+        color: _C.kpiPurple,
         label: 'ACTIVE DEALERS',
         value: activeNum == null ? '00' : '${activeNum.round()}',
         sub: 'across tracked zones',
+        icon: Icons.storefront_outlined,
       ),
     ];
 
@@ -1014,7 +1060,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '🗺 ${sum == null ? '00' : sum.zonesTracked} zones tracked',
         '📈 ${bestName.isEmpty ? 'Best zone: --' : 'Best zone: $bestName'}',
       ],
-      filters: ['Territory: All', 'Team: All', _period3()],
+      // filters: ['Territory: All', 'Team: All', _period3()],
       kpis: kpis,
       sections: [
         if (heatSrc.isNotEmpty) _HeatCard(rows: heatSrc),
@@ -1142,30 +1188,34 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final kpis = [
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiBlue,
         label: 'DEALERS TRACKED',
         value: sum == null ? '00' : '${sum.dealersTracked}',
         sub: 'this period',
+        icon: Icons.store_outlined,
       ),
       _Kpi(
-        color: _C.risk,
+        color: _C.kpiGreen,
         label: 'AT-RISK DEALERS',
         value: atRisk == null ? '00' : '$atRisk',
         sub: 'churn risk',
         subTone: (atRisk ?? 0) > 0 ? _Tone.risk : _Tone.neutral,
+        icon: Icons.warning_amber_outlined,
       ),
       _Kpi(
-        color: _C.good,
+        color: _C.kpiOrange,
         label: 'HIGH-GROWTH POTENTIAL',
         value: high == null ? '00' : '$high',
         sub: high == null ? 'not tracked yet' : 'growth candidates',
         subTone: (high ?? 0) > 0 ? _Tone.good : _Tone.neutral,
+        icon: Icons.trending_up,
       ),
       _Kpi(
-        color: _C.warn,
+        color: _C.kpiPurple,
         label: 'AVG ORDER VALUE',
         value: aov == null ? '₹0' : _currency(aov),
         sub: 'per order',
+        icon: Icons.receipt_long_outlined,
       ),
     ];
 
@@ -1181,6 +1231,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         () {
           final s = recency(it.daysSinceLastVisit);
           final d = it.daysSinceLastVisit;
+          final ach = it.achievementPercentage.number; // for growth show
           final f = _footFromBackend(
             it.nextMonthTarget.hasValue ? it.nextMonthTarget : it.growthTarget,
             _plan(sales: 0, target: 0, projNext: 0),
@@ -1201,6 +1252,8 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 '${it.dealerCategory}${city == null ? '' : ' · $city'} · ${d == null ? 'never visited' : 'last visit ${d}d ago'}',
             avatarText: _initials(it.dealerName),
             trend: [for (final t in it.trend) t.value],
+            // growth: ach,
+            growth: it.changePercentage,
             badgeText: s.$1,
             badgeTone: s.$2,
             stats: [
@@ -1230,7 +1283,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '🏪 ${sum == null ? '00' : sum.dealersTracked} dealers tracked',
         '⚠ ${atRisk ?? '00'} at risk',
       ],
-      filters: ['Segment: All', 'Region: All', 'Salesperson: All'],
+      //filters: ['Segment: All', 'Region: All', 'Salesperson: All'],
       kpis: kpis,
       sections: _targetSection(
         'Monthly projection & next month\'s target',
@@ -1256,19 +1309,21 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 
     final kpis = [
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiBlue,
         label: 'REPS REPORTING',
         value: loaded ? '${r.repsTracked}' : '00',
         sub: loaded ? '${r.visitsCompleted} visits completed' : 'this period',
+        icon: Icons.groups_outlined,
       ),
       _Kpi(
-        color: _C.good,
+        color: _C.kpiGreen,
         label: 'TOTAL ACHIEVED SALES',
         value: loaded ? _currency(r.totalAchievedSales) : '₹0',
         sub: 'all reps combined',
+        icon: Icons.payments_outlined,
       ),
       _Kpi(
-        color: _C.info,
+        color: _C.kpiOrange,
         label: 'TEAM ACHIEVEMENT',
         value: teamAch == null ? '00%' : '${teamAch.toStringAsFixed(0)}%',
         sub: r?.averageAiScore == null
@@ -1277,13 +1332,15 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         subTone: teamAch == null
             ? _Tone.neutral
             : (teamAch >= 80 ? _Tone.good : _Tone.warn),
+        icon: Icons.military_tech_outlined,
       ),
       _Kpi(
-        color: _C.risk,
+        color: _C.kpiPurple,
         label: 'FLAGGED FOR COACHING',
         value: loaded ? '$flagged reps' : '00',
         sub: 'need review',
         subTone: flagged > 0 ? _Tone.risk : _Tone.neutral,
+        icon: Icons.school_outlined,
       ),
     ];
 
@@ -1349,7 +1406,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '👥 ${loaded ? r.repsTracked : '00'} reps tracked',
         '⚠ ${loaded ? flagged : '00'} flagged for coaching',
       ],
-      filters: ['Region: All', 'Manager: All', _period3()],
+      //filters: ['Region: All', 'Manager: All', _period3()],
       kpis: kpis,
       sections: _targetSection(
         'Monthly projection & next month\'s target',
@@ -1399,7 +1456,11 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     }
 
     final funnel = [
-      _FunnelStep('Submitted', pctAt(0), _C.primary),
+      _FunnelStep(
+        'Submitted',
+        pctAt(0),
+        const Color.fromARGB(255, 72, 84, 119),
+      ),
       _FunnelStep('Confirmed', pctAt(1), const Color(0xFF3A6BEB)),
       _FunnelStep('Dispatched', pctAt(2), _C.info),
       _FunnelStep('Delivered', pctAt(3), _C.good),
@@ -1424,6 +1485,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           final o = atRisk[i];
           final cancelled = _stage(o.orderStatus) == -1;
           final rl = o.riskLevel.toLowerCase();
+
           return _RiskRow(
             avatarIdx: i + 2,
             avatarText: o.orderNumber.length >= 2
@@ -1431,7 +1493,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                 : o.orderNumber,
             title: o.orderNumber,
             sub: o.products,
-            insight: o.insight,
+            //insight: o.insight,
             value: _currency(o.revenueAtRiskValue),
             badgeText: cancelled
                 ? 'CANCELLED'
@@ -1440,80 +1502,107 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
           );
         }(),
     ];
-    final riskSrc = riskRows.isNotEmpty
-        ? riskRows
-        : (_showPh
-              ? const [
-                  _RiskRow(
-                    avatarIdx: 2,
-                    avatarText: '00',
-                    title: 'Test',
-                    sub: 'Test — no at-risk orders',
-                    insight: '',
-                    value: '₹0',
-                    badgeText: 'NO DATA',
-                    badgeTone: _Tone.neutral,
-                  ),
-                ]
-              : <_RiskRow>[]);
+    // final riskSrc = riskRows.isNotEmpty
+    //     ? riskRows
+    //     : (_showPh
+    //           ? const [
+    //               _RiskRow(
+    //                 avatarIdx: 2,
+    //                 avatarText: '00',
+    //                 title: 'Test',
+    //                 sub: 'Test — no at-risk orders',
+    //                 value: '₹0',
+    //                 badgeText: 'NO DATA',
+    //                 badgeTone: _Tone.neutral,
+    //               ),
+    //             ]
+    //           : <_RiskRow>[]);
+
+    final riskSrc = riskRows;
 
     final kpis = [
       _Kpi(
-        color: _C.primary,
+        color: _C.kpiBlue,
         label: 'ORDERS',
         value: loaded ? '$total' : '00',
         sub: 'this period',
+        icon: Icons.shopping_bag_outlined,
       ),
       _Kpi(
-        color: _C.good,
+        color: _C.kpiGreen,
         label: 'TOTAL ORDER VALUE',
         value: loaded ? _currency(grossValue) : '₹0',
         sub: 'gross value',
+        icon: Icons.account_balance_wallet_outlined,
       ),
       _Kpi(
-        color: _C.warn,
+        color: _C.kpiOrange,
         label: 'AT-RISK ORDERS',
         value: loaded ? '$atRiskCount' : '00',
         sub: 'delayed or cancelled',
         subTone: atRiskCount > 0 ? _Tone.warn : _Tone.neutral,
+        icon: Icons.local_shipping_outlined,
       ),
       _Kpi(
-        color: _C.risk,
+        color: _C.kpiPurple,
         label: 'REVENUE AT RISK',
         value: loaded ? _currency(atRiskValue) : '₹0',
         sub: 'from delays & cancellations',
         subTone: atRiskValue > 0 ? _Tone.risk : _Tone.neutral,
+        icon: Icons.trending_down,
       ),
     ];
 
-    const zonePlaceholder = _TargetData(
-      title: 'Test zone',
-      sub: 'Test — ₹0 revenue at risk this month',
-      avatarText: 'TE',
-      badgeText: 'NO DATA',
-      badgeTone: _Tone.neutral,
-      stats: [
-        _Stat('ON-TIME THIS MONTH', '00%'),
-        _Stat('ON-TIME TARGET', '00%'),
-        _Stat('vs TARGET', '00%'),
-        _Stat('NEXT MO. PROJECTED', '00%'),
-      ],
-      extra: 'Revenue at risk: **₹0** this month → **₹0** projected next month',
-      footLabel: 'NEXT MONTH ON-TIME TARGET FOR ZONE',
-      footValue: '00%',
-      footTag: 'PENDING',
-      footTone: _Tone.neutral,
-    );
+    final cards = <_TargetData>[
+      for (final it in items)
+        () {
+          final cancelled = _stage(it.orderStatus) == -1;
+          final rl = it.riskLevel.toLowerCase();
+          final isHigh = cancelled || rl == 'high';
+          final tone = isHigh
+              ? _Tone.risk
+              : rl == 'medium'
+              ? _Tone.warn
+              : _Tone.neutral;
 
-    final actions = [
-      for (final o in atRisk.where((i) => i.insight.isNotEmpty).take(2))
-        _Action(
-          title: 'Review ${o.orderNumber}',
-          body: o.insight,
-          impact: '${_currency(o.revenueAtRiskValue)} at risk',
-          tone: _Tone.risk,
-        ),
+          return _TargetData(
+            title: it.products,
+            sub: it.orderNumber,
+            growth: it.orderGrowthPercentage,
+
+            avatarText: _initials(it.products),
+            badgeText: cancelled
+                ? 'CANCELLED'
+                : it.isAtRisk
+                ? '${rl.toUpperCase()} RISK'
+                : 'ON TRACK',
+            badgeTone: tone,
+            stats: [
+              _Stat('ORDER VALUE', _currency(it.grossValue)),
+              _Stat('QUANTITY', it.orderedQuantity.toStringAsFixed(0)),
+              _Stat('STATUS', it.orderStatus),
+              _Stat('CHANNEL', it.channel),
+            ],
+            extra: '${it.dealer} · ${it.salesperson}',
+            footLabel: 'REVENUE AT RISK',
+            footValue: _currency(it.revenueAtRiskValue),
+            footTag: rl.toUpperCase(),
+            footTone: tone,
+          );
+        }(),
     ];
+
+    // final actions = [
+    //   for (final o in atRisk.where((i) => i.insight.isNotEmpty).take(2))
+    //     _Action(
+    //       title: 'Review ${o.orderNumber}',
+    //       body: o.insight,
+    //       impact: '${_currency(o.revenueAtRiskValue)} at risk',
+    //       tone: _Tone.risk,
+    //     ),
+    // ];
+
+    //******************************************************* */
 
     return _View(
       copy: loaded
@@ -1523,7 +1612,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         '📦 ${loaded ? total : '00'} orders',
         '⚠ ${_currency(atRiskValue)} revenue at risk',
       ],
-      filters: ['Status: All', 'Region: All', 'Dealer: All'],
+      //filters: ['Status: All', 'Region: All', 'Dealer: All'],
       kpis: kpis,
       sections: [
         if (loaded) _FunnelCard(steps: funnel),
@@ -1531,11 +1620,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         ..._targetSection(
           'Monthly projection & next month\'s target',
           '· on-time delivery, per zone',
-          const [],
-          zonePlaceholder,
+          //const [],
+          cards,
+          _placeholderTarget(footLabel: 'RISK LEVEL'),
         ),
       ],
-      actions: actions,
+      actions: const [],
     );
   }
 }
@@ -1632,7 +1722,7 @@ class _RiskRow {
     required this.avatarText,
     required this.title,
     required this.sub,
-    required this.insight,
+    this.insight = '',
     required this.value,
     required this.badgeText,
     required this.badgeTone,
@@ -1665,98 +1755,249 @@ class _IconBtn extends StatelessWidget {
   }
 }
 
+// class _Hero extends StatelessWidget {
+//   //final IconData icon;
+//   final String copy;
+//   final List<String> badges;
+//   const _Hero({
+//     //required this.icon,
+//     required this.copy,
+//     required this.badges,
+//   });
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return ClipRRect(
+//       borderRadius: BorderRadius.circular(22),
+//       child: Container(
+//         decoration: const BoxDecoration(gradient: AppColors.buttonGradient),
+//         child: Stack(
+//           children: [
+//             Positioned(
+//               right: -40,
+//               top: -60,
+//               child: Container(
+//                 width: 180,
+//                 height: 180,
+//                 decoration: BoxDecoration(
+//                   shape: BoxShape.circle,
+//                   gradient: RadialGradient(
+//                     colors: [
+//                       Colors.white.withValues(alpha: 0.10),
+//                       Colors.transparent,
+//                     ],
+//                   ),
+//                 ),
+//               ),
+//             ),
+//             Padding(
+//               padding: const EdgeInsets.fromLTRB(19, 19, 19, 17),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: [
+//                   _RichLine(
+//                     text: copy,
+//                     size: 14.5,
+//                     color: Colors.white,
+//                     boldColor: Colors.white,
+//                     height: 1.4,
+//                     weight: FontWeight.w500,
+//                   ),
+//                   const SizedBox(height: 13),
+//                   Wrap(
+//                     spacing: 8,
+//                     runSpacing: 8,
+//                     children: [
+//                       for (final b in badges)
+//                         Container(
+//                           padding: const EdgeInsets.symmetric(
+//                             horizontal: 11,
+//                             vertical: 6,
+//                           ),
+//                           decoration: BoxDecoration(
+//                             color: Colors.white.withValues(alpha: 0.15),
+//                             borderRadius: BorderRadius.circular(999),
+//                           ),
+//                           child: Text(
+//                             b,
+//                             style: const TextStyle(
+//                               fontSize: 11.5,
+//                               fontWeight: FontWeight.w700,
+//                               color: Colors.white,
+//                             ),
+//                           ),
+//                         ),
+//                     ],
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
 class _Hero extends StatelessWidget {
-  final IconData icon;
+  final String title;
+  final String period;
   final String copy;
   final List<String> badges;
-  const _Hero({required this.icon, required this.copy, required this.badges});
+  const _Hero({
+    required this.title,
+    required this.period,
+    required this.copy,
+    required this.badges,
+  });
+
+  static const _badgeIcons = [
+    Icons.shield_outlined,
+    Icons.event_available_rounded,
+  ];
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
       child: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [_C.navy, _C.navy2],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.buttonGradient),
         child: Stack(
           children: [
+            // faint chart watermark (right side)
             Positioned(
-              right: -40,
-              top: -60,
-              child: Container(
-                width: 180,
-                height: 180,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: RadialGradient(
-                    colors: [
-                      Colors.white.withValues(alpha: 0.10),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
+              right: -8,
+              bottom: -14,
+              child: Icon(
+                Icons.bar_chart_rounded,
+                size: 120,
+                color: Colors.white.withValues(alpha: 0.08),
               ),
             ),
             Padding(
-              padding: const EdgeInsets.fromLTRB(19, 19, 19, 17),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        width: 40,
-                        height: 40,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.16),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Icon(icon, color: Colors.white, size: 20),
-                      ),
-                      const SizedBox(width: 13),
-                      Expanded(
-                        child: _RichLine(
-                          text: copy,
-                          size: 14.5,
+                  // ---- header row: icon + title + period ----
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(6, 4, 6, 0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Icon(
+                          Icons.calendar_month_outlined,
+                          size: 26,
                           color: Colors.white,
-                          boldColor: Colors.white,
-                          height: 1.4,
-                          weight: FontWeight.w500,
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                title,
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  height: 1.25,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                period,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white.withValues(alpha: 0.85),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 13),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: [
-                      for (final b in badges)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 11,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
-                          child: Text(
-                            b,
-                            style: const TextStyle(
-                              fontSize: 11.5,
-                              fontWeight: FontWeight.w700,
+                  const SizedBox(height: 12),
+
+                  // ---- inner dark translucent panel ----
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
+                    decoration: BoxDecoration(
+                      color: _C.navy2.withValues(alpha: 0.35),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Icon(
+                              Icons.track_changes_rounded,
+                              size: 30,
                               color: Colors.white,
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: _RichLine(
+                                text: copy,
+                                size: 14.5,
+                                color: Colors.white,
+                                boldColor: Colors.white,
+                                height: 1.4,
+                                weight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
                         ),
-                    ],
+                        if (badges.isNotEmpty) ...[
+                          const SizedBox(height: 12),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: [
+                              for (int i = 0; i < badges.length; i++)
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.white.withValues(alpha: 0.14),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        _badgeIcons[i % _badgeIcons.length],
+                                        size: 16,
+                                        color: Colors.white,
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        // strips the leading emoji, e.g. "🎯 82% confidence" -> "82% confidence"
+                                        badges[i].replaceFirst(
+                                          RegExp(r'^\S+\s'),
+                                          '',
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 12.5,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.white,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                            ],
+                          ),
+                        ],
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -1798,9 +2039,9 @@ class _PeriodSelector extends StatelessWidget {
                   vertical: 8,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? _C.navy : Colors.white,
+                  color: selected ? _C.kpiBlue : Colors.white,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: selected ? _C.navy : _C.line),
+                  border: Border.all(color: selected ? _C.kpiBlue : _C.line),
                 ),
                 child: Text(
                   o[1],
@@ -1835,7 +2076,7 @@ class _HorizonSelector extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 9),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: selected ? _C.navy : Colors.transparent,
+              color: selected ? _C.kpiBlue : Colors.transparent,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -1868,80 +2109,80 @@ class _HorizonSelector extends StatelessWidget {
   }
 }
 
-class _FilterChips extends StatelessWidget {
-  final List<String> labels;
-  const _FilterChips({required this.labels});
+// class _FilterChips extends StatelessWidget {
+//   final List<String> labels;
+//   const _FilterChips({required this.labels});
 
-  @override
-  Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
-      child: Row(
-        children: [
-          for (final l in labels)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: GestureDetector(
-                onTap: () => AppWidgets.toast(context, 'Filters coming soon'),
-                child: CustomPaint(
-                  painter: _DashedRRectPainter(color: _C.line, radius: 999),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                    child: Text(
-                      l,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: _C.inkSoft,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return SingleChildScrollView(
+//       scrollDirection: Axis.horizontal,
+//       padding: const EdgeInsets.symmetric(horizontal: 2, vertical: 2),
+//       child: Row(
+//         children: [
+//           for (final l in labels)
+//             Padding(
+//               padding: const EdgeInsets.only(right: 8),
+//               child: GestureDetector(
+//                 onTap: () => AppWidgets.toast(context, 'Filters coming soon'),
+//                 child: CustomPaint(
+//                   painter: _DashedRRectPainter(color: _C.line, radius: 999),
+//                   child: Container(
+//                     padding: const EdgeInsets.symmetric(
+//                       horizontal: 12,
+//                       vertical: 6,
+//                     ),
+//                     decoration: BoxDecoration(
+//                       color: Colors.white,
+//                       borderRadius: BorderRadius.circular(999),
+//                     ),
+//                     child: Text(
+//                       l,
+//                       style: const TextStyle(
+//                         fontSize: 12,
+//                         fontWeight: FontWeight.w600,
+//                         color: _C.inkSoft,
+//                       ),
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ),
+//         ],
+//       ),
+//     );
+//   }
+// }
 
-class _DashedRRectPainter extends CustomPainter {
-  final Color color;
-  final double radius;
-  const _DashedRRectPainter({required this.color, required this.radius});
+// class _DashedRRectPainter extends CustomPainter {
+//   final Color color;
+//   final double radius;
+//   const _DashedRRectPainter({required this.color, required this.radius});
 
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-    final r = math.min(radius, size.height / 2);
-    final path = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(r)),
-      );
-    for (final metric in path.computeMetrics()) {
-      double d = 0;
-      while (d < metric.length) {
-        canvas.drawPath(metric.extractPath(d, d + 3), paint);
-        d += 6;
-      }
-    }
-  }
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final paint = Paint()
+//       ..color = color
+//       ..style = PaintingStyle.stroke
+//       ..strokeWidth = 1.2;
+//     final r = math.min(radius, size.height / 2);
+//     final path = Path()
+//       ..addRRect(
+//         RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(r)),
+//       );
+//     for (final metric in path.computeMetrics()) {
+//       double d = 0;
+//       while (d < metric.length) {
+//         canvas.drawPath(metric.extractPath(d, d + 3), paint);
+//         d += 6;
+//       }
+//     }
+//   }
 
-  @override
-  bool shouldRepaint(covariant _DashedRRectPainter old) =>
-      old.color != color || old.radius != radius;
-}
+//   @override
+//   bool shouldRepaint(covariant _DashedRRectPainter old) =>
+//       old.color != color || old.radius != radius;
+// }
 
 class _ReportError extends StatelessWidget {
   final String message;
@@ -1980,12 +2221,19 @@ class _SectionLabel extends StatelessWidget {
       child: Text.rich(
         TextSpan(
           children: [
+            const WidgetSpan(
+              alignment: PlaceholderAlignment.middle,
+              child: Padding(
+                padding: EdgeInsets.only(right: 6),
+                child: Icon(Icons.bolt_rounded, size: 18, color: _C.kpiBlue),
+              ),
+            ),
             TextSpan(
               text: title,
               style: const TextStyle(
                 fontSize: 12.5,
                 fontWeight: FontWeight.w800,
-                color: _C.inkSoft,
+                color: _C.kpiBlue,
               ),
             ),
             if (span.isNotEmpty)
@@ -2171,70 +2419,194 @@ class _KpiGrid extends StatelessWidget {
   }
 }
 
+// class _KpiCard extends StatelessWidget {
+//   final _Kpi kpi;
+//   const _KpiCard({required this.kpi});
+
+//   @override
+//   Widget build(BuildContext context) {
+//     final c = kpi.color;
+//     return Container(
+//       // padding: const EdgeInsets.fromLTRB(15, 14, 15, 13),
+//       // decoration: _cardDeco(),
+//       padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+//       decoration: BoxDecoration(
+//         borderRadius: BorderRadius.circular(16),
+//         border: Border.all(color: c.withValues(alpha: 0.85), width: 1.2),
+//         gradient: LinearGradient(
+//           begin: Alignment.centerLeft,
+//           end: Alignment.centerRight,
+//           colors: [Colors.white, c.withValues(alpha: 0.07)],
+//         ),
+//       ),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Row(
+//             children: [
+//               Container(
+//                 width: 26,
+//                 height: 26,
+//                 decoration: BoxDecoration(
+//                   color: kpi.color.withValues(alpha: 0.12),
+//                   borderRadius: BorderRadius.circular(8),
+//                 ),
+//                 child: Icon(kpi.icon, size: 15, color: kpi.color),
+//               ),
+//               const SizedBox(width: 8),
+
+//               Expanded(
+//                 child: Text(
+//                   kpi.label,
+//                   maxLines: 2,
+//                   overflow: TextOverflow.ellipsis,
+//                   style: TextStyle(
+//                     fontSize: 10.8,
+//                     fontWeight: FontWeight.w800,
+//                     color: c,
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//           const SizedBox(height: 9),
+//           Text(
+//             kpi.value,
+//             maxLines: 1,
+//             overflow: TextOverflow.ellipsis,
+//             style: const TextStyle(
+//               fontFamily: AppFonts.display,
+//               fontSize: 16,
+//               fontWeight: FontWeight.w700,
+//               color: _C.ink,
+//             ),
+//           ),
+//           if (kpi.sub.isNotEmpty) ...[
+//             const SizedBox(height: 4),
+//             Text(
+//               kpi.sub,
+//               maxLines: 2,
+//               overflow: TextOverflow.ellipsis,
+//               style: TextStyle(
+//                 fontSize: 11.3,
+//                 fontWeight: FontWeight.w600,
+//                 color: kpi.subTone == _Tone.neutral
+//                     ? _C.inkFaint
+//                     : kpi.subTone.fg,
+//               ),
+//             ),
+//           ],
+//         ],
+//       ),
+//     );
+//   }
+// }
+
 class _KpiCard extends StatelessWidget {
   final _Kpi kpi;
   const _KpiCard({required this.kpi});
 
   @override
   Widget build(BuildContext context) {
+    final c = kpi.color;
     return Container(
-      padding: const EdgeInsets.fromLTRB(15, 14, 15, 13),
-      decoration: _cardDeco(),
-      child: Column(
+      padding: const EdgeInsets.fromLTRB(12, 12, 10, 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        // BORDER: same color as the icon box
+        border: Border.all(color: c, width: 1.2),
+        // LIGHT TINT inside the card
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c.withValues(alpha: 0.04), c.withValues(alpha: 0.10)],
+        ),
+      ),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  color: kpi.color,
-                  shape: BoxShape.circle,
-                ),
-              ),
-              const SizedBox(width: 7),
-              Expanded(
-                child: Text(
+          // SOLID ICON BOX + WHITE ICON
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: c,
+              borderRadius: BorderRadius.circular(11),
+            ),
+            child: Icon(kpi.icon, size: 22, color: Colors.white),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // LABEL in the same color
+                Text(
                   kpi.label,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 10.8,
-                    fontWeight: FontWeight.w800,
-                    color: _C.inkSoft,
+                    fontWeight: FontWeight.w700,
+                    color: c,
+                    height: 1.2,
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 9),
-          Text(
-            kpi.value,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-              color: _C.ink,
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.centerLeft,
+                        child: Text(
+                          kpi.value,
+                          maxLines: 1,
+                          style: const TextStyle(
+                            fontFamily: AppFonts.display,
+                            fontSize: 17,
+                            fontWeight: FontWeight.w800,
+                            color: _C.ink,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    // LIGHT CIRCLE + CHEVRON
+                    Container(
+                      width: 24,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        color: c.withValues(alpha: 0.12),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.chevron_right_rounded,
+                        size: 18,
+                        color: _C.ink,
+                      ),
+                    ),
+                  ],
+                ),
+                if (kpi.sub.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    kpi.sub,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600,
+                      color: kpi.subTone == _Tone.neutral
+                          ? _C.inkSoft
+                          : kpi.subTone.fg,
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
-          if (kpi.sub.isNotEmpty) ...[
-            const SizedBox(height: 4),
-            Text(
-              kpi.sub,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: TextStyle(
-                fontSize: 11.3,
-                fontWeight: FontWeight.w600,
-                color: kpi.subTone == _Tone.neutral
-                    ? _C.inkFaint
-                    : kpi.subTone.fg,
-              ),
-            ),
-          ],
         ],
       ),
     );
@@ -2337,14 +2709,38 @@ class _TargetCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 12),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (int i = 0; i < data.stats.length; i++) ...[
-                if (i > 0) const SizedBox(width: 6),
-                Expanded(child: _StatCell(stat: data.stats[i])),
-              ],
-            ],
+          // Row(
+          //   crossAxisAlignment: CrossAxisAlignment.start,
+          //   children: [
+          //     for (int i = 0; i < data.stats.length; i++) ...[
+          //       if (i > 0) const SizedBox(width: 6),
+          //       Expanded(child: _StatCell(stat: data.stats[i])),
+          //     ],
+          //   ],
+          // ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
+            decoration: BoxDecoration(
+              color: const Color(0xFFFAF9F6),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: _C.line),
+            ),
+            child: IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (int i = 0; i < data.stats.length; i++) ...[
+                    if (i > 0)
+                      Container(
+                        width: 1,
+                        margin: const EdgeInsets.symmetric(horizontal: 8),
+                        color: _C.line,
+                      ),
+                    Expanded(child: _StatCell(stat: data.stats[i])),
+                  ],
+                ],
+              ),
+            ),
           ),
           if (data.extra != null && data.extra!.isNotEmpty) ...[
             const SizedBox(height: 9),
@@ -2389,10 +2785,30 @@ class _TargetCard extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
             decoration: BoxDecoration(
               color: data.footTone.bg,
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: data.footTone.fg.withValues(alpha: 0.25),
+              ),
             ),
             child: Row(
               children: [
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: data.footTone == _Tone.neutral
+                        ? _C.inkFaint
+                        : data.footTone.fg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.lightbulb,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+                const SizedBox(width: 10),
+
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -2441,30 +2857,46 @@ class _StatCell extends StatelessWidget {
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          stat.label,
-          maxLines: 2,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(
-            fontSize: 9.5,
-            fontWeight: FontWeight.w600,
-            color: _C.inkFaint,
-            height: 1.2,
+        SizedBox(
+          height: 24,
+          child: Align(
+            alignment: Alignment.bottomLeft,
+            child: Text(
+              stat.label,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              strutStyle: const StrutStyle(
+                fontSize: 9.5,
+                height: 1.2,
+                forceStrutHeight: true,
+              ),
+              style: const TextStyle(
+                fontSize: 9.5,
+                fontWeight: FontWeight.w600,
+                color: _C.inkFaint,
+                height: 1.2,
+              ),
+            ),
           ),
         ),
         const SizedBox(height: 3),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            stat.value,
-            maxLines: 1,
-            style: TextStyle(
-              fontFamily: AppFonts.display,
-              fontSize: 13.5,
-              fontWeight: FontWeight.w700,
-              color: stat.color ?? _C.ink,
+        SizedBox(
+          height: 20,
+          width: double.infinity,
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              stat.value,
+              maxLines: 1,
+              style: TextStyle(
+                fontFamily: AppFonts.display,
+                fontSize: 13.5,
+                fontWeight: FontWeight.w700,
+                color: stat.color ?? _C.ink,
+              ),
             ),
           ),
         ),
@@ -2946,12 +3378,31 @@ String _initials(String s) {
 
 String _cur(double? v) => v == null ? '₹0' : _currency(v);
 
-String _currency(double value) {
+// String _currency(double value) {
+//   final sign = value < 0 ? '-' : '';
+//   final v = value.abs();
+//   if (v >= 10000000) return '$sign₹${(v / 10000000).toStringAsFixed(1)}Cr';
+//   if (v >= 100000) return '$sign₹${(v / 100000).toStringAsFixed(1)}L';
+//   if (v >= 1000) return '$sign₹${(v / 1000).toStringAsFixed(1)}K';
+//   return '$sign₹${v.toStringAsFixed(0)}';
+// }
+
+String _currency(double value, {int decimals = 2}) {
+  // added decimals parameter for flexibility and more accurate formatting
   final sign = value < 0 ? '-' : '';
   final v = value.abs();
-  if (v >= 10000000) return '$sign₹${(v / 10000000).toStringAsFixed(1)}Cr';
-  if (v >= 100000) return '$sign₹${(v / 100000).toStringAsFixed(1)}L';
-  if (v >= 1000) return '$sign₹${(v / 1000).toStringAsFixed(1)}K';
+
+  String fmt(double x) {
+    var s = x.toStringAsFixed(decimals);
+    if (s.contains('.')) {
+      s = s.replaceFirst(RegExp(r'0+$'), '').replaceFirst(RegExp(r'\.$'), '');
+    }
+    return s;
+  }
+
+  if (v >= 10000000) return '$sign₹${fmt(v / 10000000)}Cr';
+  if (v >= 100000) return '$sign₹${fmt(v / 100000)}L';
+  if (v >= 1000) return '$sign₹${fmt(v / 1000)}K';
   return '$sign₹${v.toStringAsFixed(0)}';
 }
 

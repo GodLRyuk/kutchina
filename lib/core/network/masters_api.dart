@@ -1,11 +1,14 @@
 import 'dart:convert';
-
+import 'package:kutchina/core/offline/connectivity_service.dart';
+import 'package:kutchina/core/offline/offline_store.dart';
+import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/location_service.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/product_model.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
-import 'package:dio/dio.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:kutchina/core/services/location_address_service.dart';
 
 class Distributor {
   final String id;
@@ -160,6 +163,7 @@ class SalesOrder {
   final String status;
   final String createdBy; // id of the user who placed the order
   final DateTime? createdAt;
+  final String createdByName;
 
   SalesOrder({
     required this.id,
@@ -175,6 +179,7 @@ class SalesOrder {
     required this.status,
     required this.createdBy,
     required this.createdAt,
+    required this.createdByName,
   });
 
   factory SalesOrder.fromJson(Map<String, dynamic> json) {
@@ -194,6 +199,7 @@ class SalesOrder {
       status: s('order_status_display'),
       createdBy: s('created_by'),
       createdAt: DateTime.tryParse(s('created_at')),
+      createdByName: s('created_by_name'),
     );
   }
 
@@ -202,9 +208,43 @@ class SalesOrder {
 }
 
 class CheckInService {
+  static const _kCheckedInDay = 'attendance_checked_in_day';
+
+  static String _today() {
+    final n = DateTime.now();
+    return '${n.year.toString().padLeft(4, '0')}-'
+        '${n.month.toString().padLeft(2, '0')}-'
+        '${n.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Remembered per user + day so the "Check-in required" gate still
+  /// works with no network (server value wins whenever it is reachable).
+  static String get _dayValue =>
+      '${OfflineStore.userScope ?? 'anon'}|${_today()}';
+
+  static Future<void> _rememberCheckedIn() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_kCheckedInDay, _dayValue);
+    } catch (_) {}
+  }
+
+  static Future<bool> _checkedInLocally() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_kCheckedInDay) == _dayValue;
+    } catch (_) {
+      return false;
+    }
+  }
+
   /// GET current attendance status. Returns true if user is already
   /// checked in for the day (`is_logged_in: true`).
   static Future<bool> getStatus() async {
+    // Offline: trust what this phone already knows about today.
+    if (!ConnectivityService.instance.isOnline) {
+      return _checkedInLocally();
+    }
     try {
       final response = await ApiService.instance.get(
         '/api/v1/users/attendance/check-in/',
@@ -215,6 +255,7 @@ class CheckInService {
         final attendance = body['data'];
 
         if (attendance != null && attendance['is_checked_in'] == true) {
+          await _rememberCheckedIn();
           return true;
         }
         return false;
@@ -222,26 +263,35 @@ class CheckInService {
 
       // If the API errors out, fail safe and force the check-in gate
       return false;
+    } on ApiException catch (e) {
+      // Connection dropped mid-call: fall back to the local record.
+      if (e.isNetworkError) return _checkedInLocally();
+      return false;
     } catch (e) {
       return false;
     }
   }
 
+  /// Returns true when the check-in was accepted by the server OR saved
+  /// on the phone to be sent when the network returns.
   static Future<bool> checkIn({
     required String locationName,
     required double latitude,
     required double longitude,
   }) async {
     try {
-      final response = await ApiService.instance.post(
-        '/api/v1/users/attendance/check-in/',
-        data: {
+      await SyncService.instance.submitOrQueue(
+        kind: 'attendance',
+        label: 'Attendance check-in',
+        path: '/api/v1/users/attendance/check-in/',
+        body: {
           "location_name": locationName,
           "latitude": latitude,
           "longitude": longitude,
         },
       );
-      return response.statusCode == 200 || response.statusCode == 201;
+      await _rememberCheckedIn();
+      return true;
     } catch (_) {
       return false;
     }
@@ -251,7 +301,9 @@ class CheckInService {
 class MastersApi {
   MastersApi._();
   static Future<List<Distributor>> fetchDistributors() async {
-    final res = await ApiService.instance.get('/api/v1/masters/distributors/');
+    final res = await ApiService.instance.getCached(
+      '/api/v1/masters/distributors/',
+    );
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -264,7 +316,9 @@ class MastersApi {
   }
 
   static Future<List<Retailer>> fetchRetailers() async {
-    final res = await ApiService.instance.get('/api/v1/masters/retailers/');
+    final res = await ApiService.instance.getCached(
+      '/api/v1/masters/retailers/',
+    );
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -277,7 +331,9 @@ class MastersApi {
   }
 
   static Future<List<Category>> fetchCategories() async {
-    final res = await ApiService.instance.get('/api/v1/masters/categories/');
+    final res = await ApiService.instance.getCached(
+      '/api/v1/masters/categories/',
+    );
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -290,7 +346,9 @@ class MastersApi {
   }
 
   static Future<List<Channel>> fetchChannels() async {
-    final res = await ApiService.instance.get('/api/v1/masters/channels/');
+    final res = await ApiService.instance.getCached(
+      '/api/v1/masters/channels/',
+    );
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -303,7 +361,7 @@ class MastersApi {
   }
 
   static Future<List<Zone>> fetchZones() async {
-    final res = await ApiService.instance.get('/api/v1/masters/zones/');
+    final res = await ApiService.instance.getCached('/api/v1/masters/zones/');
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -313,7 +371,10 @@ class MastersApi {
   }
 
   static Future<List<Product>> fetchProducts() async {
-    final res = await ApiService.instance.get('/api/v1/masters/products/');
+    print("Product czll");
+    final res = await ApiService.instance.getCached(
+      '/api/v1/masters/products/',
+    );
     final raw = res.data;
     final list = raw is List
         ? raw
@@ -324,28 +385,72 @@ class MastersApi {
         .map(Product.fromJson)
         .toList();
   }
+
+  static Future<List<SuggestionModel>> fetchSuggestions(String search) async {
+    final res = await ApiService.instance.getCached(
+      '/api/v1/orders/visits/purpose-suggestions/?text=$search',
+    );
+    final raw = res.data;
+    final list = raw is List
+        ? raw
+        : (raw is Map ? raw['data'] as List? ?? [] : []);
+
+    return list
+        .whereType<Map<String, dynamic>>()
+        .map(SuggestionModel.fromJson)
+        .toList();
+  }
 }
 
 class OrderService {
   OrderService._();
 
-  static Future<MonthlyTarget> fetchCurrentTarget({
+  static double calculateAnnualSales(
+    Iterable<OrderEntry> orders, {
     required String userId,
-  }) async {
-    final res = await ApiService.instance.get(
-      '/api/v1/orders/target/',
-      data: {'user_id': int.tryParse(userId) ?? userId},
-    );
-    final data = res.data is Map ? res.data['data'] : null;
-    if (data is! Map) {
-      throw ApiException('Monthly target was not found');
-    }
+    required int year,
+  }) {
+    final start = DateTime(year);
+    final end = DateTime(year + 1);
+    return orders
+        .where((order) {
+          final createdAt = order.createdAt;
+          final isCurrentUserOrder =
+              order.createdBy == userId ||
+              (order.id < 0 && order.createdBy.isEmpty);
+          if (!isCurrentUserOrder || createdAt == null) return false;
+          final orderDate = createdAt.toLocal();
+          return !orderDate.isBefore(start) && orderDate.isBefore(end);
+        })
+        .fold<double>(0, (total, order) => total + order.total);
+  }
 
-    return MonthlyTarget(
-      amount: double.tryParse(data['target']?.toString() ?? '') ?? 0,
-      month: DateTime.tryParse(data['month']?.toString() ?? ''),
-      targetDate: DateTime.tryParse(data['target_date']?.toString() ?? ''),
-    );
+  static Future<AnnualTarget?> fetchAnnualTarget({
+    required String userId,
+    required int year,
+  }) async {
+    final targets = await fetchAllTargets();
+    return AnnualTarget.fromAssignments(targets, userId: userId, year: year);
+  }
+
+  static Future<List<TargetAssignment>> fetchAllTargets() async {
+    final res = await ApiService.instance.getCached('/api/v1/orders/target/');
+    final raw = res.data;
+    final responseData = raw is Map ? raw['data'] ?? raw : raw;
+    final rows = responseData is List
+        ? responseData
+        : responseData is Map
+        ? responseData['results'] as List? ??
+              responseData['targets'] as List? ??
+              [responseData]
+        : <dynamic>[];
+
+    final list = rows
+        .whereType<Map>()
+        .map((row) => TargetAssignment.fromJson(Map<String, dynamic>.from(row)))
+        .toList();
+
+    return list;
   }
 
   // static Future<void> placeOrder({
@@ -377,11 +482,15 @@ class OrderService {
 
   // Add 29-9-2026
 
-  static Future<void> placeOrder({
+  /// Returns [SubmitResult.sent] when the server accepted the order, or
+  /// [SubmitResult.queued] when there is no network and it was saved on
+  /// the phone to be sent automatically later.
+  static Future<SubmitResult> placeOrder({
     required String orderType,
     required String entityId,
     required List<Map<String, dynamic>> items,
   }) async {
+    // GPS works without internet, so the order still carries its location.
     final position = await LocationService.getCurrentLocation();
 
     final payload = items.map((item) {
@@ -391,7 +500,7 @@ class OrderService {
         'user_type': orderType,
         'product_id': p.id,
         'quantity': qty,
-        'price': (p.price*qty).toStringAsFixed(2),
+        'price': (p.price * qty).toStringAsFixed(2),
         'filter_type': p.filterType,
         'warranty': p.warranty,
         'lat': position.latitude.toString(),
@@ -400,88 +509,533 @@ class OrderService {
       };
     }).toList();
 
-    print(jsonEncode(payload)); 
-
-    await ApiService.instance.post('/api/v1/orders/place/', data: payload);
+    return SyncService.instance.submitOrQueue(
+      kind: 'order',
+      label: 'Order: ${items.length} product${items.length == 1 ? '' : 's'}',
+      path: '/api/v1/orders/place/',
+      body: payload,
+    );
   }
 
   static Future<List<OrderEntry>> fetchOrders() async {
-    final res = await ApiService.instance.get('/api/v1/orders/place/');
+    final res = await ApiService.instance.getCached('/api/v1/orders/place/');
+
+    final raw = res.data;
+
+    // final serverList = raw is List
+    //     ? raw
+    //     : (raw is Map
+    //           ? raw['data'] as List? ?? raw['results'] as List? ?? []
+    //           : []);
+
+    final serverList = raw is List
+        ? raw
+        : (raw is Map
+              ? (raw['orders'] ?? raw['data'] ?? raw['results']) as List? ?? []
+              : []);
+    final orders = <OrderEntry>[];
+
+    for (final value in serverList) {
+      if (value is Map) {
+        try {
+          orders.add(OrderEntry.fromJson(Map<String, dynamic>.from(value)));
+        } catch (_) {}
+      }
+    }
+
+    final queued = await SyncService.instance.listAll();
+
+    for (final request in queued.where(
+      (r) =>
+          r.kind == 'order' && (r.status == 'pending' || r.status == 'failed'),
+    )) {
+      final body = request.body;
+      if (body is! List) continue;
+
+      for (final value in body) {
+        if (value is! Map) continue;
+
+        final item = Map<String, dynamic>.from(value);
+        final productId =
+            int.tryParse(item['product_id']?.toString() ?? '') ?? 0;
+
+        final quantity =
+            double.tryParse(item['quantity']?.toString() ?? '') ?? 0;
+
+        final price = double.tryParse(item['price']?.toString() ?? '');
+
+        orders.add(
+          OrderEntry(
+            id: -request.id,
+            orderNumber: 'OFFLINE-${request.clientId.substring(0, 8)}',
+            productId: productId,
+            productName:
+                item['product_name']?.toString() ?? 'Product #$productId',
+            quantity: quantity,
+            lat: double.tryParse(item['lat']?.toString() ?? ''),
+            long: double.tryParse(item['long']?.toString() ?? ''),
+            userType: item['user_type']?.toString() ?? '',
+            filterType: item['filter_type']?.toString(),
+            warranty: item['warranty']?.toString(),
+            price: price,
+            orderStatus: request.status == 'failed'
+                ? 'Sync Failed'
+                : 'Pending Sync',
+            createdAt: request.createdAt,
+          ),
+        );
+      }
+    }
+
+    // Latest records first.
+    orders.sort((a, b) {
+      final aDate = a.createdAt;
+      final bDate = b.createdAt;
+
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+
+      return bDate.compareTo(aDate);
+    });
+
+    return orders;
+  }
+
+  static Future<List<OrderEntry>> searchOrders(
+    String search, {
+    String? entityId,
+    String? entityType, // 'R' or 'D'
+  }) async {
+    final query = search.trim();
+
+    if (query.isEmpty && entityId == null) return [];
+
+    // For offline work
+    if (!ConnectivityService.instance.isOnline) {
+      final all = await fetchOrders(); // reads from cache
+      final q = query.toLowerCase();
+      return all
+          .where(
+            (o) =>
+                q.isEmpty ||
+                o.orderNumber.toLowerCase().contains(q) ||
+                o.userType.toLowerCase().contains(q),
+          )
+          .toList();
+    }
+    //Done
+
+    final res = entityId == null
+        ? await ApiService.instance.getCached('/api/v1/orders/place/$query/')
+        : await ApiService.instance.getCached(
+            '/api/v1/orders/place/',
+            queryParams: {
+              if (entityType != null) 'user_type': entityType,
+              'order_for': entityId,
+              if (query.isNotEmpty) 'order_number': query,
+            },
+          );
+
     final raw = res.data;
     final list = raw is List
         ? raw
         : (raw is Map
-              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              ? (raw['orders'] ?? raw['data'] ?? raw['results']) as List? ?? []
               : []);
 
-    return list
-        .whereType<Map<String, dynamic>>()
-        .map(OrderEntry.fromJson)
-        .toList();
+    // product_id -> name (the search endpoint doesn't send names)
+    final names = <String, String>{};
+    try {
+      final products = await MastersApi.fetchProducts();
+      for (final p in products) {
+        names[p.id.toString()] = p.name;
+      }
+    } catch (_) {}
+
+    final orders = <OrderEntry>[];
+    for (final value in list) {
+      if (value is! Map) continue;
+      try {
+        final row = Map<String, dynamic>.from(value);
+        final pid = row['product_id']?.toString() ?? '';
+
+        if ((row['product_name']?.toString() ?? '').isEmpty) {
+          row['product_name'] = names[pid] ?? 'Product #$pid';
+        }
+
+        orders.add(OrderEntry.fromJson(row));
+      } catch (e) {
+        print('Failed to parse order row: $e\nrow: $value');
+      }
+    }
+    return orders;
   }
 }
 
-class MonthlyTarget {
+class TargetAssignment {
   final double amount;
   final DateTime? month;
-  final DateTime? targetDate;
+  // final DateTime? targetDate;
+  final String userId;
+  final String locationName;
+  final String retailerName;
+  final String categoryName;
 
-  const MonthlyTarget({
+  const TargetAssignment({
     required this.amount,
     required this.month,
-    required this.targetDate,
+    // required this.targetDate,
+    required this.userId,
+    required this.locationName,
+    required this.retailerName,
+    required this.categoryName,
   });
+
+  factory TargetAssignment.fromJson(Map<String, dynamic> json) {
+    final rawUser = json['user'];
+    final user = rawUser is Map
+        ? Map<String, dynamic>.from(rawUser)
+        : const <String, dynamic>{};
+
+    final rawRetailer = json['retailer'];
+    final retailer = rawRetailer is Map
+        ? Map<String, dynamic>.from(rawRetailer)
+        : const <String, dynamic>{};
+
+    final rawCategory = json['category'];
+    final category = rawCategory is Map
+        ? Map<String, dynamic>.from(rawCategory)
+        : const <String, dynamic>{};
+
+    final rawLocation = json['location'];
+    final location = rawLocation is Map
+        ? Map<String, dynamic>.from(rawLocation)
+        : const <String, dynamic>{};
+
+    return TargetAssignment(
+      amount:
+          double.tryParse(
+            (json['amount'] ?? json['target_value'] ?? json['target'])
+                    ?.toString() ??
+                '',
+          ) ??
+          0,
+      month: DateTime.tryParse(
+        (json['FY_date'] ?? json['month'] ?? json['target_month'])
+                ?.toString() ??
+            '',
+      ),
+      // targetDate: DateTime.tryParse(
+      //   (json['target_date'] ?? json['end_date'])?.toString() ?? '',
+      // ),
+
+      userId: (user['id'] ?? json['user_id'] ?? '').toString(),
+
+      retailerName: (retailer['name'] ?? '').toString(),
+      categoryName: (category['name'] ?? '').toString(),
+      locationName: (location['name'] ?? '').toString(),
+    );
+  }
 }
 
+class AnnualTarget {
+  final double amount;
+  final int year;
+
+  const AnnualTarget({required this.amount, required this.year});
+
+  static AnnualTarget? fromAssignments(
+    Iterable<TargetAssignment> assignments, {
+    required String userId,
+    required int year,
+  }) {
+    var amount = 0.0;
+    var hasTargets = false;
+    for (final assignment in assignments) {
+      if (assignment.userId != userId || assignment.month?.year != year) {
+        continue;
+      }
+      amount += assignment.amount;
+      hasTargets = true;
+    }
+    if (!hasTargets) return null;
+    return AnnualTarget(amount: amount, year: year);
+  }
+}
+
+// ************************************************
+// class allMonthlyTarget {
+//   final int? id;
+
+//   final double amount;
+//   final DateTime? month;
+//   final DateTime? targetDate;
+
+//   const allMonthlyTarget({
+//     this.id,
+
+//     required this.amount,
+//     required this.month,
+//     required this.targetDate,
+//   });
+// }
+
+//***************************************************
+
 class VisitService {
-  static Future<void> checkIn({required Map<String, dynamic> payload}) async {
-    final formData = FormData.fromMap(payload);
-    await ApiService.instance.post('/api/v1/orders/visits/', data: formData);
+  /// [payload] holds plain text fields only. Photos are passed as file
+  /// paths so they can be copied to app storage and uploaded later if the
+  /// phone is offline.
+  static Future<SubmitResult> checkIn({
+    required Map<String, dynamic> payload,
+    List<String> imagePaths = const [],
+  }) {
+    final who = payload['visitor_name']?.toString().trim() ?? '';
+    return SyncService.instance.submitOrQueue(
+      kind: 'visit',
+      label: who.isEmpty ? 'Visit check-in' : 'Visit: $who',
+      path: '/api/v1/orders/visits/',
+      body: payload,
+      filePaths: imagePaths,
+      fileField: 'image',
+    );
   }
 
   static Future<List<VisitEntry>> fetchTodayVisits({
     required String date,
   }) async {
-    String currentDate = date;
-    String dataParam = "?created_at=";
-    dataParam = dataParam + currentDate;
-    final res = await ApiService.instance.get(
-      '/api/v1/orders/visits/$dataParam',
-    );
-    final raw = res.data;
+    final res = await ApiService.instance.getCached('/api/v1/orders/visits/');
 
-    final list = raw is List
+    final raw = res.data;
+    final serverList = raw is List
         ? raw
         : (raw is Map
               ? raw['data'] as List? ?? raw['results'] as List? ?? []
               : []);
 
-    return list
-        .whereType<Map<String, dynamic>>()
-        .map(VisitEntry.fromJson)
-        .toList();
+    final visits = <VisitEntry>[];
+
+    for (final value in serverList) {
+      if (value is Map) {
+        visits.add(VisitEntry.fromJson(Map<String, dynamic>.from(value)));
+      }
+    }
+
+    final queued = await SyncService.instance.listAll();
+
+    for (final request in queued.where(
+      (r) =>
+          r.kind == 'visit' && (r.status == 'pending' || r.status == 'failed'),
+    )) {
+      final body = request.body;
+
+      if (body is! Map) continue;
+
+      final created = request.createdAt;
+      final localDate =
+          '${created.year.toString().padLeft(4, '0')}-'
+          '${created.month.toString().padLeft(2, '0')}-'
+          '${created.day.toString().padLeft(2, '0')}';
+
+      if (localDate != date) continue;
+
+      final item = Map<String, dynamic>.from(body);
+
+      final lat = item['lat']?.toString() ?? '';
+      final long = item['long']?.toString() ?? '';
+
+      final address = item['address']?.toString().trim() ?? '';
+
+      visits.add(
+        VisitEntry(
+          id: 'offline-${request.id}',
+          visitorName: item['visitor_name']?.toString() ?? 'Offline visit',
+          address: address.isNotEmpty
+              ? address
+              : (lat.isNotEmpty && long.isNotEmpty
+                    ? '$lat, $long'
+                    : 'Address unavailable'),
+          purpose: item['visit_purpose']?.toString() ?? '',
+          visitType: item['visit_type']?.toString() ?? '',
+          note: item['note']?.toString(),
+          createdAt: created,
+          isPendingSync: request.status == 'pending',
+          syncFailed: request.status == 'failed',
+        ),
+      );
+    }
+
+    visits.sort((a, b) {
+      final aDate = a.createdAt;
+      final bDate = b.createdAt;
+
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+
+      return bDate.compareTo(aDate);
+    });
+
+    return visits;
+  }
+
+  static Future<List<VisitEntry>> fetchAllVisits({required String date}) async {
+    final res = await ApiService.instance.getCached(
+      '/api/v1/orders/visits/',
+      queryParams: {'created_at': date},
+    );
+
+    final raw = res.data;
+    final serverList = raw is List
+        ? raw
+        : (raw is Map
+              ? raw['data'] as List? ?? raw['results'] as List? ?? []
+              : []);
+
+    final visits = <VisitEntry>[];
+
+    for (final value in serverList) {
+      if (value is Map) {
+        visits.add(VisitEntry.fromJson(Map<String, dynamic>.from(value)));
+      }
+    }
+
+    final queued = await SyncService.instance.listAll();
+
+    for (final request in queued.where(
+      (r) =>
+          r.kind == 'visit' && (r.status == 'pending' || r.status == 'failed'),
+    )) {
+      final body = request.body;
+
+      if (body is! Map) continue;
+
+      final created = request.createdAt;
+      final localDate =
+          '${created.year.toString().padLeft(4, '0')}-'
+          '${created.month.toString().padLeft(2, '0')}-'
+          '${created.day.toString().padLeft(2, '0')}';
+
+      if (localDate != date) continue;
+
+      final item = Map<String, dynamic>.from(body);
+
+      final lat = item['lat']?.toString() ?? '';
+      final long = item['long']?.toString() ?? '';
+
+      final address = item['address']?.toString().trim() ?? '';
+
+      visits.add(
+        VisitEntry(
+          id: 'offline-${request.id}',
+          visitorName: item['visitor_name']?.toString() ?? 'Offline visit',
+          address: address.isNotEmpty
+              ? address
+              : (lat.isNotEmpty && long.isNotEmpty
+                    ? '$lat, $long'
+                    : 'Address unavailable'),
+          purpose: item['visit_purpose']?.toString() ?? '',
+          visitType: item['visit_type']?.toString() ?? '',
+          note: item['note']?.toString(),
+          createdAt: created,
+          isPendingSync: request.status == 'pending',
+          syncFailed: request.status == 'failed',
+        ),
+      );
+    }
+
+    visits.sort((a, b) {
+      final aDate = a.createdAt;
+      final bDate = b.createdAt;
+
+      if (aDate == null && bDate == null) return 0;
+      if (aDate == null) return 1;
+      if (bDate == null) return -1;
+
+      return bDate.compareTo(aDate);
+    });
+
+    return visits;
   }
 }
 
+// Added for paginaton
+class AdminUsersPage {
+  final List<AdminUser> users;
+  final int count;
+  final bool hasMore;
+
+  const AdminUsersPage({
+    required this.users,
+    required this.count,
+    required this.hasMore,
+  });
+}
+
+// done
 class AdminUsersApi {
   AdminUsersApi._();
-
-  static Future<List<AdminUser>> fetchUsers() async {
-    final res = await ApiService.instance.get(
+  static Future<AdminUsersPage> fetchUsers({
+    int page = 1,
+    int pageSize = 10,
+    String search = '',
+  }) async {
+    final isSearch = search.isNotEmpty;
+    final res = await ApiService.instance.getCached(
       '/api/v1/users/superadmin/userlist/',
+      queryParams: isSearch
+          ? {'search': search}
+          : {'page': page, 'page_size': pageSize},
     );
     final raw = res.data;
-    final list = raw is List
-        ? raw
-        : (raw is Map
-              ? raw['data'] as List? ?? raw['results'] as List? ?? []
-              : []);
 
-    return list
+    final List list;
+    int? count;
+    bool hasMore = false;
+
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map) {
+      list = (raw['results'] ?? raw['data'] ?? []) as List;
+      count = raw['count'] as int?;
+      hasMore = raw['next'] != null;
+    } else {
+      list = [];
+    }
+
+    final users = list
         .whereType<Map<String, dynamic>>()
         .map(AdminUser.fromJson)
         .toList();
+
+    return AdminUsersPage(
+      users: users,
+      count: count ?? users.length,
+      hasMore: hasMore,
+    );
   }
+
+  // static Future<List<AdminUser>> fetchUsers({
+  //   int page = 1,
+  //   int pageSize = 10
+  // }) async {
+  //   final res = await ApiService.instance.getCached(
+  //     '/api/v1/users/superadmin/userlist/',
+  //      queryParams: {'page': page, 'page_size': pageSize},
+  //   );
+  //   final raw = res.data;
+  //   final list = raw is List
+  //       ? raw
+  //       : (raw is Map
+  //             ? raw['data'] as List? ?? raw['results'] as List? ?? []
+  //             : []);
+
+  //   return list
+  //       .whereType<Map<String, dynamic>>()
+  //       .map(AdminUser.fromJson)
+  //       .toList();
+  // }
 }
 
 class SalesProduct {
@@ -542,7 +1096,7 @@ class SalespersonSalesApi {
     int pageSize = 10,
     int salesPage = 1,
   }) async {
-    final res = await ApiService.instance.get(
+    final res = await ApiService.instance.getCached(
       '/api/v1/orders/salespersons/$userId/sales/',
       queryParams: {
         'page': page,
@@ -603,7 +1157,7 @@ class CategoryOrdersApi {
     int page = 1,
     int pageSize = 10,
   }) async {
-    final res = await ApiService.instance.get(
+    final res = await ApiService.instance.getCached(
       '/api/v1/masters/categories/$categoryId/products/',
       queryParams: {'page': page, 'page_size': pageSize},
     );
@@ -658,7 +1212,7 @@ class RegionOrdersApi {
     int page = 1,
     int pageSize = 10,
   }) async {
-    final res = await ApiService.instance.get(
+    final res = await ApiService.instance.getCached(
       '/api/v1/orders/regions/$regionId/sales/',
       queryParams: {'page': page, 'page_size': pageSize},
     );
