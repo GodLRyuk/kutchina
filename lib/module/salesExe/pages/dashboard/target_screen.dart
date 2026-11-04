@@ -6,7 +6,7 @@ import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/target_milestone_notification_service.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
-import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 
@@ -129,7 +129,7 @@ class _TargetScreenState extends State<TargetScreen> {
 
   Widget _displayTargetDesign() {
     if (_targetLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const SkeletonLoader.cards(rows: 4);
     }
 
     if (_targets.isEmpty) {

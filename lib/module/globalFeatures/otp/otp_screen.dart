@@ -1,8 +1,11 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:kutchina/core/auth/app_roles.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:provider/provider.dart';
 
 class OtpVerificationScreen extends StatefulWidget {
   const OtpVerificationScreen({super.key});
@@ -70,7 +73,8 @@ class _OtpVerificationScreenState extends State<OtpVerificationScreen> {
       AppWidgets.toast(context, 'Enter all 6 digits');
       return;
     }
-    Navigator.pushNamedAndRemoveUntil(context, '/dashboard', (route) => false);
+    final role = context.read<AuthProvider>().role;
+    AppRoles.openHome(context, role.name);
   }
 
   @override

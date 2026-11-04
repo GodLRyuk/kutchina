@@ -12,6 +12,7 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
 import 'package:kutchina/module/salesExe/pages/dashboard/target_screen.dart';
@@ -21,11 +22,12 @@ import 'package:kutchina/module/salesExe/pages/visits/today_visits_screen.dart';
 import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
 import 'package:kutchina/module/salesExe/pages/dashboard/top_categories_screen.dart';
-import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final bool showBottomNav;
+
+  const DashboardScreen({super.key, this.showBottomNav = true});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -165,7 +167,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _openTargetNotifications() async {
-    
     final userId = context.read<AuthProvider>().user?.id;
     if (userId == null || userId.isEmpty) return;
     final notifications = await TargetMilestoneNotificationService.markAllRead(
@@ -440,7 +441,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SkeletonLoader.dashboard());
     }
 
     final topThree = _topCategories.take(3).toList();
@@ -763,18 +764,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                           ),
                           const SizedBox(height: 8),
                           if (_overviewLoading)
-                            const Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8),
-                              child: Center(
-                                child: SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                ),
-                              ),
-                            )
+                            const SkeletonLoader(rows: 3)
                           else if (topThree.isEmpty)
                             const Padding(
                               padding: EdgeInsets.symmetric(vertical: 8),
@@ -943,10 +933,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
             ),
           ),
         ),
-        bottomNavigationBar: Container(
-          color: Colors.white,
-          child: const AppBottomNav(backgroundColor: Colors.white),
-        ),
+        bottomNavigationBar: widget.showBottomNav
+            ? Container(
+                color: Colors.white,
+                child: const AppBottomNav(backgroundColor: Colors.white),
+              )
+            : null,
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 
 // ─────────────────────────── helpers ───────────────────────────
 
@@ -197,7 +198,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-               padding: EdgeInsets.symmetric(horizontal: 16),
+                padding: EdgeInsets.symmetric(horizontal: 16),
                 child: Text(
                   _title,
                   style: TextStyle(
@@ -231,10 +232,7 @@ class _AdminRegionSalesScreenState extends State<AdminRegionSalesScreen> {
 
   List<Widget> _content() {
     if (_isLoading) {
-      return const [
-        SizedBox(height: 48),
-        Center(child: CircularProgressIndicator()),
-      ];
+      return const [SkeletonLoader(rows: 5)];
     }
 
     if (_loadError != null) {

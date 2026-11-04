@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:kutchina/core/auth/app_roles.dart';
 import 'package:kutchina/core/offline/offline_store.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
@@ -7,6 +8,8 @@ import 'package:kutchina/core/services/auth_api.dart';
 class AuthProvider extends ChangeNotifier {
   KUser? _user;
   KUser? get user => _user;
+  AppRole get role => AppRoles.parse(_user?.role);
+  int get level => AppRoles.level(role);
   bool get isLoggedIn => _user != null;
 
   Future<void> loadFromStorage() async {

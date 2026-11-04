@@ -7,6 +7,7 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/module/salesExe/models/order_model.dart';
 import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
@@ -14,7 +15,9 @@ import 'package:kutchina/module/salesExe/pages/order/order_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class OrderListScreen extends StatefulWidget {
-  const OrderListScreen({super.key});
+  final bool showBottomNav;
+
+  const OrderListScreen({super.key, this.showBottomNav = true});
 
   @override
   State<OrderListScreen> createState() => _OrderListScreenState();
@@ -40,8 +43,7 @@ class _OrderListScreenState extends State<OrderListScreen> {
   String? _entityError;
   List<dynamic> _distributors = [];
   List<dynamic> _retailers = [];
-   List<TargetMilestoneNotification> _targetNotifications = [];
-
+  List<TargetMilestoneNotification> _targetNotifications = [];
 
   // Selected retailer / distributor (its id goes to the search API)
   String? _selectedEntityId;
@@ -85,7 +87,6 @@ class _OrderListScreenState extends State<OrderListScreen> {
   }
 
   Future<void> _openTargetNotifications() async {
-    
     final userId = context.read<AuthProvider>().user?.id;
     if (userId == null || userId.isEmpty) return;
     final notifications = await TargetMilestoneNotificationService.markAllRead(
@@ -395,10 +396,12 @@ class _OrderListScreenState extends State<OrderListScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        child: const AppBottomNav(backgroundColor: Colors.white),
-      ),
+      bottomNavigationBar: widget.showBottomNav
+          ? Container(
+              color: Colors.white,
+              child: const AppBottomNav(backgroundColor: Colors.white),
+            )
+          : null,
     );
   }
 
@@ -580,8 +583,9 @@ class _OrderListScreenState extends State<OrderListScreen> {
 
   Widget _buildBody() {
     if (_loading && _orders.isEmpty) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.commandCentreText),
+      return ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: const [SkeletonLoader(rows: 5)],
       );
     }
     if (_error != null && _orders.isEmpty) {

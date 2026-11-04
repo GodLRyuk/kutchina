@@ -1,15 +1,16 @@
 import 'package:kutchina/core/constants/app_theme.dart';
-import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
+import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
-import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/module/admin/reports/report_detail_screen.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
 
 /// Entry point for the "Reports" bottom-nav destination.
 class ReportsHubScreen extends StatefulWidget {
-  const ReportsHubScreen({super.key});
+  final bool showBottomNav;
+
+  const ReportsHubScreen({super.key, this.showBottomNav = true});
 
   @override
   State<ReportsHubScreen> createState() => _ReportsHubScreenState();
@@ -328,13 +329,15 @@ class _ReportsHubScreenState extends State<ReportsHubScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        child: const AdminBottomNav(
-          initialIndex: 1,
-          backgroundColor: Colors.white,
-        ),
-      ),
+      bottomNavigationBar: widget.showBottomNav
+          ? Container(
+              color: Colors.white,
+              child: const AppBottomNav(
+                initialIndex: 1,
+                backgroundColor: Colors.white,
+              ),
+            )
+          : null,
     );
   }
 

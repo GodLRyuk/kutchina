@@ -4,10 +4,10 @@ import 'package:kutchina/core/constants/customePaint.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/utils/admin_widgets.dart';
-import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
+import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
-import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_product_detail_screen.dart';
 import 'package:kutchina/module/admin/admin_products_screen.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_region_detail_screen.dart';
@@ -91,7 +91,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
     if (user == null) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const Scaffold(body: SkeletonLoader.dashboard());
     }
 
     return Scaffold(
@@ -112,7 +112,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                   Text(
+                  Text(
                     getGreeting(),
                     style: const TextStyle(
                       fontSize: 13,
@@ -138,25 +138,24 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       _buildDropDown(),
                     ],
                   ),
-                  SizedBox(height: 14,),
+                  SizedBox(height: 14),
 
-                  if (_isLoading)...[
-                    LinearProgressIndicator(minHeight: 2),
-                    const SizedBox(height: 12),
-                  ] ,
-
-                  _buildHeader(),
-                  if (_loadError != null) _buildLoadError(),
-                  const SizedBox(height: 14),
-                  _buildStatCards(),
-                  const SizedBox(height: 16),
-                  _buildHighPerformers(),
-                  const SizedBox(height: 16),
-                  _buildSalesByCategory(),
-                  const SizedBox(height: 16),
-                  _buildSalesByRegion(),
-                  const SizedBox(height: 16),
-                  _buildTeamPerformance(),
+                  if (_isLoading)
+                    const SkeletonLoader.dashboard()
+                  else ...[
+                    _buildHeader(),
+                    if (_loadError != null) _buildLoadError(),
+                    const SizedBox(height: 14),
+                    _buildStatCards(),
+                    const SizedBox(height: 16),
+                    _buildHighPerformers(),
+                    const SizedBox(height: 16),
+                    _buildSalesByCategory(),
+                    const SizedBox(height: 16),
+                    _buildSalesByRegion(),
+                    const SizedBox(height: 16),
+                    _buildTeamPerformance(),
+                  ],
                 ],
               ),
             ),
@@ -165,7 +164,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
       ),
       bottomNavigationBar: Container(
         color: Colors.white,
-        child: const AdminBottomNav(
+        child: const AppBottomNav(
           initialIndex: 0,
           backgroundColor: Colors.white,
         ),

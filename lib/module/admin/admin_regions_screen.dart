@@ -4,6 +4,7 @@ import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/admin/detailsScreen/admin_regions_screen.dart';
 
 class AdminRegionsScreen extends StatefulWidget {
@@ -104,7 +105,13 @@ class _AdminRegionsScreenState extends State<AdminRegionsScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: _loadZones,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [SkeletonLoader(rows: 4)],
+        ),
+      );
     }
 
     if (_loadError != null) {

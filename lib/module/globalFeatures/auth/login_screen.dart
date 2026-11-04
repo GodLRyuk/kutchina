@@ -22,10 +22,6 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const List<String> _roles = ['Sales Exec', 'Admin'];
-
-  String _selectedRole = 'Sales Exec';
-
   bool _loading = false;
   bool _bioAvailable = false; // device has an enrolled fingerprint/face
   bool _bioEnabled = false; // user already turned fingerprint login on
@@ -270,8 +266,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
                 const SizedBox(height: 28),
 
-                // Role selector (dropdown)
-                // _roleDropdown(),
                 const SizedBox(height: 16),
 
                 AppWidgets.buildTextField(
@@ -390,46 +384,4 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  Widget _roleDropdown() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      decoration: BoxDecoration(
-        color: const Color(0xFFECEAE5),
-        borderRadius: BorderRadius.circular(11),
-      ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<String>(
-          value: _selectedRole,
-          isExpanded: true,
-          icon: const Icon(
-            Icons.keyboard_arrow_down_rounded,
-            color: AppColors.steel,
-          ),
-          borderRadius: BorderRadius.circular(11),
-          dropdownColor: AppColors.white,
-          items: _roles
-              .map(
-                (role) => DropdownMenuItem<String>(
-                  value: role,
-                  child: Text(
-                    role,
-                    style: const TextStyle(
-                      fontFamily: AppFonts.display,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.commandCentreText,
-                    ),
-                  ),
-                ),
-              )
-              .toList(),
-          onChanged: (value) {
-            if (value == null) return;
-            setState(() => _selectedRole = value);
-          },
-        ),
-      ),
-    );
-  }
 }

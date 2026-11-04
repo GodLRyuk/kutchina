@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/services/api_services.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 
 /// Loads data once, shows spinner / error with Retry / pull-to-refresh.
 /// Used by every new tab so loading behaviour is identical everywhere.
@@ -81,9 +82,7 @@ class AsyncViewState<T> extends State<AsyncView<T>> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const Center(
-        child: CircularProgressIndicator(color: AppColors.commandCentreText),
-      );
+      return const SkeletonLoader(rows: 5);
     }
     if (_error != null && _data == null) {
       return _scrollable(

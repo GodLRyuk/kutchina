@@ -7,6 +7,7 @@ import 'package:kutchina/core/services/target_milestone_notification_service.dar
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/salesExe/models/visit_model.dart';
 import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
@@ -208,12 +209,7 @@ class _TodayVisitsScreenState extends State<TodayVisitsScreen> {
       return ListView(
         controller: _scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        children: const [
-          SizedBox(
-            height: 240,
-            child: Center(child: CircularProgressIndicator()),
-          ),
-        ],
+        children: const [SkeletonLoader(rows: 5)],
       );
     }
     if (_error != null) {

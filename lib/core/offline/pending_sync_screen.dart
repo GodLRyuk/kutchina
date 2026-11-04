@@ -3,6 +3,7 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/offline/connectivity_service.dart';
 import 'package:kutchina/core/offline/offline_store.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 
 /// Lists everything saved on the phone that has not reached the server yet.
 /// Failed items (server rejected them) can be retried or discarded.
@@ -106,7 +107,7 @@ class _PendingSyncScreenState extends State<PendingSyncScreen> {
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator())
+          ? const SkeletonLoader(rows: 4)
           : _items.isEmpty
           ? Center(
               child: Padding(
@@ -173,10 +174,7 @@ class _PendingSyncScreenState extends State<PendingSyncScreen> {
                 ),
               ),
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 3,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                 decoration: BoxDecoration(
                   color: failed ? AppColors.redLight : AppColors.amberLight,
                   borderRadius: BorderRadius.circular(20),

@@ -4,6 +4,7 @@ import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 
 // ─────────────────────────── helpers ───────────────────────────
 
@@ -220,7 +221,13 @@ class _AdminProductsScreenState extends State<AdminProductsScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: _loadCategories,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [SkeletonLoader.cards(rows: 6)],
+        ),
+      );
     }
 
     if (_loadError != null) {
@@ -476,10 +483,7 @@ class _AdminCategoryProductsScreenState
 
   List<Widget> _content() {
     if (_isLoading) {
-      return const [
-        SizedBox(height: 48),
-        Center(child: CircularProgressIndicator()),
-      ];
+      return const [SkeletonLoader(rows: 5)];
     }
 
     if (_loadError != null) {

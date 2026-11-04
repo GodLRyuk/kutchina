@@ -13,17 +13,23 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  final bool showBottomNav;
+  final bool showBackButton;
+
+  const ProfileScreen({
+    super.key,
+    this.showBottomNav = true,
+    this.showBackButton = true,
+  });
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
-   List<TargetMilestoneNotification> _targetNotifications = [];
-   
+  List<TargetMilestoneNotification> _targetNotifications = [];
+
   Future<void> _openTargetNotifications() async {
-    
     final userId = context.read<AuthProvider>().user?.id;
     if (userId == null || userId.isEmpty) return;
     final notifications = await TargetMilestoneNotificationService.markAllRead(
@@ -112,34 +118,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
       extendBody: true,
       extendBodyBehindAppBar: true,
       appBar: AppTopBar.brand(
-        showBackButton: true,
+        showBackButton: widget.showBackButton,
         centerImage: const AssetImage('assets/images/logo.jpg'),
-       actions: [
-            IconButton(
-              onPressed: _openTargetNotifications,
-              icon: Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  const Icon(Icons.notifications_outlined),
-                  if (_targetNotifications.any(
-                    (notification) => !notification.isRead,
-                  ))
-                    Positioned(
-                      right: 0,
-                      top: 0,
-                      child: Container(
-                        width: 9,
-                        height: 9,
-                        decoration: const BoxDecoration(
-                          color: AppColors.red,
-                          shape: BoxShape.circle,
-                        ),
+        actions: [
+          IconButton(
+            onPressed: _openTargetNotifications,
+            icon: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                const Icon(Icons.notifications_outlined),
+                if (_targetNotifications.any(
+                  (notification) => !notification.isRead,
+                ))
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      width: 9,
+                      height: 9,
+                      decoration: const BoxDecoration(
+                        color: AppColors.red,
+                        shape: BoxShape.circle,
                       ),
                     ),
-                ],
-              ),
+                  ),
+              ],
             ),
-          ],
+          ),
+        ],
       ),
       body: AppBackground(
         child: SafeArea(
@@ -382,10 +388,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: Container(
-        color: Colors.white,
-        child: const AppBottomNav(backgroundColor: Colors.white),
-      ),
+      bottomNavigationBar: widget.showBottomNav
+          ? Container(
+              color: Colors.white,
+              child: const AppBottomNav(backgroundColor: Colors.white),
+            )
+          : null,
     );
   }
 

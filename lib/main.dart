@@ -11,9 +11,10 @@ import 'package:kutchina/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_theme.dart';
 
+import 'module/dashboard/role_home.dart';
 import 'module/globalFeatures/auth/login_screen.dart';
 import 'module/globalFeatures/auth/register_screen.dart';
-import 'module/salesExe/pages/dashboard/dashboard_screen.dart';
+import 'module/dashboard/role_dashboard_screen.dart';
 import 'module/salesExe/pages/leads/leads_screen.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
@@ -90,11 +91,9 @@ class KutchinaSalesApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/register': (context) => const RegisterScreen(),
         '/otp': (context) => const OtpVerificationScreen(),
-        '/dashboard': (context) => const DashboardScreen(),
+        '/dashboard': (context) => const RoleDashboardScreen(),
+        '/home': (context) => const RoleHome(),
         '/leads': (context) => const LeadsScreen(),
-        // '/distributor': (context) => const DistributorHome(),
-        // '/saleshead': (context) => const SalesHeadHome(),
-        // '/hod': (context) => const HodHome(),
       },
     );
   }

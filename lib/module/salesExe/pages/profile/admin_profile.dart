@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/offline/pending_sync_screen.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/biometric_auth_service.dart';
-import 'package:kutchina/core/widgets/admin_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
@@ -337,7 +336,7 @@ class AdminProfileScreen extends StatelessWidget {
       ),
       bottomNavigationBar: Container(
         color: Colors.white,
-        child: const AdminBottomNav(
+        child: const AppBottomNav(
           initialIndex: 2,
           backgroundColor: Colors.white,
         ),

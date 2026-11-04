@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
-import 'package:kutchina/module/admin/admin_dashboard.dart';
 
-enum AppRole { salesExec, distributor, salesHead, hod, admin }
+enum AppRole {
+  admin,
+  salesExec,
+  salesHead,
+  branchManager,
+  areaSalesManager,
+  hod,
+  distributor,
+}
 
 class AppRoles {
   AppRoles._();
@@ -9,14 +16,26 @@ class AppRoles {
   static AppRole parse(String? raw) {
     final r = (raw ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
     switch (r) {
-      case 'admin':
       case 'superadmin':
+        return AppRole.admin;
+      case 'admin':
         return AppRole.admin;
       case 'hod':
         return AppRole.hod;
+      case 'se':
+      case 'salesexec':
+        return AppRole.salesExec;
       case 'sh':
+      case 'saleshead':
         return AppRole.salesHead;
+      case 'bm':
+      case 'branchmanager':
+        return AppRole.branchManager;
+      case 'asm':
+      case 'areasalesmanager':
+        return AppRole.areaSalesManager;
       case 'areasaleshead':
+        return AppRole.areaSalesManager;
       case 'distributor':
       case 'dealer':
         return AppRole.distributor;
@@ -25,48 +44,28 @@ class AppRoles {
     }
   }
 
-  static String routeFor(AppRole role) {
+  static int level(AppRole role) {
     switch (role) {
-      case AppRole.distributor:
-        return '/distributor';
-      case AppRole.salesHead:
-        return '/saleshead';
-      case AppRole.hod:
-        return '/hod';
       case AppRole.admin:
+        return 6;
       case AppRole.salesExec:
-        return '/dashboard';
+        return 1;
+      case AppRole.salesHead:
+        return 2;
+      case AppRole.branchManager:
+        return 3;
+      case AppRole.areaSalesManager:
+        return 4;
+      case AppRole.hod:
+        return 5;
+      case AppRole.distributor:
+        return 0;
     }
   }
 
   /// Opens the right home screen after login (password, fingerprint or
   /// offline login all call this).
   static void openHome(BuildContext context, String? roleName) {
-    print('Opening home for role: $roleName');
-    final role = parse(roleName);
-    if (role == AppRole.admin) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => AdminDashboard()),
-      );
-      return;
-    }
-    if (role == AppRole.salesExec) {
-      Navigator.pushReplacementNamed(context, '/dashboard');
-      return;
-    }
-    if (role == AppRole.distributor) {
-      Navigator.pushReplacementNamed(context, '/distributor');
-      return;
-    }
-    if (role == AppRole.salesHead) {
-      Navigator.pushReplacementNamed(context, '/saleshead');
-      return;
-    }
-    if (role == AppRole.hod) {
-      Navigator.pushReplacementNamed(context, '/hod');
-      return;
-    }
-    Navigator.pushReplacementNamed(context, routeFor(role));
+    Navigator.pushNamedAndRemoveUntil(context, '/home', (_) => false);
   }
 }

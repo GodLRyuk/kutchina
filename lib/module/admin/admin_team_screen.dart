@@ -4,6 +4,7 @@ import 'package:kutchina/core/network/masters_api.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/admin/reports/salesPersonDetailsScreen.dart';
 
 class AdminTeamScreen extends StatefulWidget {
@@ -133,11 +134,11 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
         showBackButton: true,
         centerImage: AssetImage('assets/images/logo.jpg'),
       ),
-     
+
       body: AppBackground(
         child: SafeArea(
           child: Padding(
-             padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
             //padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -172,7 +173,13 @@ class _AdminTeamScreenState extends State<AdminTeamScreen> {
 
   Widget _buildBody() {
     if (_isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return RefreshIndicator(
+        onRefresh: _loadUsers,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: const [SkeletonLoader(rows: 4)],
+        ),
+      );
     }
 
     if (_loadError != null) {

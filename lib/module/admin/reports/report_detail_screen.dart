@@ -6,6 +6,7 @@ import 'package:kutchina/core/services/report_api.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
+import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/admin/reports/report_models.dart';
 import 'package:flutter/material.dart';
 
@@ -17,7 +18,6 @@ class _C {
   static const inkSoft = Color(0xFF5E6478);
   static const inkFaint = Color(0xFF9BA0AF);
   static const line = Color(0xFFE7E3DA);
-  static const navy = Color(0xFF1C2740);
   static const navy2 = Color(0xFF111830);
   static const primary = Color(0xFF1D4ED8);
   static const primarySoft = Color(0xFFE7EEFE);
@@ -420,7 +420,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
             ),
           ),
         ],
-
       ),
       // appBar: AppTopBar.simple(
       //   title: 'AI Report',
@@ -435,7 +434,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
       //       ),
       //     ),
       //   ],
-        
+
       // ),
       body: AppBackground(
         child: SafeArea(
@@ -490,17 +489,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
                     if (_error != null)
                       _ReportError(message: _error!, onRetry: _loadReport),
                     if (_loading)
-                      const Padding(
-                        padding: EdgeInsets.only(bottom: 12),
-                        child: LinearProgressIndicator(
-                          minHeight: 2,
-                          color: _C.navy,
-                          backgroundColor: _C.line,
-                        ),
-                      ),
-                    _KpiGrid(kpis: kpis),
-                    ...view.sections,
-                    ..._actionWidgets(view.actions),
+                      const SkeletonLoader.detail()
+                    else ...[
+                      _KpiGrid(kpis: kpis),
+                      ...view.sections,
+                      ..._actionWidgets(view.actions),
+                    ],
                   ]),
                 ),
               ),
