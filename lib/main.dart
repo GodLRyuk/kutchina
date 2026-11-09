@@ -7,6 +7,7 @@ import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/provider/app_providers.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/module/globalFeatures/otp/otp_screen.dart';
+import 'package:kutchina/module/salesModule/pages/features/feature_list_screen.dart';
 import 'package:kutchina/splash_screen.dart';
 import 'package:provider/provider.dart';
 import 'core/constants/app_theme.dart';
@@ -15,7 +16,7 @@ import 'module/dashboard/role_home.dart';
 import 'module/globalFeatures/auth/login_screen.dart';
 import 'module/globalFeatures/auth/register_screen.dart';
 import 'module/dashboard/role_dashboard_screen.dart';
-import 'module/salesExe/pages/leads/leads_screen.dart';
+import 'module/salesModule/pages/leads/leads_screen.dart';
 
 final GlobalKey<NavigatorState> appNavigatorKey = GlobalKey<NavigatorState>();
 bool _sessionDialogVisible = false;
@@ -94,6 +95,7 @@ class KutchinaSalesApp extends StatelessWidget {
         '/dashboard': (context) => const RoleDashboardScreen(),
         '/home': (context) => const RoleHome(),
         '/leads': (context) => const LeadsScreen(),
+        '/feature-list': (context) => const FeatureListScreen(),
       },
     );
   }

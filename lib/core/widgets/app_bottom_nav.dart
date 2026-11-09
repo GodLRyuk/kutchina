@@ -8,11 +8,11 @@ import 'package:kutchina/module/admin/admin_team_screen.dart';
 import 'package:kutchina/module/admin/admin_dashboard.dart';
 import 'package:kutchina/module/admin/reports/reports_hub_screen.dart';
 import 'package:kutchina/module/dashboard/role_dashboard_screen.dart';
-import 'package:kutchina/module/salesExe/pages/dashboard/dashboard_screen.dart';
-import 'package:kutchina/module/salesExe/pages/leads/leads_screen.dart';
-import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
-import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
-import 'package:kutchina/module/salesExe/pages/profile/admin_profile.dart';
+import 'package:kutchina/module/salesModule/pages/dashboard/dashboard_screen.dart';
+import 'package:kutchina/module/salesModule/pages/leads/leads_screen.dart';
+import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
+import 'package:kutchina/module/salesModule/pages/profile/profile.dart';
+import 'package:kutchina/module/salesModule/pages/profile/admin_profile.dart';
 import 'package:provider/provider.dart';
 
 class RoleTab {

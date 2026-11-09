@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/utils/voice_input_sheet.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
 
 class NoteSheet extends StatefulWidget {
   final String initialText;
@@ -39,7 +39,6 @@ class NoteSheetState extends State<NoteSheet> {
     );
   }
 
-  
   @override
   Widget build(BuildContext context) {
     return Padding(

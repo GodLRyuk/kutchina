@@ -4,9 +4,9 @@ import 'package:kutchina/core/offline/offline_store.dart';
 import 'package:kutchina/core/offline/sync_service.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/services/location_service.dart';
-import 'package:kutchina/module/salesExe/models/order_model.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-import 'package:kutchina/module/salesExe/models/visit_model.dart';
+import 'package:kutchina/module/salesModule/models/order_model.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
+import 'package:kutchina/module/salesModule/models/visit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kutchina/core/services/location_address_service.dart';
 
@@ -726,10 +726,10 @@ class TargetAssignment {
                 ?.toString() ??
             '',
       ),
+
       // targetDate: DateTime.tryParse(
       //   (json['target_date'] ?? json['end_date'])?.toString() ?? '',
       // ),
-
       userId: (user['id'] ?? json['user_id'] ?? '').toString(),
 
       retailerName: (retailer['name'] ?? '').toString(),

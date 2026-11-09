@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/channel_model.dart';
-import 'package:kutchina/module/salesExe/pages/order/select_product_screen.dart';
+import 'package:kutchina/module/salesModule/models/channel_model.dart';
+import 'package:kutchina/module/salesModule/pages/order/select_product_screen.dart';
 
 Future<void> showNewOrderSheet(BuildContext context) {
   return showModalBottomSheet(
@@ -27,8 +27,6 @@ class _NewOrderSheetState extends State<_NewOrderSheet> {
   String? _channelError;
   String? _orderTypeError;
 
-  
-  
   static const List<Color> _channelColors = [
     AppColors.regionBlue,
     AppColors.regionOrange,

@@ -10,9 +10,9 @@ import 'package:kutchina/core/widgets/coming_soon_tab.dart';
 import 'package:kutchina/module/dashboard/dashboard_controller.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile_factory.dart';
-import 'package:kutchina/module/salesExe/pages/dashboard/dashboard_screen.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
-import 'package:kutchina/module/salesExe/pages/profile/profile.dart';
+import 'package:kutchina/module/salesModule/pages/dashboard/dashboard_screen.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/pages/profile/profile.dart';
 import 'package:provider/provider.dart';
 
 class RoleDashboardScreen extends StatefulWidget {
@@ -131,7 +131,7 @@ class _RoleDashboardScreenState extends State<RoleDashboardScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        if (user != null && _role != AppRole.hod) ...[
+                        if (user != null) ...[
                           const SizedBox(height: 3),
                           Text(
                             _greeting(),
@@ -165,7 +165,7 @@ class _RoleDashboardScreenState extends State<RoleDashboardScreen> {
                                 Expanded(
                                   child: _QuickActionButton(
                                     item: actions[index],
-                                    compact: _role == AppRole.hod,
+                                    compact: false,
                                   ),
                                 ),
                               ],

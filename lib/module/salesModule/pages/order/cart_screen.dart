@@ -9,8 +9,8 @@ import 'package:kutchina/core/utils/dialog_box.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 
 class CartScreen extends StatefulWidget {

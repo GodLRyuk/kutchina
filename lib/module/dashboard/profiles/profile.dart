@@ -4,9 +4,9 @@ import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/module/dashboard/dashboard_controller.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile.dart';
 import 'package:kutchina/module/dashboard/se_dashboard_controller.dart';
-import 'package:kutchina/module/salesExe/pages/order/new_order_sheet.dart';
-import 'package:kutchina/module/salesExe/pages/order/order_list_screen.dart';
-import 'package:kutchina/module/salesExe/pages/visits/new_visit.dart';
+import 'package:kutchina/module/salesModule/pages/order/new_order_sheet.dart';
+import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
+import 'package:kutchina/module/salesModule/pages/visits/new_visit.dart';
 
 class SeProfile extends DashboardProfile {
   @override

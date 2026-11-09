@@ -5,9 +5,9 @@ import 'package:kutchina/core/services/target_milestone_notification_service.dar
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
-import 'package:kutchina/module/salesExe/pages/order/cart_screen.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/pages/order/cart_screen.dart';
 import 'package:provider/provider.dart';
 
 class ProductDetailScreen extends StatefulWidget {

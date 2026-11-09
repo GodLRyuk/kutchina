@@ -8,8 +8,8 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/skeleton_loader.dart';
-import 'package:kutchina/module/salesExe/models/visit_model.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/models/visit_model.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 
 class TodayVisitsScreen extends StatefulWidget {

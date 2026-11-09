@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:kutchina/core/auth/app_roles.dart';
 import 'package:kutchina/module/dashboard/dashboard_controller.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile.dart';
-import 'package:kutchina/module/dashboard/profiles/hod_profile.dart';
-import 'package:kutchina/module/dashboard/profiles/se_profile.dart';
+import 'package:kutchina/module/dashboard/profiles/profile.dart';
 import 'package:kutchina/module/dashboard/se_dashboard_controller.dart';
 
 class _StubProfile extends DashboardProfile {
@@ -39,7 +38,7 @@ DashboardProfile forRole(AppRole role) {
     case AppRole.areaSalesManager:
       return _StubProfile(AppRole.areaSalesManager);
     case AppRole.hod:
-      return HodProfile();
+      return _StubProfile(AppRole.hod);
     case AppRole.distributor:
       return _StubProfile(AppRole.distributor);
   }

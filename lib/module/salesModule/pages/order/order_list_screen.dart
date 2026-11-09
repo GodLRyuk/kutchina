@@ -9,9 +9,9 @@ import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/core/services/api_services.dart';
-import 'package:kutchina/module/salesExe/models/order_model.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
-import 'package:kutchina/module/salesExe/pages/order/order_detail_screen.dart';
+import 'package:kutchina/module/salesModule/models/order_model.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/pages/order/order_detail_screen.dart';
 import 'package:provider/provider.dart';
 
 class OrderListScreen extends StatefulWidget {

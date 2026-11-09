@@ -17,8 +17,8 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/suggestion_dropdown.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 
 class NewVisitScreen extends StatefulWidget {
@@ -163,7 +163,6 @@ class _NewVisitScreenState extends State<NewVisitScreen> {
   }
 
   Future<void> _openTargetNotifications() async {
-    
     final userId = context.read<AuthProvider>().user?.id;
     if (userId == null || userId.isEmpty) return;
     final notifications = await TargetMilestoneNotificationService.markAllRead(

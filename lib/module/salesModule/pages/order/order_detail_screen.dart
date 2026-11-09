@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/models/order_model.dart';
+import 'package:kutchina/module/salesModule/models/order_model.dart';
 
 class OrderDetailScreen extends StatelessWidget {
   final List<OrderEntry> orders;
@@ -131,12 +131,11 @@ class OrderDetailScreen extends StatelessWidget {
                         children: [
                           _detailRow('Quantity', _formatQty(item.quantity)),
                           const SizedBox(height: 8),
-                         _detailRow('Filter Type', item.filterType ?? '—'),
+                          _detailRow('Filter Type', item.filterType ?? '—'),
                           const SizedBox(height: 8),
                           _detailRow('Warranty', item.warranty ?? '—'),
                           const SizedBox(height: 8),
                           _detailRow("Total Price", '${item.price}'),
-                         
                         ],
                       ),
                     ),

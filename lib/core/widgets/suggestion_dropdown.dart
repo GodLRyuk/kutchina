@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
-import 'package:kutchina/module/salesExe/models/product_model.dart';
+import 'package:kutchina/module/salesModule/models/product_model.dart';
 
 class SuggestionDropdown extends StatelessWidget {
   final List<SuggestionModel> items;
@@ -35,10 +35,12 @@ class SuggestionDropdown extends StatelessWidget {
       child: Wrap(
         spacing: 8,
         runSpacing: 8,
-        children: items.map((item) => _SuggestionChip(
-              text: item.text,
-              onTap: () => onSelect(item),
-            )).toList(),
+        children: items
+            .map(
+              (item) =>
+                  _SuggestionChip(text: item.text, onTap: () => onSelect(item)),
+            )
+            .toList(),
       ),
     );
   }

@@ -7,7 +7,7 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';

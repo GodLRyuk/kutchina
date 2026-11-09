@@ -7,7 +7,7 @@ import 'package:kutchina/core/services/target_milestone_notification_service.dar
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/skeleton_loader.dart';
-import 'package:kutchina/module/salesExe/pages/notification/notification.dart';
+import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:provider/provider.dart';
 
 class TargetScreen extends StatefulWidget {
