@@ -1,0 +1,53 @@
+import 'package:kutchina/module/distributors/models/orders_model.dart';
+
+final List<OrdersModel> staticOrders = [
+  OrdersModel(
+    id: 1,
+    orderNumber: 'KUTORD1001',
+    productId: 11,
+    productName: 'RO Filter 5 Stage',
+    quantity: 2,
+    filterType: 'RO',
+    warranty: '1 Year',
+    price: 4500,
+    orderStatus: 'Placed',
+    createdBy: 'Distributor',
+    createdAt: DateTime(2026, 11, 10),
+  ),
+  OrdersModel(
+    id: 2,
+    orderNumber: 'KUTORD1001',
+    productId: 12,
+    productName: 'Sediment Cartridge',
+    quantity: 4,
+    filterType: 'Cartridge',
+    price: 800,
+    orderStatus: 'Placed',
+    createdBy: 'Distributor',
+    createdAt: DateTime(2026, 11, 10),
+  ),
+  OrdersModel(
+    id: 3,
+    orderNumber: 'KUTORD1002',
+    productId: 13,
+    productName: 'UV Water Purifier',
+    quantity: 1,
+    filterType: 'UV',
+    warranty: '2 Years',
+    price: null, // shows "Price pending"
+    orderStatus: 'Delivered',
+    createdBy: 'Dealer',
+    createdAt: DateTime(2026, 11, 8),
+  ),
+  OrdersModel(
+    id: 4,
+    orderNumber: 'KUTORD1003',
+    productId: 14,
+    productName: 'Carbon Filter',
+    quantity: 3.5,
+    price: 1200,
+    orderStatus: 'Cancelled',
+    createdBy: 'Dealer',
+    createdAt: DateTime(2026, 11, 5),
+  ),
+];

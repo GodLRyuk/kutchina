@@ -8,6 +8,7 @@ import 'package:kutchina/module/admin/admin_team_screen.dart';
 import 'package:kutchina/module/admin/admin_dashboard.dart';
 import 'package:kutchina/module/admin/reports/reports_hub_screen.dart';
 import 'package:kutchina/module/dashboard/role_dashboard_screen.dart';
+import 'package:kutchina/module/distributors/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/leads/leads_screen.dart';
 import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
@@ -180,10 +181,41 @@ class AppBottomNav extends StatelessWidget {
             ),
           ),
         ];
+
+       case AppRole.distributor:
+        return [
+          RoleTab(
+            label: 'Home',
+            icon: Icons.home_outlined,
+            builder: (_) => const DistributorDashboard(showBottomNav: false),
+          ),
+          RoleTab(
+            label: 'Shops',
+            icon: Icons.storefront_outlined,
+            builder: (_) => const ComingSoonTab(title: 'Shops'),
+          ),
+          RoleTab(
+            label: 'Orders',
+            icon: Icons.receipt_long_outlined,
+            builder: (_) => const ComingSoonTab(title: 'Orders'),
+          ),
+          RoleTab(
+            label: 'Profile',
+            icon: Icons.person_outline,
+            builder: (_) => const ProfileScreen(
+              showBottomNav: false,
+              showBackButton: false,
+            ),
+          ),
+        ];
+
+
+
+
       case AppRole.salesHead:
       case AppRole.branchManager:
       case AppRole.areaSalesManager:
-      case AppRole.distributor:
+      // case AppRole.distributor:
         return [
           RoleTab(
             label: 'Home',

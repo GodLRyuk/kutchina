@@ -10,6 +10,7 @@ import 'package:kutchina/core/widgets/coming_soon_tab.dart';
 import 'package:kutchina/module/dashboard/dashboard_controller.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile.dart';
 import 'package:kutchina/module/dashboard/dashboard_profile_factory.dart';
+import 'package:kutchina/module/distributors/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
 import 'package:kutchina/module/salesModule/pages/profile/profile.dart';
@@ -67,6 +68,9 @@ class _RoleDashboardScreenState extends State<RoleDashboardScreen> {
   Widget build(BuildContext context) {
     if (_role == AppRole.salesExec) {
       return DashboardScreen(showBottomNav: false);
+    }
+    else if (_role == AppRole.distributor) {
+      return DistributorDashboard(showBottomNav: false);
     }
 
     return ListenableBuilder(

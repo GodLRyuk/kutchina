@@ -15,6 +15,7 @@ class AppRoles {
 
   static AppRole parse(String? raw) {
     final r = (raw ?? '').toLowerCase().replaceAll(RegExp(r'[^a-z]'), '');
+
     switch (r) {
       case 'superadmin':
         return AppRole.admin;
