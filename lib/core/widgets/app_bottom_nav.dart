@@ -14,6 +14,7 @@ import 'package:kutchina/module/salesModule/pages/leads/leads_screen.dart';
 import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
 import 'package:kutchina/module/salesModule/pages/profile/profile.dart';
 import 'package:kutchina/module/salesModule/pages/profile/admin_profile.dart';
+import 'package:kutchina/module/salesModule/pages/task_management/task_list_screen.dart';
 import 'package:provider/provider.dart';
 
 class RoleTab {
@@ -169,7 +170,7 @@ class AppBottomNav extends StatelessWidget {
             label: 'Tasks',
             icon: Icons.task_alt_outlined,
             iconColor: AppColors.topProductBg,
-            builder: (_) => const ComingSoonTab(title: 'Tasks'),
+            builder: (_) => const TaskListScreen(showBottomNav: false),
           ),
           RoleTab(
             label: 'Profile',
@@ -225,7 +226,7 @@ class AppBottomNav extends StatelessWidget {
           RoleTab(
             label: 'Tasks',
             icon: Icons.checklist_outlined,
-            builder: (_) => const ComingSoonTab(title: 'Tasks'),
+            builder: (_) => const TaskListScreen(showBottomNav: false),
           ),
           RoleTab(
             label: 'Profile',

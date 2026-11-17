@@ -596,8 +596,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     footTone: _Tone.neutral,
   );
 
-  String _period3() => 'Period: $_displayPeriodLabel';
-
   // ---------------------------------------------------------------------------
   // 1. Sales projection
   // ---------------------------------------------------------------------------
@@ -879,40 +877,6 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  static const _kName = [
-    'zone',
-    'zone_name',
-    'region',
-    'region_name',
-    'name',
-    'label',
-  ];
-  static const _kAch = [
-    'achievement_percentage',
-    'achievement_pct',
-    'achievement',
-    'target_achievement_percentage',
-  ];
-  static const _kPotential = [
-    'market_potential',
-    'potential_value',
-    'potential',
-    'estimated_potential',
-  ];
-  static const _kGap = ['opportunity_gap', 'gap', 'untapped_value'];
-  static const _kDealers = ['active_dealers', 'dealer_count', 'dealers'];
-  static const _kSales = [
-    'current_period_sales',
-    'achieved_sales',
-    'sales',
-    'sales_value',
-    'actual_sales',
-  ];
-  static const _kTarget = ['target_value', 'target'];
-  static const _kGrowth = ['growth_percentage', 'growth'];
-  static const _kProj = ['projected_sales', 'next_month_projection'];
-  static const _kInsight = ['insight', 'recommendation'];
-
   _View _regionalView() {
     final r = _regionalOpportunity;
     final items = r?.items ?? <RegionalZoneItem>[];
@@ -1069,104 +1033,12 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
     );
   }
 
-  _Zone _zoneFrom(Map<String, dynamic> m, int i) {
-    final name = _str(m, _kName) ?? 'Zone ${i + 1}';
-    final sales = _num(m, _kSales);
-    final target = _num(m, _kTarget);
-    var ach = _num(m, _kAch);
-    if (ach == null && sales != null && target != null && target > 0) {
-      ach = sales / target * 100;
-    }
-    final potential = _num(m, _kPotential);
-    var gap = _num(m, _kGap);
-    if (gap == null && potential != null && sales != null) {
-      gap = potential - sales;
-    }
-    final dealers = _num(m, _kDealers);
-    final growth = _num(m, _kGrowth);
-    final projNext = _num(m, _kProj);
-    final insight = _str(m, _kInsight);
-
-    final p = _plan(
-      sales: sales ?? 0,
-      target: target ?? 0,
-      projNext: projNext ?? 0,
-    );
-    final f = _foot(p);
-    final badge = _badgeFor(ach);
-
-    final consumed = <String>{
-      ..._kName,
-      ..._kAch,
-      ..._kPotential,
-      ..._kGap,
-      ..._kDealers,
-      ..._kSales,
-      ..._kTarget,
-      ..._kGrowth,
-      ..._kProj,
-      ..._kInsight,
-    };
-    final leftovers = m.entries
-        .where(
-          (e) =>
-              !consumed.contains(e.key) &&
-              e.value != null &&
-              e.value is! Map &&
-              e.value is! List &&
-              e.value.toString().trim().isNotEmpty,
-        )
-        .take(3)
-        .map((e) => '${_prettify(e.key)} **${_formatValue(e.value)}**')
-        .toList();
-    final extra = [
-      if (leftovers.isNotEmpty) leftovers.join(' · '),
-      if (insight != null) insight,
-    ].join('\n');
-
-    return _Zone(
-      name: name,
-      ach: ach,
-      potential: potential,
-      gap: gap,
-      dealers: dealers,
-      insight: insight,
-      card: _TargetData(
-        title: name,
-        sub:
-            '${dealers == null ? '00' : dealers.round()} active dealers · ${gap == null ? '₹0' : _currency(gap)} opportunity gap',
-        avatarText: name.length >= 2
-            ? name.substring(0, 2).toUpperCase()
-            : name.toUpperCase(),
-        growth: growth,
-        badgeText: badge.$1,
-        badgeTone: badge.$2,
-        stats: [
-          _Stat('THIS MONTH SALES', _cur(sales)),
-          _Stat('OPPORTUNITY TARGET', _cur(target)),
-          _Stat(
-            'CAPTURE RATE',
-            ach == null ? '00%' : '${ach.round()}%',
-            ach == null ? null : (ach >= 100 ? _C.good : _C.risk),
-          ),
-          _Stat('NEXT MO. PROJECTED SALES', _cur(projNext)),
-        ],
-        extra: extra.isEmpty ? null : extra,
-        footLabel: 'NEXT MONTH OPPORTUNITY CAPTURE TARGET',
-        footValue: f.value,
-        footTag: f.tag,
-        footTone: f.tone,
-      ),
-    );
-  }
-
   // ---------------------------------------------------------------------------
   // 4. Dealer potential
   // ---------------------------------------------------------------------------
   _View _dealerView() {
     final r = _dealerPotential;
     final sum = r?.summary;
-    final loaded = r != null;
     final items = [...(r?.items ?? <DealerPotentialItem>[])]
       ..sort((a, b) {
         final sa = a.salesValue.number ?? -1;
@@ -1225,7 +1097,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
         () {
           final s = recency(it.daysSinceLastVisit);
           final d = it.daysSinceLastVisit;
-          final ach = it.achievementPercentage.number; // for growth show
+          // for growth show
           final f = _footFromBackend(
             it.nextMonthTarget.hasValue ? it.nextMonthTarget : it.growthTarget,
             _plan(sales: 0, target: 0, projNext: 0),
@@ -1627,6 +1499,7 @@ class _ReportDetailScreenState extends State<ReportDetailScreen> {
 // =============================================================================
 // Regional helper types
 // =============================================================================
+// ignore: unused_element
 class _Zone {
   final String name;
   final double? ach;
@@ -1646,35 +1519,7 @@ class _Zone {
   });
 }
 
-extension _TargetDataLabels on _TargetData {
-  _TargetData copyWithLabels({
-    String? target,
-    String? achievement,
-    String? footLabel,
-  }) {
-    return _TargetData(
-      title: title,
-      sub: sub,
-      avatarText: avatarText,
-      trend: trend,
-      growth: growth,
-      badgeText: badgeText,
-      badgeTone: badgeTone,
-      stats: [
-        stats[0],
-        _Stat(target ?? stats[1].label, stats[1].value, stats[1].color),
-        _Stat(achievement ?? stats[2].label, stats[2].value, stats[2].color),
-        stats[3],
-      ],
-      extra: extra,
-      coachingText: coachingText,
-      footLabel: footLabel ?? this.footLabel,
-      footValue: footValue,
-      footTag: footTag,
-      footTone: footTone,
-    );
-  }
-}
+extension _TargetDataLabels on _TargetData {}
 
 class _HeatRow {
   final String name;
@@ -1716,11 +1561,10 @@ class _RiskRow {
     required this.avatarText,
     required this.title,
     required this.sub,
-    this.insight = '',
     required this.value,
     required this.badgeText,
     required this.badgeTone,
-  });
+  }) : insight = '';
 }
 
 // =============================================================================
@@ -3320,46 +3164,6 @@ class _RiskCard extends StatelessWidget {
 // =============================================================================
 // Small local helpers
 // =============================================================================
-Map<String, dynamic> _asMap(dynamic value) {
-  if (value is Map<String, dynamic>) return value;
-  if (value is Map) return Map<String, dynamic>.from(value);
-  return <String, dynamic>{};
-}
-
-double? _num(Map<String, dynamic> m, List<String> keys) {
-  for (final k in keys) {
-    final v = m[k];
-    if (v is num) return v.toDouble();
-    if (v is String) {
-      final p = double.tryParse(v);
-      if (p != null) return p;
-    }
-  }
-  return null;
-}
-
-String? _str(Map<String, dynamic> m, List<String> keys) {
-  for (final k in keys) {
-    final v = m[k];
-    if (v != null && v.toString().trim().isNotEmpty) return v.toString();
-  }
-  return null;
-}
-
-String _prettify(String key) => key
-    .replaceAll('_', ' ')
-    .split(' ')
-    .map((w) => w.isEmpty ? w : '${w[0].toUpperCase()}${w.substring(1)}')
-    .join(' ');
-
-String _formatValue(dynamic value) {
-  if (value is double) {
-    return value == value.roundToDouble()
-        ? value.toStringAsFixed(0)
-        : value.toStringAsFixed(1);
-  }
-  return value.toString();
-}
 
 String _initials(String s) {
   final w = s.trim().split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();

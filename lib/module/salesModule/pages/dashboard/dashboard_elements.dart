@@ -10,6 +10,7 @@ import 'package:kutchina/module/salesModule/models/visit_model.dart';
 import 'package:kutchina/module/salesModule/pages/features/feature_list_screen.dart';
 import 'package:kutchina/module/salesModule/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
+import 'package:kutchina/module/salesModule/pages/task_management/task_list_screen.dart';
 import 'package:kutchina/module/salesModule/pages/visits/new_visit.dart';
 
 class DashboardElements {
@@ -597,7 +598,10 @@ class DashboardElements {
             AdminWidget.quickAction(
               Icons.shopping_bag_outlined,
               'Task Management',
-              () => showNewOrderSheet(context),
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TaskListScreen()),
+              ),
               bgColor: AppColors.amberDark,
             ),
             const SizedBox(width: 8),

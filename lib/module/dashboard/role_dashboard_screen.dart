@@ -13,7 +13,6 @@ import 'package:kutchina/module/dashboard/dashboard_profile_factory.dart';
 import 'package:kutchina/module/distributors/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/dashboard/dashboard_screen.dart';
 import 'package:kutchina/module/salesModule/pages/notification/notification.dart';
-import 'package:kutchina/module/salesModule/pages/profile/profile.dart';
 import 'package:provider/provider.dart';
 
 class RoleDashboardScreen extends StatefulWidget {

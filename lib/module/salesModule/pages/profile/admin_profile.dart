@@ -9,6 +9,7 @@ import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:provider/provider.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
 import 'package:kutchina/core/provider/auth_provider.dart';
+import 'package:kutchina/module/salesModule/pages/profile/user_list_screen.dart';
 
 class AdminProfileScreen extends StatelessWidget {
   const AdminProfileScreen({super.key});
@@ -260,6 +261,25 @@ class AdminProfileScreen extends StatelessWidget {
                         valueColor: user.isActive
                             ? AppColors.green
                             : AppColors.steel,
+                      ),
+                    ]),
+
+                    const SizedBox(height: 18),
+                    _sectionLabel('User directory'),
+                    _sectionCard([
+                      InkWell(
+                        onTap: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                const UserListScreen(showBottomNav: false),
+                          ),
+                        ),
+                        child: _infoRow(
+                          Icons.groups_outlined,
+                          'Browse users',
+                          'View user accounts and roles',
+                        ),
                       ),
                     ]),
 

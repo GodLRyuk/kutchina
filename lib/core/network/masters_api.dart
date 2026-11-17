@@ -8,7 +8,6 @@ import 'package:kutchina/module/salesModule/models/order_model.dart';
 import 'package:kutchina/module/salesModule/models/product_model.dart';
 import 'package:kutchina/module/salesModule/models/visit_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:kutchina/core/services/location_address_service.dart';
 
 class Distributor {
   final String id;
@@ -90,6 +89,7 @@ class AdminUser {
   final String locationId;
   final String zoneId;
   final String roleId;
+  final String roleName;
   final bool isActive;
   final bool isStaff;
   final bool isSuperuser;
@@ -106,6 +106,7 @@ class AdminUser {
     required this.locationId,
     required this.zoneId,
     required this.roleId,
+    required this.roleName,
     required this.isActive,
     required this.isStaff,
     required this.isSuperuser,
@@ -113,6 +114,12 @@ class AdminUser {
 
   factory AdminUser.fromJson(Map<String, dynamic> json) {
     String s(String key) => json[key]?.toString().trim() ?? '';
+    final rawRole = json['role'];
+    final roleName =
+        json['role_name']?.toString().trim() ??
+        (rawRole is Map
+            ? (rawRole['name'] ?? rawRole['title'])?.toString().trim() ?? ''
+            : rawRole?.toString().trim() ?? '');
 
     return AdminUser(
       id: s('id'),
@@ -126,6 +133,7 @@ class AdminUser {
       locationId: s('location_id'),
       zoneId: s('zone_id'),
       roleId: s('role_id'),
+      roleName: roleName,
       // Treat a missing flag as active.
       isActive: json['is_active'] == null ? true : json['is_active'] == true,
       isStaff: json['is_staff'] == true,
@@ -371,7 +379,6 @@ class MastersApi {
   }
 
   static Future<List<Product>> fetchProducts() async {
-    print("Product czll");
     final res = await ApiService.instance.getCached(
       '/api/v1/masters/products/',
     );
@@ -631,7 +638,7 @@ class OrderService {
         : await ApiService.instance.getCached(
             '/api/v1/orders/place/',
             queryParams: {
-              if (entityType != null) 'user_type': entityType,
+              'user_type': ?entityType,
               'order_for': entityId,
               if (query.isNotEmpty) 'order_number': query,
             },
