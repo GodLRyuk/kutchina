@@ -240,6 +240,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }
     final isSalesExecutive = auth.role == AppRole.salesExec;
     final isHod = auth.role == AppRole.hod;
+    final isASM = auth.role == AppRole.areaSalesManager;
+    final isBM = auth.role == AppRole.branchManager;
+    final isSH = auth.role == AppRole.salesHead;
+
     return AnnotatedRegion<SystemUiOverlayStyle>(
       value: const SystemUiOverlayStyle(
         statusBarColor: Colors.transparent,
@@ -355,6 +359,75 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       const SizedBox(height: 8),
                     ],
                     if (isHod) ...[
+                      DashboardElements.hodtopModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.performanceBox(
+                        yearlyTarget: _yearlyTarget,
+                        targetYear: _targetYear,
+                        yearlyOrderTotal: _yearlyOrderTotal,
+                        targetProgress: _targetProgress,
+                        targetLoading: _targetLoading,
+                        refreshTick: _refreshTick,
+                        onTargetTap: () => AdminServices.openTarget(context),
+                      ),
+                      const SizedBox(height: 0),
+                      DashboardElements.hodAllModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.topSellingCategory(
+                        categories: _categories,
+                        loading: _categoriesLoading,
+                        error: _categoriesError,
+                        onRetry: _loadCategories,
+                      ),
+                    ],
+
+                    if (isASM) ...[
+                      DashboardElements.hodtopModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.performanceBox(
+                        yearlyTarget: _yearlyTarget,
+                        targetYear: _targetYear,
+                        yearlyOrderTotal: _yearlyOrderTotal,
+                        targetProgress: _targetProgress,
+                        targetLoading: _targetLoading,
+                        refreshTick: _refreshTick,
+                        onTargetTap: () => AdminServices.openTarget(context),
+                      ),
+                      const SizedBox(height: 0),
+                      DashboardElements.hodAllModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.topSellingCategory(
+                        categories: _categories,
+                        loading: _categoriesLoading,
+                        error: _categoriesError,
+                        onRetry: _loadCategories,
+                      ),
+                    ],
+
+                    if (isBM) ...[
+                      DashboardElements.hodtopModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.performanceBox(
+                        yearlyTarget: _yearlyTarget,
+                        targetYear: _targetYear,
+                        yearlyOrderTotal: _yearlyOrderTotal,
+                        targetProgress: _targetProgress,
+                        targetLoading: _targetLoading,
+                        refreshTick: _refreshTick,
+                        onTargetTap: () => AdminServices.openTarget(context),
+                      ),
+                      const SizedBox(height: 0),
+                      DashboardElements.hodAllModule(context),
+                      const SizedBox(height: 12),
+                      DashboardElements.topSellingCategory(
+                        categories: _categories,
+                        loading: _categoriesLoading,
+                        error: _categoriesError,
+                        onRetry: _loadCategories,
+                      ),
+                    ],
+
+                    if (isSH) ...[
                       DashboardElements.hodtopModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.performanceBox(

@@ -13,14 +13,14 @@ import 'package:kutchina/core/widgets/form_widgets.dart';
 class TaskElement {
   TaskElement._();
 
-  static Widget taskElementTopHeader() {
+  static Widget taskElementTopHeader({bool isEditMode = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
       decoration: BoxDecoration(
         gradient: AppColors.buttonGradient,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: const Column(
+      child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -42,11 +42,171 @@ class TaskElement {
     );
   }
 
+  // Task Card 19-11-2026
+  
+  static Widget taskElementSummaryCard(
+    Map<String, dynamic> task, {
+    VoidCallback? onAssign,
+  }) {
+    final title = (task['title'] ?? '').toString().trim();
+    final description = (task['description'] ?? '').toString().trim();
+    final priority = (task['priority'] ?? 'medium').toString().trim();
+
+    final priorityText = priority.isEmpty
+        ? 'Medium'
+        : priority[0].toUpperCase() + priority.substring(1);
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.aiBlue, width: 1.5),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x0C0B2752),
+            blurRadius: 12,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Task Icon
+          Container(
+            width: 54,
+            height: 54,
+            decoration: BoxDecoration(
+              color: AppColors.aiBlueBg,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: const Icon(
+              Icons.assignment_turned_in_outlined,
+              color: AppColors.regionBlue,
+              size: 30,
+            ),
+          ),
+
+          const SizedBox(width: 14),
+
+          // Task Details
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        title.isEmpty ? 'Untitled task' : title,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          fontFamily: AppFonts.display,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                          color: AppColors.regionBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 6),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.amberLight,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(
+                        priorityText,
+                        style: const TextStyle(
+                          color: AppColors.amberDark,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Description
+                if (description.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  Text(
+                    description,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.steel,
+                    ),
+                  ),
+                ],
+
+                // Assign Button
+                if (onAssign != null) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: AppColors.buttonGradient,
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(10),
+                          onTap: onAssign,
+                          child: const Padding(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 14,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.person_add_alt_1_outlined,
+                                  size: 15,
+                                  color: AppColors.white,
+                                ),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Assign To',
+                                  style: TextStyle(
+                                    color: AppColors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Done
+
   static Widget taskElementForm(
     BuildContext context, {
     required TextEditingController titleController,
     required TextEditingController descriptionController,
-    required TextEditingController parentTaskController,
+    // required TextEditingController parentTaskController,
     required TextEditingController assigneeController,
     required TextEditingController reasonController,
     required DateTime dueDate,
@@ -54,6 +214,15 @@ class TaskElement {
     required String priority,
     required ValueChanged<String> onPriorityChanged,
     required AppRole userRole,
+    bool canEditCoreFields = true,
+    bool isEditMode = false,
+    List<TaskUser> initialAssignees = const [],
+
+    String status = 'pending',
+    DateTime? followUpDate,
+    ValueChanged<DateTime>? onFollowUpDateChanged,
+    ValueChanged<String>?
+    onStatusChanged, // ******************************************
   }) {
     Future<void> pickDueDate() async {
       final picked = await showDatePicker(
@@ -64,6 +233,27 @@ class TaskElement {
       );
       if (picked != null) onDueDateChanged(picked);
     }
+
+    Future<void> pickFollowUpDate() async {
+      final picked = await showDatePicker(
+        context: context,
+        initialDate: followUpDate ?? DateTime.now(),
+        firstDate: DateTime(2000),
+        lastDate: DateTime(2100),
+      );
+      if (picked != null) onFollowUpDateChanged?.call(picked);
+    }
+
+    Widget lock(Widget child) => canEditCoreFields
+        ? child
+        : IgnorePointer(child: Opacity(opacity: 0.6, child: child));
+
+    // *********************************************
+    const statusList = ['pending', 'in_progress', 'completed', "follow_up"];
+
+    String pretty(String v) =>
+        v.split('_').map((w) => w[0].toUpperCase() + w.substring(1)).join(' ');
+    //*********************************************** */
 
     return Container(
       padding: const EdgeInsets.fromLTRB(18, 21, 18, 22),
@@ -82,91 +272,105 @@ class TaskElement {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FormWidgets.textField(
-            label: 'Task title',
-            controller: titleController,
-            hint: 'e.g. Patna Retailer Visit',
-            required: true,
+          lock(
+            FormWidgets.textField(
+              label: 'Task title',
+              controller: titleController,
+              hint: 'e.g. Patna Retailer Visit',
+              required: true,
+            ),
           ),
           const SizedBox(height: 17),
-          FormWidgets.textField(
-            label: 'Description',
-            controller: descriptionController,
-            hint: 'Describe the work to be completed',
-            maxLines: 3,
+          lock(
+            FormWidgets.textField(
+              label: 'Description',
+              controller: descriptionController,
+              hint: 'Describe the work to be completed',
+              maxLines: 3,
+            ),
           ),
           const SizedBox(height: 17),
           FormWidgets.label('Due date', required: true),
           const SizedBox(height: 7),
-          InkWell(
-            onTap: pickDueDate,
-            borderRadius: BorderRadius.circular(12),
-            child: InputDecorator(
-              decoration: FormWidgets.inputDecoration().copyWith(
-                suffixIcon: const Icon(Icons.calendar_today_outlined, size: 20),
-              ),
-              child: Text(
-                DateFormat('dd MMM yyyy').format(dueDate),
-                style: const TextStyle(fontSize: 15),
+          lock(
+            InkWell(
+              onTap: pickDueDate,
+              borderRadius: BorderRadius.circular(12),
+              child: InputDecorator(
+                decoration: FormWidgets.inputDecoration().copyWith(
+                  suffixIcon: const Icon(
+                    Icons.calendar_today_outlined,
+                    size: 20,
+                  ),
+                ),
+                child: Text(
+                  DateFormat('dd MMM yyyy').format(dueDate),
+                  style: const TextStyle(fontSize: 15),
+                ),
               ),
             ),
           ),
           const SizedBox(height: 17),
           FormWidgets.label('Priority', required: true),
           const SizedBox(height: 8),
-          Row(
-            children: ['low', 'medium', 'high'].map((value) {
-              final selected = priority == value;
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.only(right: 7),
-                  child: InkWell(
-                    onTap: () => onPriorityChanged(value),
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      decoration: BoxDecoration(
-                        color: selected
-                            ? AppColors.regionBlue.withValues(alpha: 0.09)
-                            : Colors.white,
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(
+          lock(
+            Row(
+              children: ['low', 'medium', 'high'].map((value) {
+                final selected = priority == value;
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 7),
+                    child: InkWell(
+                      onTap: () => onPriorityChanged(value),
+                      borderRadius: BorderRadius.circular(10),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        decoration: BoxDecoration(
                           color: selected
-                              ? AppColors.regionBlue
-                              : const Color(0xFFE4E4E4),
-                          width: selected ? 1.5 : 1,
+                              ? AppColors.regionBlue.withValues(alpha: 0.09)
+                              : Colors.white,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: selected
+                                ? AppColors.regionBlue
+                                : const Color(0xFFE4E4E4),
+                            width: selected ? 1.5 : 1,
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        value[0].toUpperCase() + value.substring(1),
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          color: selected
-                              ? AppColors.regionBlue
-                              : AppColors.ink,
-                          fontWeight: selected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                        child: Text(
+                          value[0].toUpperCase() + value.substring(1),
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: selected
+                                ? AppColors.regionBlue
+                                : AppColors.ink,
+                            fontWeight: selected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
-              );
-            }).toList(),
-          ),
-          const SizedBox(height: 17),
-          if (userRole != AppRole.hod) ...[
-            FormWidgets.textField(
-              label: 'Parent task ID',
-              controller: parentTaskController,
-              hint: 'Optional',
-              keyboardType: TextInputType.number,
-              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                );
+              }).toList(),
             ),
-          ],
+          ),
+          // const SizedBox(height: 17),
+          // if (userRole != AppRole.hod) ...[
+          //   FormWidgets.textField(
+          //     label: 'Parent task ID',
+          //     controller: parentTaskController,
+          //     hint: 'Optional',
+          //     keyboardType: TextInputType.number,
+          //     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          //   ),
+          // ],
           const SizedBox(height: 17),
-          _TaskAssigneeField(controller: assigneeController),
+          _TaskAssigneeField(
+            controller: assigneeController,
+            initialUsers: initialAssignees,
+          ),
           const SizedBox(height: 17),
           FormWidgets.textField(
             label: 'Change reason',
@@ -174,6 +378,52 @@ class TaskElement {
             hint: 'e.g. Assigning work to SH',
             required: false,
           ),
+
+          const SizedBox(height: 17),
+
+          if (isEditMode) ...[
+            FormWidgets.label('Status'),
+            const SizedBox(height: 7),
+            DropdownMenuFormField<String>(
+              expandedInsets: EdgeInsets.zero,
+              requestFocusOnTap: false,
+              hintText: 'Select status',
+              initialSelection: statusList.contains(status) ? status : null,
+              dropdownMenuEntries: statusList
+                  .map((s) => DropdownMenuEntry(value: s, label: pretty(s)))
+                  .toList(),
+              onSelected: (v) {
+                if (v != null) onStatusChanged?.call(v);
+              },
+            ),
+            const SizedBox(height: 17),
+            if (status == 'follow_up') ...[
+              FormWidgets.label('Follow up date', required: true),
+              const SizedBox(height: 7),
+              InkWell(
+                onTap: pickFollowUpDate,
+                borderRadius: BorderRadius.circular(12),
+                child: InputDecorator(
+                  decoration: FormWidgets.inputDecoration().copyWith(
+                    suffixIcon: const Icon(
+                      Icons.calendar_today_outlined,
+                      size: 20,
+                    ),
+                  ),
+                  child: Text(
+                    followUpDate == null
+                        ? 'Select date'
+                        : DateFormat('dd MMM yyyy').format(followUpDate),
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: followUpDate == null ? Colors.grey.shade400 : null,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 17),
+            ],
+          ],
         ],
       ),
     );
@@ -181,19 +431,24 @@ class TaskElement {
 }
 
 class _TaskAssigneeField extends StatefulWidget {
-  const _TaskAssigneeField({required this.controller});
+  const _TaskAssigneeField({
+    required this.controller,
+    this.initialUsers = const [],
+  });
 
   final TextEditingController controller;
+  final List<TaskUser> initialUsers;
 
   @override
   State<_TaskAssigneeField> createState() => _TaskAssigneeFieldState();
 }
 
 class _TaskAssigneeFieldState extends State<_TaskAssigneeField> {
-  List<AdminUser> _selectedUsers = [];
+  //List<TaskUser> _selectedUsers = [];
+  late List<TaskUser> _selectedUsers = List.of(widget.initialUsers);
 
   Future<void> _selectAssignees(FormFieldState<String> field) async {
-    final selectedUsers = await showModalBottomSheet<List<AdminUser>>(
+    final selectedUsers = await showModalBottomSheet<List<TaskUser>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
@@ -271,7 +526,7 @@ class _TaskAssigneeFieldState extends State<_TaskAssigneeField> {
 class _AssigneeSelectionSheet extends StatefulWidget {
   const _AssigneeSelectionSheet({required this.initialSelection});
 
-  final List<AdminUser> initialSelection;
+  final List<TaskUser> initialSelection;
 
   @override
   State<_AssigneeSelectionSheet> createState() =>
@@ -280,8 +535,8 @@ class _AssigneeSelectionSheet extends StatefulWidget {
 
 class _AssigneeSelectionSheetState extends State<_AssigneeSelectionSheet> {
   final _searchController = TextEditingController();
-  final Map<String, AdminUser> _selectedUsers = {};
-  List<AdminUser> _users = [];
+  final Map<String, TaskUser> _selectedUsers = {};
+  List<TaskUser> _users = [];
   Timer? _searchDebounce;
   String? _loadError;
   bool _isLoading = true;
@@ -310,7 +565,11 @@ class _AssigneeSelectionSheetState extends State<_AssigneeSelectionSheet> {
       _loadError = null;
     });
     try {
-      final page = await AdminUsersApi.fetchUsers(pageSize: 50, search: search);
+      final page = await TaskUsersApi.fetchAssignTasks(
+        pageSize: 50,
+        search: search,
+      ); // *********************************************
+
       if (!mounted || requestId != _requestId) return;
       setState(
         () => _users = page.users
@@ -320,7 +579,9 @@ class _AssigneeSelectionSheetState extends State<_AssigneeSelectionSheet> {
     } on ApiException catch (error) {
       if (!mounted || requestId != _requestId) return;
       setState(() => _loadError = error.message);
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('LOAD USERS ERROR: $e');
+      debugPrint('$st');
       if (!mounted || requestId != _requestId) return;
       setState(() => _loadError = 'Unable to load users');
     } finally {

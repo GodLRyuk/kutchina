@@ -32,10 +32,12 @@ class _RoleDashboardScreenState extends State<RoleDashboardScreen> {
   void initState() {
     super.initState();
     _role = context.read<AuthProvider>().role;
+     print("role is that $_role");
     _profile = forRole(_role);
     _controller = _profile.createController();
     _controller.load();
     _loadTargetNotifications();
+   
   }
 
   Future<void> _loadTargetNotifications() async {

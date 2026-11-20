@@ -116,7 +116,7 @@ class AppBottomNav extends StatelessWidget {
             label: 'Command',
             icon: Icons.home_outlined,
             iconColor: AppColors.regionBlue,
-            builder: (_) => const RoleDashboardScreen(),
+            builder: (_) => const DashboardScreen(showBottomNav: false),
           ),
           RoleTab(
             label: 'Approve',
@@ -183,7 +183,7 @@ class AppBottomNav extends StatelessWidget {
           ),
         ];
 
-       case AppRole.distributor:
+      case AppRole.distributor:
         return [
           RoleTab(
             label: 'Home',
@@ -210,33 +210,139 @@ class AppBottomNav extends StatelessWidget {
           ),
         ];
 
+      // Added 17-11-2026
 
-
-
-      case AppRole.salesHead:
-      case AppRole.branchManager:
       case AppRole.areaSalesManager:
-      // case AppRole.distributor:
         return [
           RoleTab(
-            label: 'Home',
+            label: 'Command',
             icon: Icons.home_outlined,
-            builder: (_) => const RoleDashboardScreen(),
+            iconColor: AppColors.regionBlue,
+            builder: (_) => const DashboardScreen(showBottomNav: false),
           ),
           RoleTab(
-            label: 'Tasks',
-            icon: Icons.checklist_outlined,
-            builder: (_) => const TaskListScreen(showBottomNav: false),
+            label: 'Approve',
+            icon: Icons.fact_check_outlined,
+            iconColor: AppColors.productOvens,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'People',
+            icon: Icons.groups_outlined,
+            iconColor: AppColors.topProductBg,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'Masters',
+            icon: Icons.inventory_2_outlined,
+            iconColor: AppColors.regionPurple,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
           ),
           RoleTab(
             label: 'Profile',
             icon: Icons.person_outline,
+            iconColor: AppColors.navNormal,
             builder: (_) => const ProfileScreen(
               showBottomNav: false,
               showBackButton: false,
             ),
           ),
         ];
+
+      case AppRole.branchManager:
+        return [
+          RoleTab(
+            label: 'Command',
+            icon: Icons.home_outlined,
+            iconColor: AppColors.regionBlue,
+            builder: (_) => const DashboardScreen(showBottomNav: false),
+          ),
+          RoleTab(
+            label: 'Approve',
+            icon: Icons.fact_check_outlined,
+            iconColor: AppColors.productOvens,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'People',
+            icon: Icons.groups_outlined,
+            iconColor: AppColors.topProductBg,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'Masters',
+            icon: Icons.inventory_2_outlined,
+            iconColor: AppColors.regionPurple,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'Profile',
+            icon: Icons.person_outline,
+            iconColor: AppColors.navNormal,
+            builder: (_) => const ProfileScreen(
+              showBottomNav: false,
+              showBackButton: false,
+            ),
+          ),
+        ];
+
+      case AppRole.salesHead:
+        return [
+          RoleTab(
+            label: 'Command',
+            icon: Icons.home_outlined,
+            iconColor: AppColors.regionBlue,
+            builder: (_) => const DashboardScreen(showBottomNav: false),
+          ),
+          RoleTab(
+            label: 'Approve',
+            icon: Icons.fact_check_outlined,
+            iconColor: AppColors.productOvens,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'People',
+            icon: Icons.groups_outlined,
+            iconColor: AppColors.topProductBg,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'Masters',
+            icon: Icons.inventory_2_outlined,
+            iconColor: AppColors.regionPurple,
+            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+          ),
+          RoleTab(
+            label: 'Profile',
+            icon: Icons.person_outline,
+            iconColor: AppColors.navNormal,
+            builder: (_) => const ProfileScreen(
+              showBottomNav: false,
+              showBackButton: false,
+            ),
+          ),
+        ];
+
+      // return [
+      //   RoleTab(
+      //     label: 'Home',
+      //     icon: Icons.home_outlined,
+      //     builder: (_) => const RoleDashboardScreen(),
+      //   ),
+      //   RoleTab(
+      //     label: 'Tasks',
+      //     icon: Icons.checklist_outlined,
+      //     builder: (_) => const TaskListScreen(showBottomNav: false),
+      //   ),
+      //   RoleTab(
+      //     label: 'Profile',
+      //     icon: Icons.person_outline,
+      //     builder: (_) => const ProfileScreen(
+      //       showBottomNav: false,
+      //       showBackButton: false,
+      //     ),
+      //   ),
+      // ];
     }
   }
 

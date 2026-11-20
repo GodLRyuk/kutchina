@@ -157,6 +157,45 @@ class AdminUser {
 
 double _toDouble(dynamic v) => double.tryParse(v?.toString() ?? '') ?? 0;
 
+// Model for Task User  17-11-2026
+class TaskUser {
+  final String id;
+  final String userId;
+  final String firstName;
+  final String middleName;
+  final String lastName;
+  final String email;
+  final String phone;
+  final String role;
+
+  const TaskUser({
+    required this.id,
+    required this.userId,
+    required this.firstName,
+    required this.middleName,
+    required this.lastName,
+    required this.email,
+    required this.phone,
+    required this.role,
+  });
+  String get fullName =>
+      [firstName, middleName, lastName].where((p) => p.isNotEmpty).join(' ');
+
+  factory TaskUser.fromJson(Map<String, dynamic> json) {
+    String s(String key) => json[key]?.toString().trim() ?? '';
+    return TaskUser(
+      id: s('id'),
+      userId: s('userid'),
+      firstName: s('first_name'),
+      middleName: s('middle_name'),
+      lastName: s('last_name'),
+      email: s('email'),
+      phone: s('phone'),
+      role: s('role'),
+    );
+  }
+}
+
 class SalesOrder {
   final String id;
   final String orderNumber;
@@ -967,6 +1006,72 @@ class VisitService {
   }
 }
 
+// Assign Task  17-11-2026
+class TaskUsersPage {
+  final List<TaskUser> users;
+  final int count;
+  final bool hasMore;
+
+  const TaskUsersPage({
+    required this.users,
+    required this.count,
+    required this.hasMore,
+  });
+}
+
+class TaskUsersApi {
+  TaskUsersApi._();
+
+  static Future<TaskUsersPage> fetchAssignTasks({
+    int page = 1,
+    int pageSize = 10,
+    String search = '',
+  }) async {
+    final isSearch = search.isNotEmpty;
+    final res = await ApiService.instance.getCached(
+      '/api/v1/task/users/',
+      queryParams: isSearch
+          ? {'search': search}
+          : {'page': page, 'page_size': pageSize},
+    );
+    final raw = res.data;
+
+    final List list;
+    int? count;
+    bool hasMore = false;
+
+    if (raw is List) {
+      list = raw;
+    } else if (raw is Map) {
+      final results = raw['results'];
+      final inner = results is Map
+          ? (results['users'] ?? results['data'])
+          : results;
+      final candidate = raw['users'] ?? inner ?? raw['data'];
+      list = candidate is List ? candidate : <dynamic>[];
+      count = raw['count'] as int?;
+      hasMore = raw['next'] != null;
+    } else {
+      list = [];
+    }
+
+    final users = list
+        .whereType<Map>()
+        .map((e) => TaskUser.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+
+    if (!hasMore && count != null) {
+      hasMore = page * pageSize < count;
+    }
+
+    return TaskUsersPage(
+      users: users,
+      count: count ?? users.length,
+      hasMore: hasMore,
+    );
+  }
+}
+
 // Added for paginaton
 class AdminUsersPage {
   final List<AdminUser> users;
@@ -1022,27 +1127,6 @@ class AdminUsersApi {
       hasMore: hasMore,
     );
   }
-
-  // static Future<List<AdminUser>> fetchUsers({
-  //   int page = 1,
-  //   int pageSize = 10
-  // }) async {
-  //   final res = await ApiService.instance.getCached(
-  //     '/api/v1/users/superadmin/userlist/',
-  //      queryParams: {'page': page, 'page_size': pageSize},
-  //   );
-  //   final raw = res.data;
-  //   final list = raw is List
-  //       ? raw
-  //       : (raw is Map
-  //             ? raw['data'] as List? ?? raw['results'] as List? ?? []
-  //             : []);
-
-  //   return list
-  //       .whereType<Map<String, dynamic>>()
-  //       .map(AdminUser.fromJson)
-  //       .toList();
-  // }
 }
 
 class SalesProduct {

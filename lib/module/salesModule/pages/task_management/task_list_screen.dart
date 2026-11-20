@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:kutchina/core/auth/app_roles.dart';
 import 'package:kutchina/core/constants/app_theme.dart';
+import 'package:kutchina/core/provider/auth_provider.dart';
 import 'package:kutchina/core/services/api_services.dart';
 import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/module/salesModule/pages/task_management/create_task.dart';
+
+import 'package:provider/provider.dart';
 
 class TaskListScreen extends StatefulWidget {
   final bool showBottomNav;
@@ -35,6 +39,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
     try {
       final response = await ApiService.instance.get('/api/v1/task/tasks/');
       final data = response.data;
+      // print("Task data is $data");
       final List<dynamic> rows;
       if (data is List) {
         rows = data;
@@ -67,11 +72,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
   Map<String, dynamic> _asStringMap(Map row) =>
       row.map((key, value) => MapEntry(key.toString(), value));
 
-  Future<void> _openCreateTask() async {
+  Future<void> _openCreateTask({Map<String, dynamic>? task}) async {
     final result = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const CreateTaskScreen(showBottomNav: false),
+        builder: (_) => CreateTaskScreen(showBottomNav: false, task: task),
       ),
     );
     if (!mounted) return;
@@ -172,7 +177,17 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     message: 'No tasks yet. Create a task to get started.',
                   )
                 else
-                  ..._tasks.map(_taskCard),
+                  // ..._tasks.map(_taskCard),
+                  ..._tasks.asMap().entries.map(
+                    (entry) => _taskCard(
+                      entry.value,
+                      accent: entry.key.isEven
+                          ? AppColors.aiBlue
+                          : AppColors.dayEndIconBg,
+                    ),
+                  ),
+
+                SizedBox(height: MediaQuery.sizeOf(context).height * 0.05),
               ],
             ),
           ),
@@ -244,12 +259,32 @@ class _TaskListScreenState extends State<TaskListScreen> {
     ),
   );
 
-  Widget _taskCard(Map<String, dynamic> task) {
+  Widget _taskCard(Map<String, dynamic> task, {required Color accent}) {
+    final auth = context.watch<AuthProvider>();
+    final isHod = auth.role == AppRole.hod;
+
     final title = _string(task['title'], fallback: 'Untitled task');
     final description = _string(task['description']);
     final dueDate = _formatDate(task['due_date'] ?? task['dueDate']);
     final priority = _string(task['priority'], fallback: 'medium');
     final status = _string(task['status'] ?? task['state']);
+
+    // HOD sees ASM name(s)
+    final assignments = task['assignments'] is List
+        ? (task['assignments'] as List).whereType<Map>().toList()
+        : <Map>[];
+    final assignedTo = assignments
+        .map((a) => _string(a['assigned_to_name']))
+        .where((n) => n.isNotEmpty)
+        .join(', ');
+
+    // ASM sees HOD name
+    final assignedBy = _string(
+      task['assigned_by_name'] ?? task['created_by_name'],
+    );
+
+    final personLabel = isHod ? 'Assigned to' : 'Assigned by';
+    final personName = isHod ? assignedTo : assignedBy;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -257,7 +292,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.88),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: const Color(0xFFDDE5F4)),
+        border: Border.all(color: accent, width: 1.5),
         boxShadow: const [
           BoxShadow(
             color: Color(0x0C0B2752),
@@ -266,42 +301,142 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ),
         ],
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
+      child: Material(
+        color: Colors.transparent,
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontFamily: AppFonts.display,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 15,
-                    color: AppColors.regionBlue,
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: const TextStyle(
+                        fontFamily: AppFonts.display,
+                        fontWeight: FontWeight.bold,
+                        fontSize: 15,
+                        color: AppColors.regionBlue,
+                      ),
+                    ),
                   ),
-                ),
+                  _tag(priority, AppColors.amberLight, AppColors.amberDark),
+                ],
               ),
-              _tag(priority, AppColors.amberLight, AppColors.amberDark),
+              if (description.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(description, style: const TextStyle(color: AppColors.ink)),
+              ],
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 6,
+                children: [
+                  if (dueDate.isNotEmpty)
+                    _tag(
+                      'Due $dueDate',
+                      AppColors.aiBlueBg,
+                      AppColors.regionBlue,
+                    ),
+                  if (status.isNotEmpty)
+                    _tag(status, AppColors.greenLight, AppColors.green),
+                ],
+              ),
+              if (personName.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                const Divider(height: 1, color: Color(0xFFE9EEF7)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 15,
+                      backgroundColor: AppColors.aiBlueBg,
+                      child: Text(
+                        personName[0].toUpperCase(),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.regionBlue,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            personLabel,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: AppColors.steel,
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            personName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Button  19-11-2026
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: AppColors.buttonGradient,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Material(
+                          color: Colors.transparent,
+                          child: InkWell(
+                            borderRadius: BorderRadius.circular(10),
+                            onTap: () => _openCreateTask(task: task),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 10,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.person_add_alt_1_outlined,
+                                    size: 15,
+                                    color: AppColors.white,
+                                  ),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'Assign Task',
+                                    style: TextStyle(
+                                      color: AppColors.white,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
-          if (description.isNotEmpty) ...[
-            const SizedBox(height: 8),
-            Text(description, style: const TextStyle(color: AppColors.ink)),
-          ],
-          const SizedBox(height: 12),
-          Wrap(
-            spacing: 8,
-            runSpacing: 6,
-            children: [
-              if (dueDate.isNotEmpty)
-                _tag('Due $dueDate', AppColors.aiBlueBg, AppColors.regionBlue),
-              if (status.isNotEmpty)
-                _tag(status, AppColors.greenLight, AppColors.green),
-            ],
-          ),
-        ],
+        ),
       ),
     );
   }
