@@ -382,7 +382,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
 
                     if (isASM) ...[
-                      DashboardElements.hodtopModule(context),
+                      DashboardElements.asmtopModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.performanceBox(
                         yearlyTarget: _yearlyTarget,
@@ -394,7 +394,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTargetTap: () => AdminServices.openTarget(context),
                       ),
                       const SizedBox(height: 0),
-                      DashboardElements.hodAllModule(context),
+                      DashboardElements.asmAllModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.topSellingCategory(
                         categories: _categories,
@@ -405,7 +405,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
 
                     if (isBM) ...[
-                      DashboardElements.hodtopModule(context),
+                      DashboardElements.bmtopModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.performanceBox(
                         yearlyTarget: _yearlyTarget,
@@ -417,7 +417,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTargetTap: () => AdminServices.openTarget(context),
                       ),
                       const SizedBox(height: 0),
-                      DashboardElements.hodAllModule(context),
+                      DashboardElements.bmAllModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.topSellingCategory(
                         categories: _categories,
@@ -428,7 +428,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     ],
 
                     if (isSH) ...[
-                      DashboardElements.hodtopModule(context),
+                      DashboardElements.shtopModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.performanceBox(
                         yearlyTarget: _yearlyTarget,
@@ -440,7 +440,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         onTargetTap: () => AdminServices.openTarget(context),
                       ),
                       const SizedBox(height: 0),
-                      DashboardElements.hodAllModule(context),
+                      DashboardElements.shAllModule(context),
                       const SizedBox(height: 12),
                       DashboardElements.topSellingCategory(
                         categories: _categories,

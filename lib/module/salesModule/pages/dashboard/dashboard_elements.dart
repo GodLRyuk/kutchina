@@ -619,4 +619,224 @@ class DashboardElements {
       ],
     );
   }
+
+  //  ASM Module
+  static Widget asmtopModule(BuildContext context) {
+    return Row(
+      children: [
+        AdminWidget.quickAction(
+          Icons.assignment_outlined,
+          'Plan',
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TaskListScreen()),
+          ),
+          bgColor: AppColors.regionBlue,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.check,
+          'Approvals',
+          () {},
+          bgColor: AppColors.regionOrange,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.description_outlined,
+          'Network',
+          () {},
+          bgColor: AppColors.green,
+        ),
+      ],
+    );
+  }
+
+  static Widget asmAllModule(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.description_outlined,
+              'Area',
+              () {},
+              bgColor: AppColors.aiBlue,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.storefront_outlined,
+              'Dealers',
+              () {},
+              bgColor: AppColors.amber,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.notifications_outlined,
+              'Escalations',
+              () {},
+              bgColor: AppColors.amberDark,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.bar_chart_outlined,
+              'Schemes and reports',
+              () {},
+              bgColor: AppColors.buttonGradientStart,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // For BM
+  static Widget bmtopModule(BuildContext context) {
+    return Row(
+      children: [
+        AdminWidget.quickAction(
+          Icons.assignment_outlined,
+          'Plan',
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TaskListScreen()),
+          ),
+          bgColor: AppColors.regionBlue,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.check,
+          'Approvals',
+          () {},
+          bgColor: AppColors.regionOrange,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.people_alt_outlined,
+          'Dealers',
+          () {},
+          bgColor: AppColors.green,
+        ),
+      ],
+    );
+  }
+
+  static Widget bmAllModule(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.inventory_2_outlined,
+              'Branch',
+              () {},
+              bgColor: AppColors.aiBlue,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.groups_outlined,
+              'Team',
+              () {},
+              bgColor: AppColors.amber,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.currency_rupee,
+              'Collections',
+              () {},
+              bgColor: AppColors.amberDark,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.inventory_outlined,
+              'Schemes and service',
+              () {},
+              bgColor: AppColors.buttonGradientStart,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  // For SH
+  static Widget shtopModule(BuildContext context) {
+    return Row(
+      children: [
+        AdminWidget.quickAction(
+          Icons.people_outline,
+          'Team',
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TaskListScreen()),
+          ),
+          bgColor: AppColors.regionBlue,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.check,
+          'Tasks',
+          () {},
+          bgColor: AppColors.regionOrange,
+        ),
+        const SizedBox(width: 8),
+        AdminWidget.quickAction(
+          Icons.check,
+          'Review',
+          () {},
+          bgColor: AppColors.green,
+        ),
+      ],
+    );
+  }
+
+  static Widget shAllModule(BuildContext context) {
+    return Column(
+      children: [
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.people_outline,
+              'Team',
+              () {},
+              bgColor: AppColors.aiBlue,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.check,
+              'Task',
+              () {},
+              bgColor: AppColors.amber,
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            AdminWidget.quickAction(
+              Icons.check,
+              'Approvals',
+              () {},
+              bgColor: AppColors.amberDark,
+            ),
+            const SizedBox(width: 8),
+            AdminWidget.quickAction(
+              Icons.bar_chart,
+              'Targets',
+
+              () {},
+              bgColor: AppColors.buttonGradientStart,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
 }

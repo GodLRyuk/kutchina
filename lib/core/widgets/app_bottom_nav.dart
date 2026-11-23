@@ -215,28 +215,28 @@ class AppBottomNav extends StatelessWidget {
       case AppRole.areaSalesManager:
         return [
           RoleTab(
-            label: 'Command',
-            icon: Icons.home_outlined,
+            label: 'Area',
+            icon: Icons.space_dashboard_outlined,
             iconColor: AppColors.regionBlue,
             builder: (_) => const DashboardScreen(showBottomNav: false),
           ),
           RoleTab(
-            label: 'Approve',
-            icon: Icons.fact_check_outlined,
+            label: 'Tasks',
+            icon: Icons.assignment_outlined,
             iconColor: AppColors.productOvens,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Tasks'),
           ),
           RoleTab(
-            label: 'People',
-            icon: Icons.groups_outlined,
+            label: 'Approve',
+            icon: Icons.verified_outlined,
             iconColor: AppColors.topProductBg,
             builder: (_) => const ComingSoonTab(title: 'Approvals'),
           ),
           RoleTab(
-            label: 'Masters',
-            icon: Icons.inventory_2_outlined,
+            label: 'Network',
+            icon: Icons.hub_outlined,
             iconColor: AppColors.regionPurple,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Network'),
           ),
           RoleTab(
             label: 'Profile',
@@ -252,28 +252,28 @@ class AppBottomNav extends StatelessWidget {
       case AppRole.branchManager:
         return [
           RoleTab(
-            label: 'Command',
-            icon: Icons.home_outlined,
+            label: 'Branch',
+            icon: Icons.domain_outlined,
             iconColor: AppColors.regionBlue,
             builder: (_) => const DashboardScreen(showBottomNav: false),
           ),
           RoleTab(
-            label: 'Approve',
-            icon: Icons.fact_check_outlined,
+            label: 'Tasks',
+            icon: Icons.assignment_outlined,
             iconColor: AppColors.productOvens,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Tasks'),
           ),
           RoleTab(
-            label: 'People',
-            icon: Icons.groups_outlined,
+            label: 'Approve',
+            icon: Icons.verified_outlined,
             iconColor: AppColors.topProductBg,
             builder: (_) => const ComingSoonTab(title: 'Approvals'),
           ),
           RoleTab(
-            label: 'Masters',
-            icon: Icons.inventory_2_outlined,
+            label: 'Dealers',
+            icon: Icons.storefront_outlined,
             iconColor: AppColors.regionPurple,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Dealers'),
           ),
           RoleTab(
             label: 'Profile',
@@ -289,28 +289,28 @@ class AppBottomNav extends StatelessWidget {
       case AppRole.salesHead:
         return [
           RoleTab(
-            label: 'Command',
-            icon: Icons.home_outlined,
+            label: 'Teams',
+            icon: Icons.groups_outlined,
             iconColor: AppColors.regionBlue,
             builder: (_) => const DashboardScreen(showBottomNav: false),
           ),
           RoleTab(
-            label: 'Approve',
-            icon: Icons.fact_check_outlined,
+            label: 'Status',
+            icon: Icons.donut_large_outlined,
             iconColor: AppColors.productOvens,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Status'),
           ),
           RoleTab(
-            label: 'People',
-            icon: Icons.groups_outlined,
+            label: 'Tasks',
+            icon: Icons.assignment_outlined,
             iconColor: AppColors.topProductBg,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Tasks'),
           ),
           RoleTab(
-            label: 'Masters',
-            icon: Icons.inventory_2_outlined,
+            label: 'Review',
+            icon: Icons.rate_review_outlined,
             iconColor: AppColors.regionPurple,
-            builder: (_) => const ComingSoonTab(title: 'Approvals'),
+            builder: (_) => const ComingSoonTab(title: 'Review'),
           ),
           RoleTab(
             label: 'Profile',
