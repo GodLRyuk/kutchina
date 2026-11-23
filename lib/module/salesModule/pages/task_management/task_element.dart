@@ -292,7 +292,7 @@ class TaskElement {
           const SizedBox(height: 17),
           FormWidgets.label('Due date', required: true),
           const SizedBox(height: 7),
-          lock(
+          
             InkWell(
               onTap: pickDueDate,
               borderRadius: BorderRadius.circular(12),
@@ -309,7 +309,7 @@ class TaskElement {
                 ),
               ),
             ),
-          ),
+          
           const SizedBox(height: 17),
           FormWidgets.label('Priority', required: true),
           const SizedBox(height: 8),

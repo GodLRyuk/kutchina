@@ -183,7 +183,6 @@ class _CreateTaskScreenState extends State<CreateTaskScreen> {
                       context,
                       titleController: _titleController,
                       descriptionController: _descriptionController,
-                      // parentTaskController: _parentTaskController,
                       assigneeController: _assigneeController,
                       reasonController: _reasonController,
                       dueDate: _dueDate,

@@ -8,7 +8,6 @@ import 'package:kutchina/core/widgets/app_background.dart';
 import 'package:kutchina/core/widgets/app_bar.dart';
 import 'package:kutchina/core/widgets/app_bottom_nav.dart';
 import 'package:kutchina/module/salesModule/pages/task_management/create_task.dart';
-
 import 'package:provider/provider.dart';
 
 class TaskListScreen extends StatefulWidget {
@@ -21,6 +20,12 @@ class TaskListScreen extends StatefulWidget {
 }
 
 class _TaskListScreenState extends State<TaskListScreen> {
+  // For sales executive
+  bool get _isSalesExecutive =>
+      context.read<AuthProvider>().role == AppRole.salesExec;
+  bool get _canCreateTask => !_isSalesExecutive;
+  // done
+
   List<Map<String, dynamic>> _tasks = [];
   bool _loading = true;
   String? _error;
@@ -71,6 +76,29 @@ class _TaskListScreenState extends State<TaskListScreen> {
 
   Map<String, dynamic> _asStringMap(Map row) =>
       row.map((key, value) => MapEntry(key.toString(), value));
+
+  Map<int, List<Map<String, dynamic>>> get _childrenByParent {
+    final ids = _tasks.map((t) => t['id']).toSet();
+
+    final map = <int, List<Map<String, dynamic>>>{};
+    for (final t in _tasks) {
+      final parentId = t['parent_task_id'];
+
+      if (parentId is int && ids.contains(parentId)) {
+        map.putIfAbsent(parentId, () => []).add(t);
+      }
+    }
+    return map;
+  }
+
+  List<Map<String, dynamic>> get _visibleTasks {
+    final ids = _tasks.map((t) => t['id']).toSet();
+    return _tasks.where((t) {
+      final parentId = t['parent_task_id'];
+      final isChild = parentId is int && ids.contains(parentId);
+      return !isChild;
+    }).toList();
+  }
 
   Future<void> _openCreateTask({Map<String, dynamic>? task}) async {
     final result = await Navigator.push(
@@ -132,7 +160,11 @@ class _TaskListScreenState extends State<TaskListScreen> {
                   ),
                 ),
                 const SizedBox(height: 18),
-                _createButton(),
+                // _createButton(),
+                if (_canCreateTask) ...[
+                  const SizedBox(height: 18),
+                  _createButton(),
+                ],
                 const SizedBox(height: 22),
                 Row(
                   children: [
@@ -148,7 +180,7 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       ),
                     ),
                     Text(
-                      '${_tasks.length} total',
+                      '${_visibleTasks.length} total',
                       style: const TextStyle(
                         fontSize: 12,
                         color: AppColors.steel,
@@ -171,14 +203,14 @@ class _TaskListScreenState extends State<TaskListScreen> {
                       child: const Text('Try again'),
                     ),
                   )
-                else if (_tasks.isEmpty)
+                else if (_visibleTasks.isEmpty)
                   _messageCard(
                     icon: Icons.task_alt_outlined,
                     message: 'No tasks yet. Create a task to get started.',
                   )
                 else
                   // ..._tasks.map(_taskCard),
-                  ..._tasks.asMap().entries.map(
+                  ..._visibleTasks.asMap().entries.map(
                     (entry) => _taskCard(
                       entry.value,
                       accent: entry.key.isEven
@@ -193,13 +225,15 @@ class _TaskListScreenState extends State<TaskListScreen> {
           ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _openCreateTask,
-        backgroundColor: AppColors.regionBlue,
-        foregroundColor: Colors.white,
-        icon: const Icon(Icons.add),
-        label: const Text('New task'),
-      ),
+      floatingActionButton: _canCreateTask
+          ? FloatingActionButton.extended(
+              onPressed: _openCreateTask,
+              backgroundColor: AppColors.regionBlue,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('New task'),
+            )
+          : null,
       bottomNavigationBar: widget.showBottomNav
           ? const AppBottomNav(backgroundColor: Colors.white)
           : null,
@@ -267,9 +301,8 @@ class _TaskListScreenState extends State<TaskListScreen> {
     final description = _string(task['description']);
     final dueDate = _formatDate(task['due_date'] ?? task['dueDate']);
     final priority = _string(task['priority'], fallback: 'medium');
-    final status = _string(task['status'] ?? task['state']);
 
-    // HOD sees ASM name(s)
+    // 1. assignments
     final assignments = task['assignments'] is List
         ? (task['assignments'] as List).whereType<Map>().toList()
         : <Map>[];
@@ -278,13 +311,34 @@ class _TaskListScreenState extends State<TaskListScreen> {
         .where((n) => n.isNotEmpty)
         .join(', ');
 
+    // 2. children
+    final children = _childrenByParent[task['id']] ?? const [];
+    final isDelegated = children.isNotEmpty;
+    final delegatedTo = children
+        .expand((c) => (c['assignments'] as List? ?? []).whereType<Map>())
+        .map(
+          (a) =>
+              '${_string(a['assigned_to_name'])} (${_string(a['assigned_to_role'])})',
+        )
+        .join(', ');
+
+    // 3. status (needs both of the above)
+    final status = isDelegated
+        ? 'Delegated'
+        : _string(
+            task['status'] ??
+                (assignments.isNotEmpty ? assignments.first['status'] : null),
+          );
+
     // ASM sees HOD name
     final assignedBy = _string(
       task['assigned_by_name'] ?? task['created_by_name'],
     );
 
-    final personLabel = isHod ? 'Assigned to' : 'Assigned by';
+    final personLabel = isHod ? 'Assigned to' : 'Received from';
     final personName = isHod ? assignedTo : assignedBy;
+
+    final canAssign = !isHod &&  !_isSalesExecutive;
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -390,49 +444,74 @@ class _TaskListScreenState extends State<TaskListScreen> {
                     ),
 
                     // Button  19-11-2026
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: AppColors.buttonGradient,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Material(
-                          color: Colors.transparent,
-                          child: InkWell(
+                    if (canAssign)
+                      Align(
+                        alignment: Alignment.centerRight,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(
+                            gradient: AppColors.buttonGradient,
                             borderRadius: BorderRadius.circular(10),
-                            onTap: () => _openCreateTask(task: task),
-                            child: const Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 14,
-                                vertical: 10,
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.person_add_alt_1_outlined,
-                                    size: 15,
-                                    color: AppColors.white,
-                                  ),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'Assign Task',
-                                    style: TextStyle(
+                          ),
+                          child: Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              borderRadius: BorderRadius.circular(10),
+                              onTap: () => _openCreateTask(task: task),
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 10,
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.person_add_alt_1_outlined,
+                                      size: 15,
                                       color: AppColors.white,
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.bold,
                                     ),
-                                  ),
-                                ],
+                                    const SizedBox(width: 6),
+                                    Text(
+                                      isDelegated ? 'Reassign' : 'Assign Task',
+                                      style: const TextStyle(
+                                        color: AppColors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
                           ),
                         ),
                       ),
-                    ),
                   ],
                 ),
+
+                if (isDelegated) ...[
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.subdirectory_arrow_right,
+                        size: 16,
+                        color: AppColors.steel,
+                      ),
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          'Delegated to $delegatedTo',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: AppColors.regionBlue,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ],
           ),

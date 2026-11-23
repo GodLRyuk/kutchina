@@ -7,6 +7,7 @@ import 'package:kutchina/core/widgets/admin_widget.dart';
 import 'package:kutchina/core/widgets/app_widgets.dart';
 import 'package:kutchina/core/widgets/skeleton_loader.dart';
 import 'package:kutchina/module/salesModule/models/visit_model.dart';
+import 'package:kutchina/module/salesModule/pages/area/area_performance_screen.dart';
 import 'package:kutchina/module/salesModule/pages/features/feature_list_screen.dart';
 import 'package:kutchina/module/salesModule/pages/order/new_order_sheet.dart';
 import 'package:kutchina/module/salesModule/pages/order/order_list_screen.dart';
@@ -659,7 +660,12 @@ class DashboardElements {
             AdminWidget.quickAction(
               Icons.description_outlined,
               'Area',
-              () {},
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const AreaPerformanceScreen(),
+                ),
+              ),
               bgColor: AppColors.aiBlue,
             ),
             const SizedBox(width: 8),
@@ -783,7 +789,10 @@ class DashboardElements {
         AdminWidget.quickAction(
           Icons.check,
           'Tasks',
-          () {},
+          () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const TaskListScreen()),
+          ),
           bgColor: AppColors.regionOrange,
         ),
         const SizedBox(width: 8),
@@ -812,7 +821,10 @@ class DashboardElements {
             AdminWidget.quickAction(
               Icons.check,
               'Task',
-              () {},
+              () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const TaskListScreen()),
+              ),
               bgColor: AppColors.amber,
             ),
           ],
